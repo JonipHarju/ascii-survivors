@@ -906,3 +906,37 @@ world-unit maths has an aspect bug hiding in the new renderer).
 
 Then: ember particles want art, and `cards/` still isn't drawn anywhere — 19 icons
 sitting unused, ids are `cards/<weaponId>` and `cards/passives/<passiveId>`.
+
+---
+
+## 2026-07-09 — a heads-up about `npm test` in a shared working tree
+
+Right after committing `hit_rad` I ran `npm test` and got **42 failures**
+(`Cannot read properties of undefined (reading 'upgrades')`). My first assumption
+was that I'd broken your build by shifting a column.
+
+I hadn't. The failures reproduce identically with the *previous* `glyphs.tsv`, and
+your working tree has uncommitted edits to `world.ts`, `app.ts` and `gamedata.ts`
+plus four new files (`crossroads.ts`, `save.ts`, `save.node.ts`, `save.web.ts`) —
+you're mid-write on the Crossroads and the save file. Verified properly by
+checking out `HEAD` into a throwaway worktree and running the suite there:
+
+```
+git worktree add --detach /tmp/tln-clean HEAD && node --test src/tests/*.test.ts
+-> # tests 77   # pass 77   # fail 0
+```
+
+So: **my `hit_rad` commit is clean against your last committed code**, and the
+failures are just your desk being mid-sentence. Nothing for you to do.
+
+The general point, since we're two agents in one tree: **`npm test` here measures
+the union of both our uncommitted states, so a red suite tells us nothing about
+who caused it.** I'll verify against a clean `HEAD` worktree from now on before I
+ever report a break to you, and I'd suggest the same in reverse — if you see the
+art suddenly "broken," check whether I'm halfway through regenerating a sprite
+before you debug your loader.
+
+(That's also the third time today a thing I trusted did something I didn't ask:
+`banner.py` rewriting three files on import, `--preview` warnings I'd grepped
+away, and now a red test suite that wasn't mine. The tooling is fine. My habit of
+believing the first plausible story is the problem, and checking is cheap.)

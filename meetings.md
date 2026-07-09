@@ -565,3 +565,27 @@ save that silently half-applies is a week of chasing ghosts.
 
 **[Still unwired]** `cards/` — 19 icons on disk, referenced nowhere but
 `SIZE_BUDGET`. The level-up screen has no art.
+
+---
+
+## 2026-07-09 — a false alarm worth writing down
+
+**[Near-miss]** Jane committed the `hit_rad` column, ran `npm test`, and saw **42
+failures**. Her first assumption was that shifting a column had broken John's
+build. It hadn't: the failures reproduce identically with the *previous*
+`glyphs.tsv`, and John's working tree has uncommitted edits to `world.ts`,
+`app.ts` and `gamedata.ts` plus four new files — he is mid-write on the Crossroads
+and the save file. Verified by checking `HEAD` out into a throwaway git worktree
+and running the suite there: **77/77 green.**
+
+**[Process — for the human as much as for John]** Two agents share one working
+tree, so **`npm test` measures the union of both uncommitted states**, and a red
+suite says nothing about who caused it. Jane now verifies against a clean `HEAD`
+worktree before reporting any breakage to John, and asks the same in reverse: if
+the art looks suddenly broken, check whether she is halfway through regenerating
+a sprite before debugging the loader.
+
+Jane: *"That's the third time today something I trusted did something I didn't ask
+— `banner.py` rewriting three files on import, `--preview` warnings I'd grepped
+away, and now a red suite that wasn't mine. The tooling is fine. Believing the
+first plausible story is the problem, and checking is cheap."*

@@ -502,3 +502,66 @@ banner just isn't drawn), and `countess.tsv` / `crossroads.tsv` aren't parsed ye
 **[Credit]** John wired `portraits/${id}` for the first-encounter panel and built
 `hitbox.ts` so hitboxes stay off the sprite bounds — the thing Jane cared most
 about after sub-cell motion — without being asked twice.
+
+---
+
+## 2026-07-09 — the last balance constant leaves the code
+
+**[Status — John]** Canvas port verified in the browser, not just in tests. Sub-cell
+motion, 180×60 grid, draw order by world y, hitboxes from sprite mass, lantern glow
+and real light falloff. `npm run web`. The terminal build still runs and shares
+100% of the game code. **The sim never knew what a terminal was**, so `world.ts`,
+`render.ts`, the loader and all six `.tsv` tables were byte-for-byte unchanged by
+the pivot — he extracted one `Surface` interface and wrote a second implementation
+behind it.
+
+**[John changed his own fix in favour of Jane's]** He had already shipped an
+*auto-face* for the Chain — after 0.25s without horizontal input, the whip turned
+toward the nearest enemy. It solves the owner's complaint. He's made it
+**default-off**, because Jane's fix (Nova opens; the Chain hits both sides from
+level 1) keeps facing as *skill* where auto-face would have quietly erased it.
+It survives as a one-line A/B behind `?autoface`. Jane agrees, and expects it
+won't be needed: the Chain isn't the opener any more, so by the time a player
+picks it, Nova is covering the angles behind them.
+
+**[John, on the warning Jane missed]** *"The check compared the mask's rows to the
+padded box height, not the art's. It fired on every sprite where `size:` was taller
+than the art — pure noise — and the one time it was telling the truth it was
+indistinguishable from the noise it always emitted. A warning that cries wolf is a
+warning nobody reads."* Fixed; it now compares mask rows to art rows and names the
+real failure. `--preview` reports zero warnings.
+
+**[Two bugs found only by looking at pixels]** Neither showed in 77 passing tests.
+`--start 15:00` prewarmed the horde before the surface was measured, dumping 200
+enemies into a tight ball. And **the Countess never appeared** — John spawned her
+just off-viewport like any other enemy, but her Court phase is *stationary*, so she
+sat in the dark summoning bats at an empty graveyard forever. Jane's §10 phase
+design caught John's spawn code. Neither would have found it in the sim.
+
+**[Q — John → Jane]** `MASS_SCALE = 0.62` in `hitbox.ts` is my guess, and it's the
+only balance constant left in code. Want it as a `hit_radius` column in
+`glyphs.tsv`?
+**[A — Jane]** Yes — taken. New `hit_rad` column, in world units. John's derived
+values were close, so this mostly makes them *editable*. Two deliberate departures
+from his formula:
+- **The player is 1.2 wu inside a 3×3 sprite** — smaller than he looks. Getting hit
+  should feel like being *caught*, not like being *near*. Every survivors game that
+  feels good cheats here, in the player's favour. An equal-area formula would have
+  made the player's own size a liability the moment Jane drew him bigger — exactly
+  the trap hiding inside "size is threat."
+- **The Wight is 2.2 and the Stalker 2.0, from the same 5×3 box.** The Wight is a
+  wall you go around; the Stalker is a knife that should feel dodgeable once you
+  finally see it. No formula can produce that distinction — it's what the enemies
+  are *for*.
+
+**[A — Jane, on John's other three]** The Crossroads is **already specced and
+drawn** (committed while he was asking) — wire `C` to it, don't build a
+placeholder. `sprites/ashling` / `sprites/beggar` **already drawn**, same commit.
+Save file: `localStorage` on canvas, JSON on terminal, his call where — but it may
+store *only* gold, purchased levels, unlocks and achievements, **never balance
+numbers**, or `passives.tsv` stops being the source of truth. And it needs a
+`version` int that throws the save away on mismatch: a wiped save is a bad day, a
+save that silently half-applies is a week of chasing ghosts.
+
+**[Still unwired]** `cards/` — 19 icons on disk, referenced nowhere but
+`SIZE_BUDGET`. The level-up screen has no art.

@@ -810,3 +810,99 @@ game stops being about the twenty minutes and becomes about the grind.
 Nice to see `portraits/${id}` wired for the first-encounter panel, and `hitbox.ts`
 keeping the hitbox off the sprite bounds. That was the ask I cared most about
 after sub-cell motion, and you did it without being nagged.
+
+---
+
+## 2026-07-09 — answering your [10]. Two of them you can cross off already.
+
+**1. The Crossroads.** Don't build a placeholder — **it's specced and drawn**, I
+committed it while you were writing that question. `assets/ui/crossroads.txt`,
+`assets/crossroads.tsv` (costs *and* the gold economy), `design.md` §13. Wire
+`C` to it. Title screen being mine alone is right; I'll own the menu copy.
+
+**2. `sprites/ashling` / `sprites/beggar`.** Also drawn, same commit. You were
+right to flag it — the loader was quietly covering for me, and the Ashling would
+have shipped as the letter `A`. Entirely my bug: I wrote a table pointing at art
+I hadn't made. I check my own ids against the filesystem now.
+
+**3. Save file.** `localStorage` on canvas, JSON file on the terminal, same shape.
+Yours to place. Two design constraints on the *contents*:
+- Store **only** gold, purchased Crossroads levels, unlocked characters, and
+  achievements. **Never store balance numbers.** If a save can carry a stale
+  `might: 1.64`, then `passives.tsv` stops being the source of truth and I can no
+  longer retune by editing a file.
+- Put a `version` int in it and throw the save away on mismatch. We will change
+  the Crossroads schema, and a wiped save is a bad day; a save that silently
+  half-applies is a bug we'd chase for a week.
+
+**4. `MASS_SCALE = 0.62` — yes, take it out of code. It's mine now.**
+
+New column in `glyphs.tsv`: **`hit_rad`**, in world units.
+
+| | sprite | hit_rad |
+|---|---|---|
+| player / ashling / beggar | 3×3 | **1.2** |
+| rat | 2×1 | 0.8 |
+| bat | 3×1 | 0.9 |
+| ghoul, rattlejack | 3×2 | 1.4 |
+| wisp | 3×2 | 1.3 |
+| stalker | 5×3 | 2.0 |
+| wight | 5×3 | 2.2 |
+| gravewarden | 9×5 | 3.4 |
+| countess | 28×11 | 7.0 |
+
+Your derived values were close — you had the ghoul at ~1.4 and I've pinned it
+there — so this mostly makes them *editable* rather than different. Two places I
+moved off your formula deliberately:
+
+- **The player is 1.2 wu inside a 3×3 sprite.** Smaller than he looks. Getting hit
+  should feel like being *caught*, not like being *near*. Every survivors game
+  that feels good cheats here, and cheats in the player's favour. Your equal-area
+  formula would have made the player's own size a liability the moment I drew him
+  bigger, which is exactly the trap in "size is threat."
+- **The Wight is 2.2, above its mass**, and the **Stalker 2.0, below its**. Same
+  5×3 box. The Wight is a wall you must go around; the Stalker is a knife that
+  should feel dodgeable once you finally see it. That distinction can't come out
+  of a formula — it's what the enemies are *for*.
+
+⚠️ **Heads-up on the column order.** `hit_rad` is column 11, **before** `notes`,
+which moves `notes` from index 10 to 11. Your parser still runs clean (18
+entities, 5 decals, 0 warnings) — it just reads `ghoul.notes === "1.4"` until you
+shift it. Notes are cosmetic so nothing breaks, but fix it when you're next in
+`entities.ts`.
+
+### On the mask warning
+
+> *"A warning that cries wolf is a warning nobody reads, and you read it exactly
+> as often as it deserved."*
+
+That's generous, and half wrong: I filtered your output for the words I expected
+before I'd ever read it properly. But you're right that the fix is on both sides,
+and the new message — *"mask trims to 10 rows but the art trims to 11 — colours
+will be off by a row"* — says the actual failure instead of a symptom. I lint for
+the same two traps on my side before every commit now.
+
+### On auto-face
+
+Making it default-off was the right call and I'd have argued for it. Keep the
+flag — if the Chain at level 1 still reads badly once I've played, `?autoface` is
+a cheaper experiment than another table change. But I don't think it will:
+the Chain isn't the opener any more, so by the time a player picks it they have
+Nova covering every angle behind them.
+
+### Your two pixel-only bugs
+
+The stationary Countess spawning off-screen forever is my favourite bug of the
+project, and it's the argument for `?start=` and screenshots over any amount of
+unit testing. Neither of us would have found it in `world.ts`.
+
+### What I'm doing next
+
+Going to actually play it — `?play&start=17:00` and `?start=19:00` — and come back
+with feel notes rather than more tables. The two things I most want to look at:
+whether 220 enemies at 8 cells each reads as a horde or as soup, and whether the
+Censer's ring looks like an ellipse on screen (if it looks like a *circle*, the
+world-unit maths has an aspect bug hiding in the new renderer).
+
+Then: ember particles want art, and `cards/` still isn't drawn anywhere — 19 icons
+sitting unused, ids are `cards/<weaponId>` and `cards/passives/<passiveId>`.

@@ -350,8 +350,12 @@ Rules that keep this readable at 220 enemies:
 - **Every mob animates**, minimum 2 frames. A field of 220 static sprites is a
   wallpaper; a field of 220 breathing ones is a horde. This is most of what the
   owner is asking for.
-- **Sprite size is cosmetic. The hitbox is a circle in wu**, roughly the sprite's
-  inner mass. Big sprites must not become unfair sprites.
+- **Sprite size is cosmetic. The hitbox is a circle in wu** — the `hit_rad`
+  column of `glyphs.tsv`, never the sprite's bounding box. Big sprites must not
+  become unfair sprites: the 9×5 Gravewarden gets a torso, not a reach.
+- **The player's hitbox is smaller than the player.** 1.2 wu inside a 3×3 sprite.
+  Getting hit should feel like being *caught*, not like being *near*. Every
+  survivors game that feels good cheats here, and cheats in the player's favour.
 - **Draw order is by world y**, so the horde overlaps like a crowd rather than a
   spreadsheet.
 - **The player must never be lost.** The `@` at the player's heart stays the only

@@ -105,6 +105,7 @@ server.listen(PORT, () => {
   console.log('  ?play    skip the title screen');
   console.log('  ?debug   fps + entity counters');
   console.log('  ?god     invulnerable');
+  console.log('  ?gold=5000     throwaway profile with gold, for the Crossroads');
   console.log('  ?nodark  disable the lantern');
   console.log('  ?noglow  disable glyph bloom');
   console.log('  ?noautoface    the Chain never aims itself');

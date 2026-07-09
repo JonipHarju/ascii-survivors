@@ -12,6 +12,7 @@
  *   --start <mm:ss> begin the run at this clock time, to inspect the late game
  *   --no-autoface   the Chain never aims itself; you turn only by walking
  *   --god           invulnerable, for watching the late game
+ *   --no-save       don't touch the save file (gold never persists)
  *   --preview       dump every sprite in assets/ and exit (no game loop)
  */
 
@@ -27,6 +28,8 @@ import { Renderer } from './engine/renderer.ts';
 import { Terminal } from './engine/terminal.ts';
 import { loadGameData } from './data/gamedata.node.ts';
 import { App, MIN_COLS, MIN_ROWS } from './game/app.ts';
+import { fileStore } from './game/save.node.ts';
+import { memoryStore } from './game/save.ts';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ASSETS = join(ROOT, 'assets');
@@ -40,6 +43,8 @@ type Args = {
   startTime: number | undefined;
   autoFace: boolean;
   god: boolean;
+  save: boolean;
+  shop: boolean;
 };
 
 /** `mm:ss` or a bare seconds count. */
@@ -60,12 +65,16 @@ function parseArgs(argv: readonly string[]): Args {
     startTime: undefined,
     autoFace: true,
     god: false,
+    save: true,
+    shop: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--no-dark') args.dark = false;
     else if (a === '--no-autoface') args.autoFace = false;
     else if (a === '--god') args.god = true;
+    else if (a === '--no-save') args.save = false;
+    else if (a === '--shop') args.shop = true;
     else if (a === '--debug') args.debug = true;
     else if (a === '--watch') args.watch = true;
     else if (a === '--preview') args.preview = true;
@@ -161,6 +170,8 @@ async function main(): Promise<void> {
     startTime: args.startTime,
     autoFace: args.autoFace,
     god: args.god,
+    store: args.save ? fileStore() : memoryStore(),
+    openShop: args.shop,
   });
 
   term.onResize((cols, rows) => {

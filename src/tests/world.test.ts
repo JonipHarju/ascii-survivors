@@ -21,6 +21,7 @@ import { parsePassives } from '../data/passives.ts';
 import { parseDirector, targetPopulation, spawnCap, mixWeight } from '../data/director.ts';
 import { parseEvolutions } from '../data/evolutions.ts';
 import { parseCharacters } from '../data/characters.ts';
+import { parseCrossroads } from '../data/crossroads.ts';
 import type { GameData } from '../data/gamedata.ts';
 import { GameView } from '../game/render.ts';
 import { SpriteLoader } from '../assets/loader.ts';
@@ -90,6 +91,19 @@ const CHARACTERS = [
   'ashling\tThe Ashling\tsprites/ashling\tnova\t70\t1.20\t1.00\t1.00\t1.00\t400\tfragile, fast',
 ].join('\n');
 
+const CROSSROADS = [
+  'param\tgold_kill_chance\t0.025',
+  'param\tgold_per_kill\t3',
+  'param\tgold_per_elite\t100',
+  'param\tgold_per_chest\t60',
+  'param\tgold_countess\t500',
+  'might\tMight\tcards/passives/might\tdamage\tmult\t0.05\t5\t100\t1.6\t+5% damage per level',
+  'maxhp\tVigour\tcards/passives/regen\tmax_hp\tadd\t10\t5\t80\t1.6\t+10 max HP',
+  'armour\tArmour\tcards/passives/armour\tflat_reduce\tadd\t1\t3\t200\t2.0\tflat reduction',
+  'greed\tGreed\tcards/passives/magnet\tgold_gain\tmult\t0.10\t5\t120\t1.5\t+10% gold',
+  'ashling\tThe Ashling\tsprites/ashling\t-\tunlock\t-\t1\t400\t1.0\tfragile, fast',
+].join('\n');
+
 function makeData(directorSrc: string = DIRECTOR_QUIET): GameData {
   return {
     glyphs: parseGlyphTable(GLYPHS),
@@ -98,6 +112,7 @@ function makeData(directorSrc: string = DIRECTOR_QUIET): GameData {
     director: parseDirector(directorSrc),
     evolutions: parseEvolutions(EVOLUTIONS),
     characters: parseCharacters(CHARACTERS),
+    crossroads: parseCrossroads(CROSSROADS),
     warnings: [],
   };
 }

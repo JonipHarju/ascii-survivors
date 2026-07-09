@@ -29,6 +29,8 @@ import { evolutionFor, type Evolution } from '../data/evolutions.ts';
 import { computeStats, passiveMaxLevel, type StatName } from '../data/passives.ts';
 import { maxLevel, weaponAt, type WeaponLevel } from '../data/weapons.ts';
 import { defaultCharacter, type CharacterDef } from '../data/characters.ts';
+import { crossroadsParam } from '../data/crossroads.ts';
+import { emptyProfile, type Profile } from './save.ts';
 
 /** Vertical wu per terminal row. The whole aspect-ratio correction, in one number. */
 export const WU_PER_ROW = 2;
@@ -276,10 +278,14 @@ export class World {
   /** Which character is being played. Drives the starting weapon and bonuses. */
   readonly character: CharacterDef | null;
 
-  constructor(data: GameData, seed?: number, characterId?: string) {
+  /** Meta-progression bought at The Crossroads. Moves the floor, never the ceiling. */
+  readonly profile: Profile;
+
+  constructor(data: GameData, seed?: number, characterId?: string, profile?: Profile) {
     this.data = data;
     this.table = data.glyphs;
     this.rng = new Rng(seed);
+    this.profile = profile ?? emptyProfile();
 
     const player = data.glyphs.entities.get('player');
     this.playerDef = player ?? {
@@ -296,11 +302,10 @@ export class World {
       notes: '',
     };
 
-    this.character =
-      (characterId !== undefined ? (data.characters.byId.get(characterId) ?? null) : null) ??
-      defaultCharacter(data.characters);
+    const wantedCharacter = characterId ?? this.profile.character;
+    this.character = data.characters.byId.get(wantedCharacter) ?? defaultCharacter(data.characters);
 
-    this.maxHp = this.character?.hp ?? this.playerDef.hp;
+    this.maxHp = (this.character?.hp ?? this.playerDef.hp) + this.meta('max_hp');
     this.hp = this.maxHp;
 
     // characters.tsv: "no starting weapon may require aiming." The Warden opens
@@ -373,8 +378,24 @@ export class World {
 
   // ---------------------------------------------------------------- stats
 
+  /**
+   * Total bonus from purchased Crossroads upgrades for one stat.
+   * `add` rows sum; `mult` rows contribute `per_level * levels` as a fraction,
+   * so +5%/level bought three times is +0.15 — a bonus, not a multiplier yet.
+   */
+  meta(stat: string): number {
+    let total = 0;
+    for (const u of this.data.crossroads.upgrades) {
+      if (u.stat !== stat || u.kind === 'unlock') continue;
+      const levels = this.profile.upgrades[u.id] ?? 0;
+      total += u.perLevel * levels;
+    }
+    return total;
+  }
+
   stats(): Record<StatName, number> {
     const s = computeStats(this.data.passives, this.passives);
+
     // Character bonuses are multipliers on the base (characters.tsv).
     const c = this.character;
     if (c !== null) {
@@ -382,12 +403,27 @@ export class World {
       s.area *= c.area;
       s.luck *= c.luck;
     }
+
+    // Crossroads: "it only moves the floor, never the ceiling." Note damage is a
+    // flat bonus on top, not a multiplier on the weapon curve — that's the rule.
+    s.damage *= 1 + this.meta('damage');
+    s.luck *= 1 + this.meta('luck');
+    s.flat_reduce += this.meta('flat_reduce');
+    s.revives += this.meta('revives');
     return s;
   }
 
-  /** Gold multiplier from the character. Separate: gold isn't a passive stat. */
+  /** Gold multiplier: character identity times Greed. Gold isn't a passive stat. */
   get goldMultiplier(): number {
-    return this.character?.gold ?? 1;
+    return (this.character?.gold ?? 1) * (1 + this.meta('gold_gain'));
+  }
+
+  get rerolls(): number {
+    return this.meta('rerolls');
+  }
+
+  get banishes(): number {
+    return this.meta('banishes');
   }
 
   get lightRadius(): number {
@@ -864,6 +900,7 @@ export class World {
     if (e.boss) {
       this.boss = null;
       this.won = true; // kill her and the sun comes up
+      this.gold += Math.round(crossroadsParam(this.data.crossroads, 'gold_countess') * this.goldMultiplier);
       return;
     }
 
@@ -879,13 +916,19 @@ export class World {
 
     if (e.def.xp > 0) this.dropPickup('mote', e.x, e.y, e.def.xp);
 
+    // Gold rates come from crossroads.tsv, because Jane costed the whole meta
+    // economy against them (a winning run pays ~1,365g). A `1/40` in here would
+    // silently invalidate her 11-runs-to-unlock-everything maths.
+    const cr = this.data.crossroads;
     const luck = this.stats().luck;
+    const gold = (n: number): number => Math.max(1, Math.round(n * this.goldMultiplier));
+
     if (e.elite) {
       this.dropPickup('chest', e.x, e.y, 1);
-      this.dropPickup('gold', e.x + 2, e.y, this.rng.int(10, 25));
+      this.dropPickup('gold', e.x + 2, e.y, gold(crossroadsParam(cr, 'gold_per_elite')));
     } else {
-      if (this.rng.chance((1 / 40) * luck)) {
-        this.dropPickup('gold', e.x, e.y, Math.round(this.rng.int(1, 3) * this.goldMultiplier));
+      if (this.rng.chance(crossroadsParam(cr, 'gold_kill_chance') * luck)) {
+        this.dropPickup('gold', e.x, e.y, gold(crossroadsParam(cr, 'gold_per_kill')));
       }
       if (this.rng.chance(0.004 * luck)) this.dropPickup('heal', e.x, e.y, 30);
     }
@@ -1422,12 +1465,12 @@ export class World {
         w.evolved = evo;
         this.justEvolved = evo;
         this.effects.push({ kind: 'flash', age: 0 });
-        this.gold += 20;
+        this.gold += Math.round(crossroadsParam(this.data.crossroads, 'gold_per_chest') * this.goldMultiplier);
         return;
       }
     }
     this.pendingChests++;
-    this.gold += this.rng.int(10, 30);
+    this.gold += Math.round(crossroadsParam(this.data.crossroads, 'gold_per_chest') * this.goldMultiplier);
   }
 
   /** Weapon at max level + its paired passive at max level. */

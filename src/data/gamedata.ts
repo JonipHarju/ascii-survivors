@@ -15,6 +15,7 @@ import { parseEvolutions, type EvolutionTable } from './evolutions.ts';
 import { parsePassives, fallbackPassives, type PassiveTable } from './passives.ts';
 import { parseWeapons, type WeaponTable } from './weapons.ts';
 import { parseCharacters, fallbackCharacters, type CharacterTable } from './characters.ts';
+import { parseCrossroads, fallbackCrossroads, type CrossroadsTable } from './crossroads.ts';
 
 export type GameData = {
   readonly glyphs: GlyphTable;
@@ -23,6 +24,7 @@ export type GameData = {
   readonly director: DirectorTable;
   readonly evolutions: EvolutionTable;
   readonly characters: CharacterTable;
+  readonly crossroads: CrossroadsTable;
   readonly warnings: readonly string[];
 };
 
@@ -34,9 +36,18 @@ export type TableSources = {
   director: string;
   evolutions: string;
   characters: string;
+  crossroads: string;
 };
 
-export const TABLE_FILES = ['glyphs', 'weapons', 'passives', 'director', 'evolutions', 'characters'] as const;
+export const TABLE_FILES = [
+  'glyphs',
+  'weapons',
+  'passives',
+  'director',
+  'evolutions',
+  'characters',
+  'crossroads',
+] as const;
 
 export function buildGameData(src: TableSources): GameData {
   const glyphs = parseGlyphTable(src.glyphs);
@@ -45,6 +56,7 @@ export function buildGameData(src: TableSources): GameData {
   const director = src.director === '' ? fallbackDirector() : parseDirector(src.director);
   const evolutions = parseEvolutions(src.evolutions);
   const characters = src.characters === '' ? fallbackCharacters() : parseCharacters(src.characters);
+  const crossroads = src.crossroads === '' ? fallbackCrossroads() : parseCrossroads(src.crossroads);
 
   const warnings = [
     ...glyphs.warnings,
@@ -53,9 +65,10 @@ export function buildGameData(src: TableSources): GameData {
     ...director.warnings,
     ...evolutions.warnings,
     ...characters.warnings,
+    ...crossroads.warnings,
   ];
 
   if (weapons.byId.size === 0) warnings.push('weapons.tsv missing or empty — the player will start unarmed');
 
-  return { glyphs, weapons, passives, director, evolutions, characters, warnings };
+  return { glyphs, weapons, passives, director, evolutions, characters, crossroads, warnings };
 }

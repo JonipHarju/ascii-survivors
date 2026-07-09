@@ -17,6 +17,8 @@ import { buildGameData, type TableSources } from '../data/gamedata.ts';
 import { App } from '../game/app.ts';
 import { CanvasSurface } from './canvas.ts';
 import { WebInput } from './input.ts';
+import { localStore } from './save.web.ts';
+import { emptyProfile, memoryStore, saveProfile, type SaveStore } from '../game/save.ts';
 
 /** The shape `src/tools/pack.ts` writes and this file reads. */
 type AssetBundle = {
@@ -35,6 +37,20 @@ function numberParam(name: string): number | undefined {
   if (m !== null) return Number.parseInt(m[1]!, 10) * 60 + Number.parseInt(m[2]!, 10);
   const n = Number.parseFloat(raw);
   return Number.isFinite(n) ? n : undefined;
+}
+
+/**
+ * `?gold=5000` hands you a throwaway profile with money in it, so the Crossroads
+ * can be looked at without playing eleven runs. Never touches localStorage.
+ */
+function pickStore(): SaveStore {
+  const gold = numberParam('gold');
+  if (gold !== undefined) {
+    const store = memoryStore();
+    saveProfile(store, { ...emptyProfile(), gold, wonOnce: true });
+    return store;
+  }
+  return flag('nosave') ? memoryStore() : localStore();
 }
 
 async function boot(): Promise<void> {
@@ -72,6 +88,8 @@ async function boot(): Promise<void> {
     autoFace: !flag('noautoface'),
     skipTitle: flag('play'),
     god: flag('god'),
+    store: pickStore(),
+    openShop: flag('shop'),
   });
 
   addEventListener('resize', () => {

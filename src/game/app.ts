@@ -12,7 +12,9 @@ import type { GameData } from '../data/gamedata.ts';
 import type { Evolution } from '../data/evolutions.ts';
 import { GameView, drawHud, type ViewOptions } from './render.ts';
 import { generateCards, type Card } from './upgrades.ts';
+import { crossroadsParam, upgradeCost, type Upgrade } from '../data/crossroads.ts';
 import { makeHitRadius } from './hitbox.ts';
+import { loadProfile, memoryStore, saveProfile, type Profile, type SaveStore } from './save.ts';
 import { formatTime, World } from './world.ts';
 
 const ACCENT: Color = 0xffe040;
@@ -30,7 +32,7 @@ const MIN_ROWS = 24;
 const MAX_COLS = 180;
 const MAX_ROWS = 60;
 
-type State = 'title' | 'playing' | 'levelup' | 'paused' | 'dead' | 'dawn' | 'evolution';
+type State = 'title' | 'crossroads' | 'playing' | 'levelup' | 'paused' | 'dead' | 'dawn' | 'evolution';
 
 export type AppOptions = ViewOptions & {
   seed?: number | undefined;
@@ -42,6 +44,10 @@ export type AppOptions = ViewOptions & {
   skipTitle?: boolean | undefined;
   /** Invulnerable, so the late game can be observed rather than survived. */
   god?: boolean | undefined;
+  /** Where gold and unlocks live. Defaults to an in-memory (non-persistent) store. */
+  store?: SaveStore | undefined;
+  /** Open straight on The Crossroads. Dev deep-link. */
+  openShop?: boolean | undefined;
 };
 
 export class App {
@@ -60,6 +66,13 @@ export class App {
   private quitting = false;
   private readonly hitRadius: (id: string) => number;
 
+  private readonly store: SaveStore;
+  private profile: Profile;
+  private saveWarning: string | null;
+  /** Selected row on the Crossroads screen. */
+  private shopIndex = 0;
+  private shopMessage = '';
+
   fps = 0;
 
   constructor(data: GameData, sprites: SpriteBank, input: InputSource, opts: AppOptions) {
@@ -68,9 +81,16 @@ export class App {
     this.input = input;
     this.opts = opts;
     this.hitRadius = makeHitRadius(sprites);
+    this.store = opts.store ?? memoryStore();
+
+    const loaded = loadProfile(this.store);
+    this.profile = loaded.profile;
+    this.saveWarning = loaded.warning;
+
     this.world = this.newWorld();
     this.view = new GameView(sprites);
     if (opts.skipTitle === true) this.state = 'playing';
+    else if (opts.openShop === true) this.state = 'crossroads';
   }
 
   get done(): boolean {
@@ -78,7 +98,7 @@ export class App {
   }
 
   private newWorld(): World {
-    const w = new World(this.data, this.opts.seed);
+    const w = new World(this.data, this.opts.seed, undefined, this.profile);
     w.hitRadius = this.hitRadius;
     if (this.opts.autoFace !== undefined) w.autoFace = this.opts.autoFace;
     if (this.opts.god === true) w.godMode = true;
@@ -100,10 +120,16 @@ export class App {
 
     switch (this.state) {
       case 'title':
-        if (pressed.size > 0) {
-          if (pressed.has('q')) this.quitting = true;
-          else this.restart();
-        }
+        if (pressed.has('q')) this.quitting = true;
+        else if (pressed.has('c')) {
+          this.shopIndex = 0;
+          this.shopMessage = '';
+          this.state = 'crossroads';
+        } else if (pressed.size > 0) this.restart();
+        return;
+
+      case 'crossroads':
+        this.updateCrossroads(pressed);
         return;
 
       case 'paused':
@@ -114,7 +140,11 @@ export class App {
       case 'dead':
       case 'dawn':
         if (pressed.has('q')) this.quitting = true;
-        else if (pressed.size > 0) this.restart();
+        else if (pressed.has('c')) {
+          this.shopIndex = 0;
+          this.shopMessage = '';
+          this.state = 'crossroads';
+        } else if (pressed.size > 0) this.restart();
         return;
 
       case 'evolution':
@@ -144,10 +174,13 @@ export class App {
     }
 
     if (this.world.dead) {
+      this.bankRun();
       this.state = 'dead';
       return;
     }
     if (this.world.won) {
+      this.profile.wonOnce = true; // Endless unlocks by seeing dawn, not by gold
+      this.bankRun();
       this.state = 'dawn';
       return;
     }
@@ -166,6 +199,70 @@ export class App {
       else this.world.pendingChests--;
       this.openCards();
     }
+  }
+
+  /** Gold earned in a run is only ever banked once, when the run ends. */
+  private bankRun(): void {
+    const w = this.world;
+    this.profile.gold += w.gold;
+    this.profile.runs++;
+    this.profile.bestTime = Math.max(this.profile.bestTime, Math.floor(w.time));
+    this.profile.bestKills = Math.max(this.profile.bestKills, w.kills);
+    saveProfile(this.store, this.profile);
+  }
+
+  // ------------------------------------------------------------ crossroads
+
+  /** Rows that can still be bought, plus the maxed ones (shown greyed). */
+  private shopRows(): Upgrade[] {
+    return [...this.data.crossroads.upgrades];
+  }
+
+  private levelOf(u: Upgrade): number {
+    return this.profile.upgrades[u.id] ?? 0;
+  }
+
+  private updateCrossroads(pressed: Set<string>): void {
+    const rows = this.shopRows();
+    if (rows.length === 0 || pressed.has('escape') || pressed.has('q')) {
+      this.state = 'title';
+      return;
+    }
+
+    if (pressed.has('up') || pressed.has('w')) this.shopIndex = (this.shopIndex - 1 + rows.length) % rows.length;
+    if (pressed.has('down') || pressed.has('s')) this.shopIndex = (this.shopIndex + 1) % rows.length;
+    if (pressed.has('enter') || pressed.has('space')) this.buy(rows[this.shopIndex]!);
+  }
+
+  private buy(u: Upgrade): void {
+    const level = this.levelOf(u);
+
+    if (level >= u.levels) {
+      this.shopMessage = `${u.name} is already maxed.`;
+      return;
+    }
+    // Endless is free but gated on having seen dawn.
+    if (u.id === 'endless' && !this.profile.wonOnce) {
+      this.shopMessage = 'Endless unlocks when you first see the sun.';
+      return;
+    }
+
+    const cost = upgradeCost(u, level + 1);
+    if (this.profile.gold < cost) {
+      this.shopMessage = `${u.name} costs ${cost}g — you have ${this.profile.gold}g.`;
+      return;
+    }
+
+    this.profile.gold -= cost;
+    this.profile.upgrades[u.id] = level + 1;
+
+    // Buying a character selects them; that's the only reason to buy one.
+    if (u.kind === 'unlock' && this.data.characters.byId.has(u.id)) this.profile.character = u.id;
+
+    saveProfile(this.store, this.profile);
+    this.shopMessage = `Bought ${u.name}.`;
+    // A purchase changes the starting build, so rebuild the pending world.
+    this.world = this.newWorld();
   }
 
   private openCards(): void {
@@ -216,6 +313,7 @@ export class App {
 
     if (r.width < MIN_COLS || r.height < MIN_ROWS) return this.drawTooSmall(r);
     if (this.state === 'title') return this.drawTitle(r);
+    if (this.state === 'crossroads') return this.drawCrossroads(r);
 
     const field = this.fieldRect(r);
     this.world.setViewport(field.w, field.h);
@@ -294,6 +392,76 @@ export class App {
     }
   }
 
+  /**
+   * The Crossroads (design.md §13). Gold persists; you spend it here between
+   * runs and it never comes back. Costs come from crossroads.tsv — Jane costed
+   * the whole economy against them and asked me not to invent any.
+   */
+  private drawCrossroads(r: Surface): void {
+    const cx = Math.floor(r.width / 2);
+    const rows = this.shopRows();
+    const full: Rect = { x: 0, y: 0, w: r.width, h: r.height };
+
+    let y = 1;
+    const banner = this.sprites.get('ui/crossroads');
+    if (!banner.placeholder) {
+      const frame = banner.frames[0]!;
+      drawSprite(r, frame, cx - Math.floor(frame.w / 2), y, full);
+      y += frame.h + 1;
+    } else {
+      drawCentered(r, cx, y + 1, 'THE CROSSROADS', ACCENT);
+      y += 3;
+    }
+
+    drawCentered(r, cx, y, `⛁ ${this.profile.gold.toLocaleString('en-US')} gold`, ACCENT);
+    y += 2;
+
+    if (rows.length === 0) {
+      drawCentered(r, cx, y + 1, 'crossroads.tsv is missing — nothing to buy', 0x8a5a2b);
+      drawCentered(r, cx, r.height - 2, 'ESC  back', DIM);
+      return;
+    }
+
+    // Rows are drawn in file order, which is the order Jane offers them in.
+    const listW = 62;
+    const x0 = cx - Math.floor(listW / 2);
+    const maxRows = Math.max(1, r.height - y - 4);
+    const first = Math.max(0, Math.min(this.shopIndex - Math.floor(maxRows / 2), rows.length - maxRows));
+
+    for (let i = first; i < Math.min(rows.length, first + maxRows); i++) {
+      const u = rows[i]!;
+      const level = this.levelOf(u);
+      const maxed = level >= u.levels;
+      const selected = i === this.shopIndex;
+      const locked = u.id === 'endless' && !this.profile.wonOnce;
+
+      const cost = maxed ? '—' : locked ? 'see dawn' : `${upgradeCost(u, level + 1)}g`;
+      const affordable = !maxed && !locked && this.profile.gold >= upgradeCost(u, level + 1);
+
+      const nameColor = maxed ? DIM : selected ? ACCENT : TEXT;
+      const costColor = maxed || locked ? DIM : affordable ? 0x3aff3a : RED;
+
+      const row = y + (i - first);
+      if (selected) r.text(x0 - 2, row, '▸', ACCENT);
+
+      r.text(x0, row, u.name.padEnd(16), nameColor);
+
+      // Pips, so progress is readable without arithmetic.
+      let pips = '';
+      for (let k = 0; k < u.levels; k++) pips += k < level ? '●' : '○';
+      r.text(x0 + 16, row, pips.padEnd(8), maxed ? 0x3aff3a : DIM);
+
+      r.text(x0 + 26, row, cost.padStart(9), costColor);
+      r.text(x0 + 38, row, truncate(u.note, listW - 38), DIM);
+    }
+
+    const footer = r.height - 2;
+    if (this.shopMessage !== '') drawCentered(r, cx, footer - 1, this.shopMessage, 0x4ff0f0);
+    drawCentered(r, cx, footer, '↑↓ select    ENTER buy    ESC back', DIM);
+
+    if (this.saveWarning !== null) drawCentered(r, cx, 0, this.saveWarning, 0x8a5a2b);
+  }
+
   private drawPause(r: Surface, field: Rect): void {
     const cx = field.x + Math.floor(field.w / 2);
     const box: Rect = { x: cx - 16, y: field.y + Math.floor(field.h / 2) - 3, w: 32, h: 7 };
@@ -351,7 +519,7 @@ export class App {
   private drawSummary(r: Surface, field: Rect): void {
     const w = this.world;
     const cx = field.x + Math.floor(field.w / 2);
-    const box: Rect = { x: cx - 21, y: field.y + Math.floor(field.h / 2) - 8, w: 42, h: 16 };
+    const box: Rect = { x: cx - 21, y: field.y + Math.floor(field.h / 2) - 9, w: 42, h: 17 };
     drawBox(r, box, RED, 0x100808, 'YOU DIED');
     drawCentered(r, cx, box.y + 2, 'the night took you', 0x8a5a5a, 0x100808);
 
@@ -361,6 +529,7 @@ export class App {
       ['level reached', String(w.level)],
       ['best minute', `${w.bestMinute} kills`],
       ['gold earned', String(w.gold)],
+      ['gold banked', this.profile.gold.toLocaleString('en-US')],
     ];
 
     let y = box.y + 4;
@@ -375,7 +544,7 @@ export class App {
     const build = w.weapons.map((wp) => this.data.weapons.byId.get(wp.id)?.[0]?.glyph ?? '?').join(' ');
     r.text(box.x + box.w - 4 - build.length, y, build, ACCENT, 0x100808);
 
-    drawCentered(r, cx, box.y + box.h - 2, 'any key: run again    Q: quit', ACCENT, 0x100808);
+    drawCentered(r, cx, box.y + box.h - 2, 'any key: run again   C: crossroads   Q: quit', ACCENT, 0x100808);
   }
 
   private drawDawn(r: Surface, field: Rect): void {
@@ -395,7 +564,8 @@ export class App {
 
     drawCentered(r, cx, y + 1, 'you saw the sun', TEXT);
     drawCentered(r, cx, y + 3, `${w.kills.toLocaleString('en-US')} dead · ${formatTime(w.time)} · level ${w.level}`, DIM);
-    drawCentered(r, cx, y + 5, 'any key: run again    Q: quit', ACCENT);
+    drawCentered(r, cx, y + 5, `⛁ ${this.profile.gold.toLocaleString('en-US')} banked`, ACCENT);
+    drawCentered(r, cx, y + 7, 'any key: run again   C: crossroads   Q: quit', DIM);
   }
 }
 

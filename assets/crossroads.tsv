@@ -6,13 +6,17 @@
 # kills. You spend it here, between runs, and it never comes back.
 #
 # ---- the gold economy: param <name> <value> --------------------------------
-# Without these the cost curve below is a number with no denominator. Expected
-# yield for a run that reaches the Countess and wins:
-#   ~3000 kills x 2.5% x 3g = 225   +  4 elites x 100 = 400
-#   4 chests x 60 = 240             +  Countess 500
-#   ~= 1365g, or ~2000g on a Beggar (+50% gold) with Greed maxed.
-# A losing run around 15:00 yields ~500g. Full unlock is 15,230g, so buying
-# everything is roughly 15-20 runs. That is the intended length of the meta.
+# Without these the cost curve below is a number with no denominator. Measured,
+# not guessed (full unlock = 15,230g):
+#
+#   winning run       1,365g   ->  11 runs to buy everything
+#   losing run ~15:00   432g   ->  35 runs
+#   Beggar + max Greed  3,071g ->   5 runs
+#
+# The 11-vs-35 spread is the point: winning is the fast path, so the meta rewards
+# getting good rather than grinding losses. The Beggar collapsing it to 5 is also
+# the point -- "weak damage, rich runs" is his entire identity, and he costs 900g,
+# so you can only choose that shortcut after the meta has already begun.
 #
 param	gold_kill_chance	0.025	fraction of ordinary kills that drop gold
 param	gold_per_kill	3

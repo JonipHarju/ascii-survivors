@@ -444,3 +444,61 @@ header. Now masked: title red, horizon near-black, ghouls grey, bats red, the `@
 bright white and the only bright white on screen, menu text white with `[ KEYS ]`
 in yellow. Death screen likewise. *(That fix had its own bug — the `g` in "begin
 the night" came out ghoul-grey, because the ghoul rule ran before the menu rule.)*
+
+---
+
+## 2026-07-09 — canvas ships; Jane cleans up after herself
+
+**[Status — John]** The canvas port landed (`0a56bb1`): new renderer backend,
+smooth sub-cell motion, real lighting, `npm run web`, hitboxes separated from
+sprite bounds, and `SIZE_BUDGET` updated so the 28×11 Countess no longer warns.
+`--preview`: **44 sprites, 0 warnings.** 77 tests green.
+
+**[Bug — Jane's own]** `characters.tsv` referenced `sprites/ashling` and
+`sprites/beggar`. **Neither existed.** Jane shipped a table pointing at art she
+hadn't drawn; only John's placeholder fallback stopped it breaking, and the
+Ashling would have rendered as the letter `A`. Both drawn now — 3×3, two frames,
+the same silhouette as the Warden so they read as the same class of creature, with
+the head glyph (`&`, `%`) the only thing that differs and still the only bright
+white on the field. Jane now checks every id in her own tables against the
+filesystem before committing.
+
+**[Near-miss — also Jane's own]** Generating the Crossroads screen, she imported
+her own `banner.py` for its block font. It writes files at module scope, so **the
+import silently rewrote `title.txt`, `death.txt` and `dawn.txt`**, discarding the
+masks she'd added an hour before. Spotted because the script printed three lines
+it had no business printing; restored from git before it reached a commit. Second
+time this session a trusted script did something unasked.
+
+**[New]** Two character sprites; **19 level-up card icons** (7 weapons diagram a
+*shape*, 12 passives diagram a *verb* — a fist for Might, an hourglass for
+Duration, rings pushing outward for Area, so the player tells them apart without
+reading); `ui/crossroads.txt`; and `assets/crossroads.tsv`.
+
+**[Decision — the meta-progression rule]** Written into `design.md` §13:
+**meta-progression may make a bad run survivable. It may never make a good run
+trivial.** It moves the floor, never the ceiling — nothing at the Crossroads
+touches weapon damage scaling or the spawn curve. A player who has bought every
+upgrade should still lose to the Countess if they build badly, or the game stops
+being about the twenty minutes and becomes about the grind.
+
+**[Numbers, measured not asserted]** Full unlock costs 15,230g. Jane first wrote
+"roughly 15–20 runs" in the file, then computed it and corrected herself: a
+**winning** run yields 1,365g (**11 runs**), a losing run around 15:00 yields 432g
+(35 runs), and a Beggar with maxed Greed yields 3,071g (5 runs). The 11-vs-35
+spread is deliberate — winning is the fast path, so the meta rewards getting good
+over grinding losses. The Beggar collapsing it to 5 is also deliberate; "weak
+damage, rich runs" is his identity, and at 900g you can only take that shortcut
+once the meta is underway. *The gold economy had to be written down first: until
+the drop rates existed, the cost curve was a number with no denominator.*
+
+**[Jane → John, unwired assets]** `cards/` is loaded but **never drawn** — it
+appears in exactly one place in `src/`, the `SIZE_BUDGET` table — so the level-up
+screen has no art despite 19 icons sitting on disk. Ids are `cards/<weaponId>` and
+`cards/passives/<passiveId>`, matching the `id` columns of `weapons.tsv` and
+`passives.tsv` exactly. Also `ui/death` is unused (the death *state* exists, the
+banner just isn't drawn), and `countess.tsv` / `crossroads.tsv` aren't parsed yet.
+
+**[Credit]** John wired `portraits/${id}` for the first-encounter panel and built
+`hitbox.ts` so hitboxes stay off the sprite bounds — the thing Jane cared most
+about after sub-cell motion — without being asked twice.

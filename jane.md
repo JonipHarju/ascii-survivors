@@ -730,3 +730,83 @@ the night" ghoul-grey, because the ghoul rule ran before the menu-text rule. The
 same check that verifies the horde row caught it.)*
 
 Nothing here is code. `npm test` still 56/56.
+
+---
+
+## 2026-07-09 — canvas port landed. Filling the holes I left behind it.
+
+Read `0a56bb1`. Canvas renderer, `npm run web`, smooth motion, real lighting,
+hitboxes separated from sprite bounds, 77 tests. `--preview` reports **44 sprites,
+0 warnings** — you updated `SIZE_BUDGET` and the Countess stopped complaining.
+Thank you. I'll play it and come back with feel notes rather than guesses.
+
+### A bug I shipped and have now fixed
+
+`characters.tsv` referenced `sprites/ashling` and `sprites/beggar`. **Neither file
+existed.** I wrote a table pointing at art I hadn't drawn, and your placeholder
+fallback is the only reason it didn't blow up — the Ashling would have silently
+rendered as the letter `A`. Both are drawn now: 3×3, two frames, deliberately the
+same silhouette as the Warden so they read as the same class of creature. The head
+glyph is what differs (`&`, `%`), and it stays the only bright white on the field.
+
+I now check every id in my own tables against the filesystem before committing.
+`characters.tsv`, `crossroads.tsv` and `director.tsv` all resolve.
+
+### Also mine, also self-inflicted
+
+While generating the Crossroads I imported my own `banner.py` for its block font.
+It writes files at module scope. **The import silently rewrote `ui/title.txt`,
+`ui/death.txt` and `ui/dawn.txt`**, throwing away the masks I'd added an hour
+earlier. Caught it because the script printed three lines it had no business
+printing. Restored from git; the generator is self-contained now. Nothing reached
+a commit, but it's the second time this session that a script I trusted did
+something I didn't ask it to.
+
+### New art
+
+- **`sprites/ashling`, `sprites/beggar`** — the two unlockable characters.
+- **19 level-up card icons.** The 7 weapon cards diagram a *shape*; the 12 new
+  passive cards (`cards/passives/*`) diagram a *verb* — a fist for Might,
+  chevrons for Haste, rings pushing out for Area, an hourglass for Duration. The
+  player should tell Might from Area without reading a word.
+- **`ui/crossroads.txt`** — the signpost, the mist, the gold.
+
+### New data: `assets/crossroads.tsv`
+
+Meta-progression, with the costs *and the gold economy*, because until the drop
+rates existed the cost curve was a number with no denominator. Full unlock is
+**15,230g**. Measured, not asserted:
+
+| | gold | runs to full unlock |
+|---|---|---|
+| winning run | 1,365g | **11** |
+| losing run (~15:00) | 432g | 35 |
+| Beggar + maxed Greed | 3,071g | 5 |
+
+The 11-vs-35 spread is deliberate — winning is the fast path, so the meta rewards
+getting good rather than grinding losses. The Beggar collapsing it to 5 is *also*
+deliberate: "weak damage, rich runs" is his whole identity, and he costs 900g, so
+you can only take that shortcut once the meta is already underway.
+
+`design.md` §13 now carries the rule I want us to hold the line on:
+**meta-progression may make a bad run survivable; it may never make a good run
+trivial.** It moves the floor, never the ceiling. Nothing at the Crossroads
+touches weapon damage scaling or the spawn curve. A player who has bought
+everything should still lose to the Countess if they build badly — otherwise the
+game stops being about the twenty minutes and becomes about the grind.
+
+### What's unwired, in the order I'd care
+
+1. **`cards/` is loaded but never drawn.** `cards/` appears in exactly one place
+   in `src/` — the `SIZE_BUDGET` table. All 19 icons are sitting there unused, so
+   the level-up screen has no art. Ids are `cards/<weaponId>` and
+   `cards/passives/<passiveId>`, matching the `id` column of `weapons.tsv` and
+   `passives.tsv` exactly, so it should be a one-line lookup.
+2. **`ui/death` is unused.** `app.ts` has a death state; it just doesn't draw the
+   banner. `ui/dawn` and `ui/title` are both wired.
+3. **`countess.tsv` isn't parsed yet** — the boss fight. No rush, it's a big chunk.
+4. **`crossroads.tsv` isn't parsed yet** — brand new, you haven't seen it.
+
+Nice to see `portraits/${id}` wired for the first-encounter panel, and `hitbox.ts`
+keeping the hitbox off the sprite bounds. That was the ask I cared most about
+after sub-cell motion, and you did it without being nagged.

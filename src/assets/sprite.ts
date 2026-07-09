@@ -57,10 +57,19 @@ const PALETTE: Readonly<Record<string, Color>> = {
   s: 0xc2b280, // "bone" — dim sandy yellow
 };
 
-/** Per-folder size budgets from assets/README.md. Advisory: we warn, never clip. */
+/**
+ * Per-folder size budgets. Advisory: we warn, never clip — which is why the
+ * canvas pivot cost Jane nothing when the Countess grew from 16x5 to 28x11.
+ *
+ * Ordered **specific-first**, because the lookup takes the first prefix match
+ * and `sprites/` would otherwise shadow `sprites/mobs/`.
+ */
 const SIZE_BUDGET: ReadonlyArray<readonly [prefix: string, w: number, h: number]> = [
-  ['sprites/', 16, 5],
+  ['sprites/mobs/', 5, 3],
+  ['sprites/elites/', 9, 5],
+  ['sprites/', 28, 11], // player + boss
   ['portraits/', 20, 8],
+  ['cards/', 12, 5],
   ['ui/', 78, 20],
 ];
 
@@ -183,8 +192,12 @@ function buildFrame(
   const w = Math.max(measuredW, declared?.w ?? 0);
   const cells: (SpriteCell | null)[] = new Array(w * h).fill(null);
 
-  if (mask !== null && mask.length !== h) {
-    warn(`mask has ${mask.length} rows but art has ${h} — extra rows ignored`);
+  // Compare against the ART's row count, not the padded box. Comparing to `h`
+  // fired whenever `size:` was taller than the art — a false alarm — while the
+  // real fault it should catch is art and mask trimming to different heights,
+  // which silently slides every colour below the missing row up by one.
+  if (mask !== null && mask.length !== measuredH) {
+    warn(`mask trims to ${mask.length} rows but the art trims to ${measuredH} — colours will be off by a row`);
   }
 
   for (let y = 0; y < h; y++) {

@@ -14,6 +14,7 @@ import { parseDirector, fallbackDirector, type DirectorTable } from './director.
 import { parseEvolutions, type EvolutionTable } from './evolutions.ts';
 import { parsePassives, fallbackPassives, type PassiveTable } from './passives.ts';
 import { parseWeapons, type WeaponTable } from './weapons.ts';
+import { parseCharacters, fallbackCharacters, type CharacterTable } from './characters.ts';
 
 export type GameData = {
   readonly glyphs: GlyphTable;
@@ -21,6 +22,7 @@ export type GameData = {
   readonly passives: PassiveTable;
   readonly director: DirectorTable;
   readonly evolutions: EvolutionTable;
+  readonly characters: CharacterTable;
   readonly warnings: readonly string[];
 };
 
@@ -31,9 +33,10 @@ export type TableSources = {
   passives: string;
   director: string;
   evolutions: string;
+  characters: string;
 };
 
-export const TABLE_FILES = ['glyphs', 'weapons', 'passives', 'director', 'evolutions'] as const;
+export const TABLE_FILES = ['glyphs', 'weapons', 'passives', 'director', 'evolutions', 'characters'] as const;
 
 export function buildGameData(src: TableSources): GameData {
   const glyphs = parseGlyphTable(src.glyphs);
@@ -41,6 +44,7 @@ export function buildGameData(src: TableSources): GameData {
   const passives = src.passives === '' ? fallbackPassives() : parsePassives(src.passives);
   const director = src.director === '' ? fallbackDirector() : parseDirector(src.director);
   const evolutions = parseEvolutions(src.evolutions);
+  const characters = src.characters === '' ? fallbackCharacters() : parseCharacters(src.characters);
 
   const warnings = [
     ...glyphs.warnings,
@@ -48,9 +52,10 @@ export function buildGameData(src: TableSources): GameData {
     ...passives.warnings,
     ...director.warnings,
     ...evolutions.warnings,
+    ...characters.warnings,
   ];
 
   if (weapons.byId.size === 0) warnings.push('weapons.tsv missing or empty — the player will start unarmed');
 
-  return { glyphs, weapons, passives, director, evolutions, warnings };
+  return { glyphs, weapons, passives, director, evolutions, characters, warnings };
 }

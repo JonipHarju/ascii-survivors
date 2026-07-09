@@ -28,6 +28,7 @@ import { mixWeight, param, spawnCap, targetPopulation, type Beat } from '../data
 import { evolutionFor, type Evolution } from '../data/evolutions.ts';
 import { computeStats, passiveMaxLevel, type StatName } from '../data/passives.ts';
 import { maxLevel, weaponAt, type WeaponLevel } from '../data/weapons.ts';
+import { defaultCharacter, type CharacterDef } from '../data/characters.ts';
 
 /** Vertical wu per terminal row. The whole aspect-ratio correction, in one number. */
 export const WU_PER_ROW = 2;
@@ -189,8 +190,14 @@ export class World {
    * you *aren't* pressing a horizontal key, the lantern-bearer looks at whatever
    * is about to eat them. Kiting vertically no longer aims the whip at empty
    * ground. Set false to compare (`--no-autoface`, `?noautoface`).
+   *
+   * **Default off.** Jane fixed this properly in the tables instead: the Warden
+   * now opens with Sanguine Nova (which seeks) and the Chain strikes both sides
+   * from level 1, so facing is skill expression rather than a toll. Auto-aim on
+   * top of that would erase the skill she deliberately kept. Kept as a flag
+   * because it's a one-line A/B if the Chain still reads badly.
    */
-  autoFace = true;
+  autoFace = false;
 
   /** Seconds since the player last pressed left or right. */
   private horizontalIdle = 0;
@@ -201,6 +208,11 @@ export class World {
   kills = 0;
   gold = 0;
   time = 0;
+  /**
+   * Seconds since the run began, never frozen. `time` stops when the Countess
+   * arrives, and animations must not stop with it.
+   */
+  timeAlive = 0;
   /** Frozen while the Countess is alive, per design.md §4. */
   clockRunning = true;
   dead = false;
@@ -253,7 +265,18 @@ export class World {
 
   private grid = new Map<number, number[]>();
 
-  constructor(data: GameData, seed?: number) {
+  /**
+   * Contact radius in wu for an enemy id. Injected, because it's derived from
+   * the sprite's *inner mass* and the sim must not know what a sprite is.
+   * jane.md: "Hitboxes stay circles in wu, sized to a sprite's inner mass, not
+   * its bounding box. Big sprites must not become unfair sprites."
+   */
+  hitRadius: (id: string) => number = () => 1.0;
+
+  /** Which character is being played. Drives the starting weapon and bonuses. */
+  readonly character: CharacterDef | null;
+
+  constructor(data: GameData, seed?: number, characterId?: string) {
     this.data = data;
     this.table = data.glyphs;
     this.rng = new Rng(seed);
@@ -273,18 +296,36 @@ export class World {
       notes: '',
     };
 
-    this.maxHp = this.playerDef.hp;
+    this.character =
+      (characterId !== undefined ? (data.characters.byId.get(characterId) ?? null) : null) ??
+      defaultCharacter(data.characters);
+
+    this.maxHp = this.character?.hp ?? this.playerDef.hp;
     this.hp = this.maxHp;
 
-    // The Warden starts with The Chain (design.md §6).
-    const starting = data.weapons.byId.has('chain') ? 'chain' : (data.weapons.order[0] ?? null);
+    // characters.tsv: "no starting weapon may require aiming." The Warden opens
+    // with Nova, which seeks. Never hardcode this — that rule is the whole file.
+    const wanted = this.character?.startWeapon;
+    const starting =
+      wanted !== undefined && data.weapons.byId.has(wanted) ? wanted : (data.weapons.order[0] ?? null);
     if (starting !== null) this.weapons.push({ id: starting, level: 1, timer: 0.35, angle: 0, evolved: null });
   }
 
   setViewport(cols: number, rows: number): void {
     this.viewCols = cols;
     this.viewRows = rows;
+    this.viewportKnown = true;
+
+    // A prewarm requested before the surface was measured has been waiting for
+    // a real field size to scatter across. Now it has one.
+    if (this.pendingPrewarm) {
+      this.pendingPrewarm = false;
+      this.populateToTarget();
+    }
   }
+
+  private viewportKnown = false;
+  private pendingPrewarm = false;
 
   /**
    * Jump the clock (the `--start mm:ss` dev flag). Beats that already passed are
@@ -300,17 +341,28 @@ export class World {
     this.minuteMark = time;
     this.beatCursor = this.data.director.beats.filter((b) => b.time < time).length;
 
-    // Also fill the field to whatever the director is targeting at that clock.
+    // Fill the field to whatever the director is targeting at that clock.
     // Jumping to 15:00 and watching an empty graveyard trickle back up to 200
     // enemies is useless for tuning, which is the only reason the flag exists.
-    const target = Math.min(400, Math.round(targetPopulation(this.data.director, time)));
+    //
+    // The App builds the World before it has measured the surface, so if we
+    // don't know the field size yet, wait for the first setViewport rather than
+    // scattering the whole horde across a guessed 100x32 default.
+    if (this.viewportKnown) this.populateToTarget();
+    else this.pendingPrewarm = true;
+  }
+
+  /** Scatter the director's head-count target across the visible field. */
+  private populateToTarget(): void {
+    const target = Math.min(400, Math.round(targetPopulation(this.data.director, this.time)));
     const half = this.viewHalf();
+
     for (let i = 0; i < target; i++) {
       const def = this.rollMix();
       if (def === null) break;
-      const a = this.rng.next() * Math.PI * 2;
-      const t = Math.sqrt(this.rng.next()); // uniform over the disc, not the centre
-      this.spawnEnemy(def, this.x + Math.cos(a) * half.x * t, this.y + Math.sin(a) * half.y * t);
+      // Uniform over the rectangle of the field, not a disc around the player:
+      // a disc leaves the corners empty and packs everything onto your face.
+      this.spawnEnemy(def, this.x + this.rng.range(-half.x, half.x), this.y + this.rng.range(-half.y, half.y));
     }
     // They arrived off-camera, conceptually; don't flash every portrait at once.
     this.justSeen = null;
@@ -322,7 +374,20 @@ export class World {
   // ---------------------------------------------------------------- stats
 
   stats(): Record<StatName, number> {
-    return computeStats(this.data.passives, this.passives);
+    const s = computeStats(this.data.passives, this.passives);
+    // Character bonuses are multipliers on the base (characters.tsv).
+    const c = this.character;
+    if (c !== null) {
+      s.move_speed *= c.move;
+      s.area *= c.area;
+      s.luck *= c.luck;
+    }
+    return s;
+  }
+
+  /** Gold multiplier from the character. Separate: gold isn't a passive stat. */
+  get goldMultiplier(): number {
+    return this.character?.gold ?? 1;
   }
 
   get lightRadius(): number {
@@ -346,6 +411,7 @@ export class World {
   update(dt: number, input: Vec): void {
     if (this.dead || this.won) return;
 
+    this.timeAlive += dt;
     if (this.clockRunning) this.time += dt;
 
     if (this.time - this.minuteMark >= 60) {
@@ -642,8 +708,11 @@ export class World {
 
       case 'boss': {
         if (def === undefined) return;
-        const p = this.spawnPoint(10);
-        this.boss = this.spawnEnemy(def, p.x, p.y);
+        // On screen, and above the player. Her Court phase is stationary, so
+        // spawning her outside the viewport like an ordinary enemy would leave
+        // her sitting in the dark summoning bats at a graveyard you can't see.
+        const half = this.viewHalf();
+        this.boss = this.spawnEnemy(def, this.x, this.y - half.y * 0.55);
         this.clockRunning = false; // the sun rises when she dies, not on a timer
         this.bossPhase = 'court';
         this.bossTimer = 0;
@@ -724,7 +793,7 @@ export class World {
       e.knockX *= decay;
       e.knockY *= decay;
 
-      if (dist < 1.0 && e.hitCd === 0) {
+      if (dist < this.hitRadius(e.def.id) && e.hitCd === 0) {
         this.damagePlayer(e.def.power);
         e.hitCd = CONTACT_COOLDOWN;
       }
@@ -815,7 +884,9 @@ export class World {
       this.dropPickup('chest', e.x, e.y, 1);
       this.dropPickup('gold', e.x + 2, e.y, this.rng.int(10, 25));
     } else {
-      if (this.rng.chance((1 / 40) * luck)) this.dropPickup('gold', e.x, e.y, this.rng.int(1, 3));
+      if (this.rng.chance((1 / 40) * luck)) {
+        this.dropPickup('gold', e.x, e.y, Math.round(this.rng.int(1, 3) * this.goldMultiplier));
+      }
       if (this.rng.chance(0.004 * luck)) this.dropPickup('heal', e.x, e.y, 30);
     }
   }

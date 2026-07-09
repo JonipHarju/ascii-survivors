@@ -52,6 +52,8 @@ export class GameView {
   private readonly sprites: SpriteBank;
   private portraitId: string | null = null;
   private portraitTimer = 0;
+  /** Reused each frame so the z-sort doesn't allocate at 220 enemies x 60fps. */
+  private zOrder: Enemy[] = [];
 
   constructor(sprites: SpriteBank) {
     this.sprites = sprites;
@@ -107,7 +109,13 @@ export class GameView {
     this.drawOrbs(r, w, p);
 
     // The player is drawn last and is the only bright white thing on the field.
-    r.setF(p.colF(w.x), p.rowF(w.y), w.playerDef.glyph, PLAYER_COLOR);
+    // Her head is still the `@`; the sprite carries the rest of the silhouette.
+    const playerSprite = this.sprites.get(w.character?.sprite ?? 'sprites/player');
+    if (!playerSprite.placeholder) {
+      drawSprite(r, frameAt(playerSprite, w.timeAlive), p.col(w.x), p.row(w.y), field);
+    } else {
+      r.setF(p.colF(w.x), p.rowF(w.y), w.playerDef.glyph, PLAYER_COLOR);
+    }
 
     if (this.portraitId !== null) this.drawPortrait(r, field, this.portraitId);
     if (w.effects.some((fx) => fx.kind === 'flash')) this.drawWhiteFlash(r, field);
@@ -233,7 +241,14 @@ export class GameView {
   }
 
   private drawEnemies(r: Surface, w: World, field: Rect, p: Proj, dark: boolean): void {
-    for (const e of w.enemies) {
+    // Painter's algorithm on world y, so 220 overlapping sprites read as a crowd
+    // rather than as z-fighting noise: things lower on the screen are nearer, so
+    // they draw last and occlude what's behind them.
+    this.zOrder.length = 0;
+    for (const e of w.enemies) this.zOrder.push(e);
+    this.zOrder.sort((a, b) => a.y - b.y);
+
+    for (const e of this.zOrder) {
       const sx = p.col(e.x);
       const sy = p.row(e.y);
 
@@ -257,11 +272,9 @@ export class GameView {
       if (!inLight && !e.elite && !r.caps.smoothLight) color = DARK_COLOR;
       if (e.flash > 0) color = mix(color, FLASH_COLOR, Math.min(1, e.flash / 0.08));
 
-      // If Jane has drawn real art for this enemy, use it. Otherwise the glyph
-      // from glyphs.tsv. Multi-cell mobs were unaffordable in an 80x24 terminal;
-      // on canvas the grid is big enough that they read, so this is the hook she
-      // needs to upgrade any enemy from one character to a sprite, one at a time.
-      const sprite = this.sprites.get(`enemies/${e.def.id}`);
+      // Sprite by convention (jane.md), falling back to the `glyph` column in
+      // glyphs.tsv. That fallback is how we ship a half-drawn bestiary.
+      const sprite = this.sprites.get(spriteIdFor(e));
       if (!sprite.placeholder) {
         drawSprite(r, frameAt(sprite, e.age, e.phase), sx, sy, field, e.flash > 0 ? FLASH_COLOR : null);
       } else {
@@ -368,6 +381,14 @@ export class GameView {
     drawSprite(r, frame, x + offset, y, field);
     r.text(x + offset, y + frame.h, sprite.name.toUpperCase(), ACCENT);
   }
+}
+
+/**
+ * `sprites/mobs/<id>` for trash, `sprites/elites/<id>` for elites. Missing art
+ * falls back to the glyph, so a half-drawn bestiary still ships.
+ */
+function spriteIdFor(e: Enemy): string {
+  return e.elite ? `sprites/elites/${e.def.id}` : `sprites/mobs/${e.def.id}`;
 }
 
 function stageFor(stages: readonly DecalDef[], age: number): DecalDef | null {

@@ -20,6 +20,7 @@ import { parseWeapons } from '../data/weapons.ts';
 import { parsePassives } from '../data/passives.ts';
 import { parseDirector, targetPopulation, spawnCap, mixWeight } from '../data/director.ts';
 import { parseEvolutions } from '../data/evolutions.ts';
+import { parseCharacters } from '../data/characters.ts';
 import type { GameData } from '../data/gamedata.ts';
 import { GameView } from '../game/render.ts';
 import { SpriteLoader } from '../assets/loader.ts';
@@ -82,6 +83,13 @@ const DIRECTOR_REAL = [
 
 const EVOLUTIONS = 'chain\tmight\touroboros\tOuroboros\tbands on BOTH sides, always';
 
+// characters.tsv: "no starting weapon may require aiming." These tests want the
+// Chain under the microscope, so this fixture's Warden opens with it anyway.
+const CHARACTERS = [
+  'warden\tThe Warden\tsprites/player\tchain\t100\t1.00\t1.00\t1.00\t1.00\t0\tthe default',
+  'ashling\tThe Ashling\tsprites/ashling\tnova\t70\t1.20\t1.00\t1.00\t1.00\t400\tfragile, fast',
+].join('\n');
+
 function makeData(directorSrc: string = DIRECTOR_QUIET): GameData {
   return {
     glyphs: parseGlyphTable(GLYPHS),
@@ -89,6 +97,7 @@ function makeData(directorSrc: string = DIRECTOR_QUIET): GameData {
     passives: parsePassives(PASSIVES),
     director: parseDirector(directorSrc),
     evolutions: parseEvolutions(EVOLUTIONS),
+    characters: parseCharacters(CHARACTERS),
     warnings: [],
   };
 }
@@ -148,7 +157,9 @@ describe('movement is isotropic in world units', () => {
 
   it('aims the Chain at the swarm when you are not steering it', () => {
     // Owner feedback 09.07: aiming by walking meant walking *into* the enemies.
+    // Jane fixed it in the tables instead, so this is now opt-in.
     const w = quietWorld();
+    w.autoFace = true;
     w.facing = 1;
     w.spawnEnemy(data.glyphs.entities.get('ghoul')!, w.x - 30, w.y);
 
@@ -161,15 +172,16 @@ describe('movement is isotropic in world units', () => {
 
   it('never lets auto-face override an explicit horizontal press', () => {
     const w = quietWorld();
+    w.autoFace = true;
     w.spawnEnemy(data.glyphs.entities.get('ghoul')!, w.x - 30, w.y);
 
     step(w, 1.0, { x: 1, y: 0 }); // walking right, ghoul is to the left
     assert.equal(w.facing, 1, 'turning by walking is the skill; auto-aim must not fight it');
   });
 
-  it('leaves facing alone with auto-face off', () => {
+  it('leaves facing alone with auto-face off, which is the default', () => {
     const w = quietWorld();
-    w.autoFace = false;
+    assert.equal(w.autoFace, false, 'Jane fixed the clunkiness in the tables, not here');
     w.facing = 1;
     w.spawnEnemy(data.glyphs.entities.get('ghoul')!, w.x - 30, w.y);
 
@@ -179,6 +191,7 @@ describe('movement is isotropic in world units', () => {
 
   it('ignores enemies directly overhead, which would flip facing every frame', () => {
     const w = quietWorld();
+    w.autoFace = true;
     w.facing = 1;
     w.spawnEnemy(data.glyphs.entities.get('ghoul')!, w.x + 0.2, w.y - 10);
 
@@ -191,6 +204,31 @@ describe('movement is isotropic in world units', () => {
     w.passives.push({ id: 'swift', level: 8 }); // 1.4x
     step(w, 1, { x: 1, y: 0 });
     assert.ok(Math.abs(w.x - 28) < 0.3, `expected 20 * 1.4 = 28 wu, got ${w.x}`);
+  });
+});
+
+describe('characters.tsv', () => {
+  it('takes the starting weapon from the table, never from code', () => {
+    // "no starting weapon may require aiming" is a rule that only holds if the
+    // weapon is data. Hardcoding 'chain' here would silently break it forever.
+    const w = new World(makeData(), 1, 'ashling');
+    assert.equal(w.character?.id, 'ashling');
+    assert.equal(w.weapons[0]?.id, 'nova');
+  });
+
+  it('defaults to the first character that costs no gold', () => {
+    const w = quietWorld();
+    assert.equal(w.character?.id, 'warden');
+    assert.equal(w.character?.unlock, 0);
+  });
+
+  it('applies the character hp and move multipliers', () => {
+    const w = new World(makeData(), 1, 'ashling');
+    w.setViewport(100, 32);
+    assert.equal(w.maxHp, 70, 'the Ashling is fragile');
+
+    step(w, 1, { x: 1, y: 0 });
+    assert.ok(Math.abs(w.x - 24) < 0.3, `20 wu/s x 1.20 = 24, got ${w.x}`);
   });
 });
 
@@ -513,6 +551,18 @@ describe('the spawn director', () => {
     const target = targetPopulation(parseDirector(DIRECTOR_REAL), 15 * 60);
     assert.ok(w.enemies.length > target * 0.8, `expected ~${Math.round(target)} enemies, got ${w.enemies.length}`);
     assert.equal(w.justSeen, null, 'and it must not flash every portrait at once');
+  });
+
+  it('spawns the Countess on screen, since her first phase never moves', () => {
+    const w = new World(makeData(DIRECTOR_REAL), 7);
+    w.setViewport(100, 32);
+    w.weapons.length = 0;
+    w.fastForward(19 * 60 - 0.5);
+    step(w, 1.0);
+
+    const boss = w.enemies.find((e) => e.boss)!;
+    assert.ok(Math.abs(boss.x - w.x) < 50, 'within half a viewport horizontally');
+    assert.ok(Math.abs(boss.y - w.y) < 32, 'within half a viewport vertically');
   });
 
   it('spawns the Countess at 19:00 and stops the clock', () => {

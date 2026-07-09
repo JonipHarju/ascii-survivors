@@ -98,6 +98,33 @@ describe('sprite parsing', () => {
     assert.deepEqual(warnings, []);
   });
 
+  it('warns when art and mask trim to different heights', () => {
+    // The bug this catches: a blank first row in one block trims away, every
+    // colour below it slides up a row, and nothing looks wrong until you stare.
+    const src = ['--- art ---', 'ab', 'cd', '--- mask ---', 'rr'].join('\n');
+    const { warnings } = parseSprite('x', src);
+    assert.equal(warnings.length, 1);
+    assert.match(warnings[0]!, /mask trims to 1 rows but the art trims to 2/);
+  });
+
+  it('does not warn when `size:` merely pads the art', () => {
+    // The old check compared the mask to the padded box, so it cried wolf here.
+    const src = ['# size: 6x4', '--- art ---', 'ab', '--- mask ---', 'rr'].join('\n');
+    const { warnings } = parseSprite('x', src);
+    assert.deepEqual(warnings, []);
+  });
+
+  it('picks the most specific folder budget, not the first that prefixes', () => {
+    // `sprites/` would otherwise shadow `sprites/mobs/` and never warn.
+    const tooBig = ['# size: 9x5', '--- art ---', ...Array(5).fill('#########')].join('\n');
+    const mob = parseSprite('sprites/mobs/ghoul', tooBig).warnings;
+    assert.equal(mob.length, 1);
+    assert.match(mob[0]!, /over the 5x3 budget/);
+
+    const elite = parseSprite('sprites/elites/gravewarden', tooBig).warnings;
+    assert.deepEqual(elite, [], '9x5 is exactly the elite budget');
+  });
+
   it('never throws on garbage, and always returns something drawable', () => {
     for (const bad of ['', '# size: nonsense', '--- art ---', '# colour: ✨', '---']) {
       const { sprite } = parseSprite('x', bad);

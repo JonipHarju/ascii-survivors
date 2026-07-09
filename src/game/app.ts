@@ -12,6 +12,7 @@ import type { GameData } from '../data/gamedata.ts';
 import type { Evolution } from '../data/evolutions.ts';
 import { GameView, drawHud, type ViewOptions } from './render.ts';
 import { generateCards, type Card } from './upgrades.ts';
+import { makeHitRadius } from './hitbox.ts';
 import { formatTime, World } from './world.ts';
 
 const ACCENT: Color = 0xffe040;
@@ -22,9 +23,12 @@ const RED: Color = 0xff3b3b;
 /** Below this the HUD and field can't coexist; we ask for a bigger window. */
 const MIN_COLS = 80;
 const MIN_ROWS = 24;
-/** Above this the player loses track of their own `@` (design.md §5). */
-const MAX_COLS = 120;
-const MAX_ROWS = 40;
+/**
+ * The field the game is designed around (jane.md: 180x60 target, 120x40 min).
+ * A bigger window shows the same world, scaled — never more world.
+ */
+const MAX_COLS = 180;
+const MAX_ROWS = 60;
 
 type State = 'title' | 'playing' | 'levelup' | 'paused' | 'dead' | 'dawn' | 'evolution';
 
@@ -54,6 +58,7 @@ export class App {
   private evolution: Evolution | null = null;
   private evolutionTimer = 0;
   private quitting = false;
+  private readonly hitRadius: (id: string) => number;
 
   fps = 0;
 
@@ -62,6 +67,7 @@ export class App {
     this.sprites = sprites;
     this.input = input;
     this.opts = opts;
+    this.hitRadius = makeHitRadius(sprites);
     this.world = this.newWorld();
     this.view = new GameView(sprites);
     if (opts.skipTitle === true) this.state = 'playing';
@@ -73,6 +79,7 @@ export class App {
 
   private newWorld(): World {
     const w = new World(this.data, this.opts.seed);
+    w.hitRadius = this.hitRadius;
     if (this.opts.autoFace !== undefined) w.autoFace = this.opts.autoFace;
     if (this.opts.god === true) w.godMode = true;
     if (this.opts.startTime !== undefined) w.fastForward(this.opts.startTime);

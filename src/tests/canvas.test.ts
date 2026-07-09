@@ -89,6 +89,12 @@ function makeSurface(cssW = 400, cssH = 300) {
     glow: 0,
     background: 0x000000,
     measure: () => box,
+    // The real bounds are 120x40..180x60; a test fixture that large would be
+    // unreadable, so shrink them rather than special-casing the code under test.
+    minCols: 4,
+    minRows: 4,
+    maxCols: 999,
+    maxRows: 999,
   });
   return { surface, canvas, ctx: canvas.ctx, box };
 }

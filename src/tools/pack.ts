@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 
 import { readSpriteSources } from '../assets/loader.ts';
 import { readTableSources } from '../data/gamedata.node.ts';
+import { TABLE_FILES } from '../data/gamedata.ts';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const ASSETS = join(ROOT, 'assets');
@@ -31,7 +32,9 @@ async function main(): Promise<void> {
 
   const bundle = JSON.parse(json) as { sprites: Record<string, string> };
   const kb = (json.length / 1024).toFixed(1);
-  console.log(`packed ${Object.keys(bundle.sprites).length} sprites + 5 tables -> web/assets.json (${kb} KB)`);
+  console.log(
+    `packed ${Object.keys(bundle.sprites).length} sprites + ${TABLE_FILES.length} tables -> web/assets.json (${kb} KB)`,
+  );
 }
 
 // Only run when invoked directly; `serve.ts` imports `packAssets` instead.

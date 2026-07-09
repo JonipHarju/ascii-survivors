@@ -1,6 +1,6 @@
 # name: Dawn
 # colour: Y
-# size: 62x17
+# size: 53x17
 # anchor: topleft
 --- art ---
           \    |    /

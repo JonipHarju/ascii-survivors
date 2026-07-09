@@ -1,6 +1,6 @@
 # name: Title
 # colour: r
-# size: 74x20
+# size: 69x20
 # anchor: topleft
 --- art ---
    _____  _   _  _____    _       ___   _   _   ____

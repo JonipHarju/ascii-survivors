@@ -1,0 +1,13 @@
+# name: Gravewarden
+# size: 16x8
+# anchor: topleft
+# colour: Y
+--- art ---
+    ,---------.
+    |  ,   ,  |
+    | (o) (o) |
+    |    ^    |
+    | \_____/ |
+    '----+----'
+    /|   |   |\
+   |_|  =|=  |_|

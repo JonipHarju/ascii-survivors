@@ -291,7 +291,7 @@ On top of the budget, **scripted beats** that the player learns to dread:
 
 ## 12. Screens, HUD, and where the art goes
 
-**HUD, top line:** `HP ████████░░ 82/100   LV 14   ⏱ 12:43   ☠ 1,847   ⛁ 312`
+**HUD, top line:** `HP ████████░░ 82/100   LV 14   T 12:43   K 1,847   $ 312`
 **HUD, bottom line:** the XP bar, full width, plus your weapon glyphs `═ * ~ o`.
 
 **First encounter.** The first time each enemy type appears, a **20×8 portrait**

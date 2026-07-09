@@ -1,5 +1,5 @@
 # name: Ghoul
-# size: 20x8
+# size: 18x8
 # anchor: topleft
 # colour: e
 --- art ---

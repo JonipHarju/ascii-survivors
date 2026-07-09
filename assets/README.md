@@ -24,37 +24,51 @@ Everything on the *field* except the Countess is a single glyph from
 One asset per `.txt` file. A header block of `# key: value` lines, then a
 `--- art ---` fence, then optionally a `--- mask ---` fence.
 
+The sprite's **id is its path** under `assets/`, minus `.txt` —
+`assets/portraits/ghoul.txt` → `portraits/ghoul`.
+
 ```
-# name: ghoul
-# size: 20x8
+# name: The Countess
+# size: 16x5
 # anchor: center
+# fps: 4
+# colour: R
 --- art ---
-     .-.   .-.
-      \ `.'  /
-...
+  \\   ^^^^   //
+ \ \ ( oo ) / /
 --- mask ---
-     eee   eee
-      e  e   e
-...
+  ee   YYYY   ee
+ e e e RR e e e
 ```
 
 ### Rules
 
-- **`size: WxH` is authoritative.** Art lines may be shorter than `W`;
-  **right-pad them with spaces**. Do not trust trailing whitespace to survive a
-  git round-trip, an editor, or me. Never left-strip.
 - **A space in `art` is transparent.** The background (or gore layer) shows
   through. There is no "opaque black" — if I want black I'll draw a glyph.
 - **`mask` is optional.** Same dimensions as `art`. Each cell is a palette char
   (below) giving that art cell's colour. Where the mask is a space, or where
   there is no mask block at all, use the file's `# colour:` header, defaulting
-  to `w` (white).
-- `anchor: center | topleft` — where the sprite's world position sits. Bosses are
-  `center`; UI is `topleft`.
+  to `w` (white). *I generate masks from the art programmatically, so they
+  cannot drift out of alignment with it.*
+- **`size: WxH` is a checksum, not a command.** The art wins; the header exists
+  so that if I fat-finger a line, John's loader warns me the art drifted. Nothing
+  depends on trailing whitespace surviving a git round-trip, because it won't.
+- **Animation:** repeat the `--- art ---` (+ optional `--- mask ---`) pair, once
+  per frame, and set `# fps: 4`. Frames may differ in size; they're aligned by
+  `anchor`. The Countess flaps her wings this way.
+- **Fences are optional.** A file with no `--- art ---` fence is one art block,
+  and bare `---` lines separate animation frames. Handy for a throwaway sprite.
+- `anchor: center | topleft | bottom` — where the sprite's world position sits.
+  Bosses are `center`; portraits and UI are `topleft`.
+- `# colour:` and `# color:` both work. Unknown header keys are ignored, never
+  fatal, so `# hp: 12` as a note-to-self is safe.
+- The per-folder sizes above are **advisory budgets** — over-size art warns and
+  draws anyway rather than getting clipped.
 - Files are UTF-8. Art may use box-drawing and a *small* set of symbols
-  (`※ ◆ ♥ ⛁ ═ ─ ▓ ▄`). If any of those render badly in your target terminals,
-  tell me and I'll swap to pure ASCII — I've kept the shapes simple enough that
-  degrading is a find-and-replace, not a redraw.
+  (`※ ◆ ♥ ═ ─ ▓ ▄ ·`). All of those are Unicode *Ambiguous* width, which every
+  mainstream terminal renders as one column. Avoid emoji and anything in the
+  misc-symbols block that fonts like to emoji-ify — that's why gold is a plain
+  `$` and not `⛁`.
 
 ### Palette (mask chars → 16-colour ANSI)
 

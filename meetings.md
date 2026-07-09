@@ -60,3 +60,95 @@ by minute 18 the floor is a carpet of your kills) and **the dark** (player is th
 only light; outside the radius things are dim, *not* hidden). Please put the dark
 behind a `--no-dark` flag from day one — 300 grey glyphs might read as mush and
 Jane would rather A/B it than argue about it.
+
+---
+
+## 2026-07-09 — first contact: John's stack, and we turn out to agree
+
+**[Decision — John]** Stack locked (his lane): **TypeScript on Node 22, zero
+runtime deps, no build step.** Node 22.18+ strips types natively, so no compiler
+and no `dist/`. He rejected `blessed` (unmaintained, slow damage-tracking), `ink`
+(React in a terminal, too heavy for a game loop) and ncurses (native build, bad
+install story) in favour of a hand-rolled double-buffered diff renderer. Colour
+degrades truecolor → 256 → 16 → mono on its own.
+
+**[Note — John]** A real constraint the human should know about: **terminals send
+key-down only — there is no key-up event.** "Hold W to walk" doesn't exist for
+free. John emulates it (a key counts as held until ~130ms pass with no repeat),
+which makes the very first keypress slightly mushy. He calls it the single
+biggest feel-tax of building this in a terminal.
+
+**[A — Jane]** Accept it, don't spend more on it. The design is unusually
+tolerant: there's no dash, no dodge and no i-frames, so 130ms is never the
+difference between alive and dead; contact damage is on a 0.5s per-enemy
+cooldown, so one mushy step costs a fraction of a hit; and movement is the only
+combat input, so the player holds a direction ~always — which is exactly when
+held-key emulation works best. If it feels bad, the lever is player speed, not
+the input layer.
+
+**[Convergence]** John and Jane wrote independently and landed on the same
+answers: 100×34 target / 80×24 minimum, cell aspect-ratio correction, scrolling
+unbounded world, 3 upgrade cards, run-summary-before-restart — and, most
+importantly, **one glyph per trash mob.** John got there from the arithmetic
+(2900 cells in the viewport; 61 enemies at 12×4 would cover the entire screen);
+Jane got there from readability. The riskiest call in the project is now
+supported from both ends. *John's phrase "density is the art here" is better than
+anything in the design doc, so `design.md` §10 is built around it.*
+
+**[Resolved — the two stale decisions above]** Both of John's earlier answers are
+superseded, by John's own code: play area is **100 wide, not 60** (he revised it
+himself for the same reason Jane did), and the 12×4 sprite cap became **per-folder
+advisory budgets** matching Jane's three exactly — `sprites/` 16×5, `portraits/`
+20×8, `ui/` 78×20 — that warn rather than clip. The Countess gets her 16×5.
+
+**[Decision — art format]** John adopted Jane's format wholesale (header +
+`--- art ---` + optional `--- mask ---`), dropping his own `paint:` proposal
+because a mask lets one glyph take two colours. He added two things back: **`fps:`
+animation** (repeat the art/mask pair per frame) and **fence-free files**. Jane
+updated `assets/README.md` to document *his* implementation. The Countess now
+flaps her wings — 2 frames at 4fps.
+
+**[Heads-up — Jane → John]** `john.md` §2 is now **stale relative to John's own
+code**, in a way that would hurt if he "fixed" the code to match his notes: the
+notes promise a hard 12×6 clip, but the code has advisory per-folder budgets. Had
+he shipped the clip, the title screen (69×20) and every portrait would have been
+sheared to ribbons.
+
+**[Verification — Jane]** Rather than assume the contract holds, Jane ran John's
+`parseSprite` and `parseGlyphTable` directly against `assets/` on Node v22.19.0:
+**13 sprites, 0 warnings**, Countess loads as `2f 16x5 anchor=center fps=4`,
+`glyphs.tsv` → 18 entities + 5 decals. Working end to end today. Along the way she
+fixed three real bugs on the art side: seven `size:` headers that disagreed with
+the art, a gold glyph (`⛁`) that fonts emoji-ify to double-width (now `$`), and a
+Countess fallback glyph of `-` that would have drawn a literal dash.
+
+**[Q — John → Jane]** Give me `assets/player.txt` and I'll draw it instead of the
+placeholder `@`.
+**[A — Jane]** **Deliberately not providing one.** The player is 1×1 `@`, bright
+white, and that already lives in `glyphs.tsv`. A `player.txt` would be a second
+source of truth for the same fact — John's own comment in `entities.ts` ("a
+lifeboat, not a second source of truth") makes the argument. No 1×1 sprite files
+for enemies either; `sprites/` holds multi-cell world art only, which today is
+exactly one file.
+
+**[Q — John → Jane]** Does the player face a direction? Do I need
+`player_left.txt` / `player_right.txt`?
+**[A — Jane]** Yes, but it needs **no art**. Facing is a `±1` set by the last
+horizontal input; only weapons read it, and the `@` never mirrors. It exists for
+The Chain, which is horizontal-only on purpose: **you turn by walking**, and
+flicking left/right to keep the whip on the swarm is the game's first real skill.
+
+**[Q — John → Jane]** Fixed arena or scrolling world?
+**[A — Jane]** Scrolling, unbounded, **no walls ever**. Don't clamp the camera.
+Walls let the player camp a corner and the whole genre dies — the tension is that
+there is nowhere to stand.
+
+**[Q — John → Jane]** Health: hearts, a bar, or a number?
+**[A — Jane]** Bar plus the number. Hearts imply discrete hits; damage here is a
+continuous drain (contact damage on a 0.5s per-enemy cooldown, no i-frames), so a
+bar tells the truth and hearts would lie.
+
+**[Blocking-ish — Jane → John]** `src/main.ts` doesn't exist yet, so `npm start`
+can't run. A loop that reads `glyphs.tsv`, spawns ghouls and lets `@` walk is
+worth more than any further speccing — Jane can tune from a running build and
+cannot tune from a document.

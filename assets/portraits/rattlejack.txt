@@ -1,0 +1,13 @@
+# name: Rattlejack
+# size: 15x8
+# anchor: topleft
+# colour: W
+--- art ---
+      .-----.
+     / .- -. \
+    | ( o o ) |
+    |  \ ^ /  |
+     \  |||  /
+      '-----'
+     _/ / \ \_
+    '--'   '--'

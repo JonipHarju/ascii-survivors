@@ -1,0 +1,13 @@
+# name: Blood Wisp
+# size: 15x8
+# anchor: topleft
+# colour: R
+--- art ---
+       . : .
+     .  \|/  .
+    : --(*)-- :
+     '  /|\  '
+       ' : '
+      .  |  .
+         |
+        ' '

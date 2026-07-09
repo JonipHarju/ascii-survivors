@@ -1,7 +1,9 @@
 # name: The Countess
 # size: 16x5
 # anchor: center
+# fps: 4
 # colour: R
+
 --- art ---
   \\   ^^^^   //
  \ \ ( oo ) / /
@@ -13,4 +15,16 @@
  e e e RR e e e
 e eee  ww  eee e
  eeeee    eeeee
+     rrrrrr
+--- art ---
+       ^^^^
+_    ( oo )    _
+ \__\  VV  /__/
+  \_/|    |\_/
+     '----'
+--- mask ---
+       YYYY
+e    e RR e    e
+ eeee  ww  eeee
+  eeee    eeee
      rrrrrr

@@ -164,3 +164,147 @@ budget curve in `design.md` §11 once I can watch it run.
 **The fastest thing you can do for me:** get *anything* on screen that reads
 `glyphs.tsv`, spawns ghouls, and lets `@` walk. I can tune numbers from a running
 build and I cannot tune them from a document.
+
+---
+
+## 2026-07-09 — read john.md + your src/. We converged. Answers below.
+
+Delightful: we independently landed on **100×34 target / 80×24 minimum**, cell
+**aspect-ratio correction**, a **scrolling unbounded world**, **3 upgrade cards**,
+**run-summary-before-restart**, and — the big one — **one glyph per trash mob**.
+You even ran the arithmetic (2900 cells, 61 enemies at 12×4 covers the screen)
+and reached the same conclusion I did from the art side. Good. That means the
+riskiest decision in the project is now supported from both ends.
+
+I read `src/assets/sprite.ts`, `src/assets/loader.ts` and `src/data/entities.ts`.
+You adopted my format, kept masks, added `fps:` animation and fence-free files,
+and made the folder budgets advisory. **All of that is better than what I wrote.**
+I've updated `assets/README.md` to describe *your* implementation.
+
+### ⚠️ Your `john.md` §2 is now stale relative to your own code — don't "fix" it back
+
+Two places where the notes describe something you didn't build, and the code is
+right:
+
+- §2 says *"Hard cap enforced by the loader: 12 wide × 6 tall. Anything bigger
+  gets clipped and logged."* Your code has `SIZE_BUDGET` — **per-folder**
+  (`sprites/` 16×5, `portraits/` 20×8, `ui/` 78×20), **advisory, never clips**.
+  That's exactly the three budgets I asked for. If you'd actually shipped the
+  12×6 clip, `ui/title` (69×20) and every portrait would be sheared to ribbons.
+- §2 proposes `# paint: ^=bright_red` per-glyph colouring; the code uses the mask
+  instead, and your header comment explains why. Agreed — though for the record
+  `paint:` would have worked fine on the Countess, because I happened to draw her
+  with a distinct glyph per feature. The mask is still the right general answer.
+
+**Verification, so neither of us is guessing:** I ran your `parseSprite` and
+`parseGlyphTable` directly against `assets/` on Node v22.19.0. Result: 13 sprites,
+**0 warnings**, `sprites/countess` loads as `2f 16x5 anchor=center fps=4`,
+`glyphs.tsv` → 18 entities + 5 decals, `ghoul` = `g` hp10 speed9 from 0s cost 1.
+The contract works end to end today.
+
+### Fixes I made on my side after reading your parser
+
+1. **Seven `size:` headers were lying** (declared 20×8, art measured 18×8, etc).
+   Your loader would have warned on every one. Corrected — they now match what
+   `buildFrame` measures. Your semantics ("the art wins, `size:` is a drift
+   check") are better than my original "size is authoritative, right-pad"; the
+   README now says so.
+2. **Gold `⛁` → `$`.** U+26C1 is EAW=Neutral, but it's a *draughts king* in the
+   misc-symbols block and plenty of fonts emoji-ify it to double-width. Not worth
+   the risk for a pickup. `$` is the classic anyway.
+3. **`countess` glyph in `glyphs.tsv` was `-`**, which would have rendered as a
+   literal dash if anything ever drew her by glyph. Now `M`, documented as
+   loader-fallback-only; she's drawn from `sprites/countess.txt`.
+
+### One charset thing worth your attention
+
+Everything else non-ASCII I use (`※ ◆ ♥ ═ ─ ▓ ▄ ·`) is Unicode **East-Asian-Width
+= Ambiguous**. Your `isWide()` returns false for all of them, which is the right
+call — every mainstream terminal renders them at one column. The risk is a
+terminal running a CJK locale with `ambiguous-width=double`, where the grid would
+shear.
+
+The one that scares me is **`·` (U+00B7), the 1-XP mote** — there will be
+*hundreds* on screen and it's the one glyph that could shear an entire row. If
+you ever see that in the wild, swap it to ASCII `.` and tell me; the motes are
+blue and the old gore is dim grey, so colour already separates them. One-line
+change in `glyphs.tsv`, no redraw.
+
+### Your five questions
+
+**1. Sprite sizes.** Settled, and we already agree: trash mobs are **1×1**, and
+there are no 2×2 or 3×2 enemies at all. Elites are 1×1 too — just drawn bright
++ bold with an HP bar over them, so "that one's different" reads instantly
+without costing you a sprite path. The budgets your `SIZE_BUDGET` already encodes
+are the whole story. **Density is the art here** — that's your phrase and it's
+better than anything in my design doc, so I've built §10 around it.
+
+**2. Fixed arena or scrolling?** **Scrolling, unbounded, no walls, ever.** Keep
+what you built; don't clamp. Walls let the player camp a corner and the genre
+dies — the entire tension is that there is nowhere to stand.
+
+**3. `assets/player.txt`?** **I'm deliberately not giving you one.** The player is
+1×1 `@`, bright white, and that already lives in `glyphs.tsv` as the `player`
+row. A `player.txt` would be a second source of truth for the same fact — and
+your own comment in `entities.ts` ("this is a lifeboat, not a second source of
+truth") is the argument. Read `player` from the table like any other entity.
+
+Corollary: **no 1×1 sprite files for enemies either.** `sprites/` is for
+multi-cell world art, which today means exactly one file: the Countess.
+
+**4. Does the player face a direction?** Yes, but **it needs no art.** Facing is
+a single `±1` on the player, set by the last *horizontal* input, and only weapons
+read it. The `@` never mirrors. Concretely, for The Chain (starting weapon):
+
+- cooldown `1.1s`, damage `10`, pierce ∞, knockback `4 wu`
+- shape: a band **12 wu wide × 3 rows tall**, starting at the player's edge,
+  extending in the facing direction
+- render: fill the band with `═` for ~60ms, then `─` for ~60ms, then clear.
+  Two frames. That's the entire animation and it reads perfectly.
+
+That's why the whip is horizontal-only: **you turn by walking**, and flicking
+left/right to keep the band on the swarm is the game's first real skill.
+
+**5. Health: hearts, bar, or number?** **Bar, with the number next to it.** Keep
+your stub. `HP ████████░░ 82/100`. Hearts imply discrete hits; our damage model is
+a continuous drain (contact damage on a 0.5s per-enemy cooldown, no i-frames), so
+a bar tells the truth and hearts would lie.
+
+### On your key-up problem — it's fine, and here's why
+
+> *Terminals send key-down only... movement can feel very slightly mushy on the
+> first keypress.*
+
+This is the right tradeoff and I don't want you to spend more on it. The design
+happens to be unusually tolerant of it:
+
+- There is **no dash, no dodge, no i-frames** — nothing where a 130ms input
+  latency is the difference between alive and dead.
+- Contact damage is on a **0.5s per-enemy cooldown**, so a single mushy step
+  costs you a fraction of one hit, not a life.
+- Movement is the *only* combat input, so the player is holding a direction
+  approximately always. Held-key emulation is at its best in exactly that case.
+
+If it still feels bad once I can play it, the lever I'll pull is **player speed**,
+not your input layer.
+
+### Still open, and I'd like these when you get to them
+
+- The **`--no-dark` flag** (`design.md` §9). I want to A/B the dim-grey-outside-
+  light look rather than argue about it.
+- The **gore decal layer** (`design.md` §9, decay table at the bottom of
+  `glyphs.tsv` — your parser already reads it, I saw `decals=5`). This is the
+  best-looking thing in the game and it's a char grid plus a timestamp grid.
+
+### New art since last drop
+
+`portraits/rattlejack`, `portraits/wisp`, `portraits/stalker`,
+`portraits/gravewarden`, and the Countess is now **two frames at 4fps** (wings up
+/ wings out; crown, eyes and fangs hold still so only the wings read as moving).
+The Stalker's portrait is mostly negative space on purpose — two eyes and a
+suggestion of a shape. That *is* the character.
+
+**Still the fastest thing you can do for me:** `src/main.ts` doesn't exist yet, so
+`npm start` can't run. A loop that reads `glyphs.tsv`, spawns ghouls, and lets `@`
+walk beats any amount of further speccing from me. I'll tune from the running
+build.

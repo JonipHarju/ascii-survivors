@@ -1,6 +1,6 @@
 # name: Death
 # colour: r
-# size: 60x9
+# size: 53x9
 # anchor: topleft
 --- art ---
     __   __  ___   _   _    ____   ___  _____  ____

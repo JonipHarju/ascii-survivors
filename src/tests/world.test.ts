@@ -22,6 +22,7 @@ import { parseDirector, targetPopulation, spawnCap, mixWeight } from '../data/di
 import { parseEvolutions } from '../data/evolutions.ts';
 import { parseCharacters } from '../data/characters.ts';
 import { parseCrossroads } from '../data/crossroads.ts';
+import { parseCountess } from '../data/countess.ts';
 import type { GameData } from '../data/gamedata.ts';
 import { GameView } from '../game/render.ts';
 import { SpriteLoader } from '../assets/loader.ts';
@@ -32,6 +33,7 @@ const GLYPHS = [
   'ghoul\tg\tGhoul\te\t10\t9\t4\t1\t0:00\t1',
   'rat\tr\tGrave Rat\ts\t2\t14\t2\t1\t0:30\t1',
   'rattlejack\tx\tRattlejack\tW\t16\t11\t6\t4\t8:00\t2\ton death spawns 2 rats',
+  'bat\tw\tBat\tr\t5\t26\t3\t2\t2:00\t1\tsine-wave drift',
   'countess\t-\tThe Countess\tR\t9000\t10\t25\t0\t-\t200\tBOSS',
   'gravewarden\tG\tGravewarden\tY\t600\t7\t16\t0\t-\t40\tELITE',
   'mote1\t·\tXP Mote\tb\t-\t0\t0\t-\t-\t1',
@@ -104,6 +106,21 @@ const CROSSROADS = [
   'ashling\tThe Ashling\tsprites/ashling\t-\tunlock\t-\t1\t400\t1.0\tfragile, fast',
 ].join('\n');
 
+const COUNTESS = [
+  'param\ttelegraph\t0.8',
+  'param\tcharge_speed\t52',
+  'param\tturn_rate\t90',
+  'param\ttrail_glyph\t▓',
+  'param\ttrail_damage\t8',
+  'param\ttrail_life\t4.0',
+  'param\tenrage_after\t120',
+  'param\tfreeze_clock\t1',
+  'param\thalt_director\t1',
+  'phase\tcourt\t100\t70\t0\tsummon_ring\t4.0\t12\tstationary',
+  'phase\thunt\t70\t25\t10\tcharge\t3.0\t1\tcharges the player',
+  'phase\tdusk\t25\t0\t14\tcharge\t2.0\t1\tthe field goes black',
+].join('\n');
+
 function makeData(directorSrc: string = DIRECTOR_QUIET): GameData {
   return {
     glyphs: parseGlyphTable(GLYPHS),
@@ -113,6 +130,7 @@ function makeData(directorSrc: string = DIRECTOR_QUIET): GameData {
     evolutions: parseEvolutions(EVOLUTIONS),
     characters: parseCharacters(CHARACTERS),
     crossroads: parseCrossroads(CROSSROADS),
+    countess: parseCountess(COUNTESS),
     warnings: [],
   };
 }
@@ -607,6 +625,118 @@ describe('the spawn director', () => {
 
     assert.equal(w.won, true, 'kill her and the sun comes up');
     assert.equal(w.bossActive, false);
+  });
+});
+
+describe('the Countess fight', () => {
+  function bossWorld() {
+    const w = new World(makeData(DIRECTOR_REAL), 7);
+    w.setViewport(100, 32);
+    w.weapons.length = 0;
+    w.godMode = true; // we're testing her, not our ability to survive her
+    w.fastForward(19 * 60 - 0.5);
+    step(w, 1.0);
+    return { w, boss: w.enemies.find((e) => e.boss)! };
+  }
+
+  it('halts the ambient director: only she and her summons', () => {
+    const { w } = bossWorld();
+    const before = w.enemies.filter((e) => e.def.id === 'ghoul').length;
+    step(w, 3.0);
+    assert.equal(w.enemies.filter((e) => e.def.id === 'ghoul').length, before, 'no ambient spawns');
+  });
+
+  it('Court summons a ring of bats and does not move', () => {
+    const { w, boss } = bossWorld();
+    const x0 = boss.x;
+    const y0 = boss.y;
+
+    step(w, 4.2); // one cadence
+    assert.equal(boss.x, x0, 'stationary');
+    assert.equal(boss.y, y0);
+    assert.ok(w.enemies.filter((e) => e.def.id === 'bat').length >= 12, 'a ring of 12');
+  });
+
+  it('Hunt telegraphs before it charges, and the telegraph is visible', () => {
+    const { w, boss } = bossWorld();
+    boss.hp = boss.maxHp * 0.5; // drop her into Hunt
+
+    let sawTelegraph = false;
+    let sawFastMove = false;
+    let last = { x: boss.x, y: boss.y };
+
+    for (let i = 0; i < Math.round(6 / TICK_DT); i++) {
+      w.update(TICK_DT, { x: 0, y: 0 });
+      if (w.bossTelegraph > 0) sawTelegraph = true;
+      const moved = Math.hypot(boss.x - last.x, boss.y - last.y) / TICK_DT;
+      if (moved > 40) sawFastMove = true;
+      last = { x: boss.x, y: boss.y };
+    }
+
+    assert.equal(w.bossPhase, 'hunt');
+    assert.ok(sawTelegraph, 'she must glow before she charges — it is the whole tell');
+    assert.ok(sawFastMove, 'and then she must actually charge at 52 wu/s');
+  });
+
+  it('lays a burning trail while charging', () => {
+    const { w, boss } = bossWorld();
+    boss.hp = boss.maxHp * 0.5;
+    step(w, 6.0);
+    assert.ok(w.hazards.length > 0, 'the arena fills with her own exhaust');
+  });
+
+  it('the trail burns at a steady rate, not as a random spike', () => {
+    const w = new World(makeData(DIRECTOR_REAL), 7);
+    w.setViewport(100, 32);
+    w.weapons.length = 0;
+    // 8 dmg/s, standing in it for exactly one second.
+    w.hazards.push({ x: w.x, y: w.y, life: 10, dmg: 8, color: 0 });
+    const hp0 = w.hp;
+    step(w, 1.0);
+    assert.ok(Math.abs(hp0 - w.hp - 8) <= 1, `expected ~8 damage in 1s, took ${hp0 - w.hp}`);
+  });
+
+  it('turns no faster than 90 deg/s, which is what makes her baitable', () => {
+    const { w, boss } = bossWorld();
+    boss.hp = boss.maxHp * 0.5;
+
+    // Drive her into a committed charge, then teleport the player behind her.
+    step(w, 3.0);
+    let maxTurnPerSec = 0;
+    let heading: number | null = null;
+    let last = { x: boss.x, y: boss.y };
+
+    for (let i = 0; i < Math.round(3 / TICK_DT); i++) {
+      w.x = boss.x - 30; // keep yanking her target across her nose
+      w.y = boss.y + 30;
+      w.update(TICK_DT, { x: 0, y: 0 });
+
+      const dx = boss.x - last.x;
+      const dy = boss.y - last.y;
+      if (Math.hypot(dx, dy) > 0.2) {
+        const h = Math.atan2(dy, dx);
+        if (heading !== null) {
+          let d = h - heading;
+          while (d > Math.PI) d -= Math.PI * 2;
+          while (d < -Math.PI) d += Math.PI * 2;
+          maxTurnPerSec = Math.max(maxTurnPerSec, Math.abs(d) / TICK_DT);
+        }
+        heading = h;
+      }
+      last = { x: boss.x, y: boss.y };
+    }
+
+    const degPerSec = (maxTurnPerSec * 180) / Math.PI;
+    assert.ok(degPerSec < 130, `she turned at ${degPerSec.toFixed(0)} deg/s; 90 is the budget`);
+  });
+
+  it('Dusk collapses the light even though --no-dark is on', () => {
+    const { w, boss } = bossWorld();
+    assert.equal(w.dusk, false);
+    boss.hp = boss.maxHp * 0.1;
+    step(w, TICK_DT * 2);
+    assert.equal(w.bossPhase, 'dusk');
+    assert.equal(w.dusk, true, 'the one moment the darkness is the mechanic');
   });
 });
 

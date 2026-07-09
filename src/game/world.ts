@@ -30,6 +30,7 @@ import { computeStats, passiveMaxLevel, type StatName } from '../data/passives.t
 import { maxLevel, weaponAt, type WeaponLevel } from '../data/weapons.ts';
 import { defaultCharacter, type CharacterDef } from '../data/characters.ts';
 import { crossroadsParam } from '../data/crossroads.ts';
+import { countessParam, phaseFor, type Phase } from '../data/countess.ts';
 import { emptyProfile, type Profile } from './save.ts';
 
 /** Vertical wu per terminal row. The whole aspect-ratio correction, in one number. */
@@ -162,7 +163,8 @@ export type Weapon = {
 
 export type Owned = { id: string; level: number };
 
-export type BossPhase = 'court' | 'hunt' | 'dusk';
+/** Phase ids come from countess.tsv; the renderer only needs to know about dusk. */
+export type BossPhase = string;
 
 export class World {
   readonly data: GameData;
@@ -261,9 +263,20 @@ export class World {
 
   private boss: Enemy | null = null;
   bossPhase: BossPhase = 'court';
+  /** Seconds until her next action (a summon, or committing to a charge). */
   private bossTimer = 0;
   private bossTarget: Vec = { x: 0, y: 0 };
-  private bossCharging = false;
+  /** Her heading in radians while charging. She turns at `turn_rate`, no faster. */
+  private bossHeading = 0;
+  private bossState: 'idle' | 'telegraph' | 'charging' = 'idle';
+  /** Set while telegraphing, so the renderer can make her glow. */
+  bossTelegraph = 0;
+  private bossArrived = 0;
+  private bossTrailAcc = 0;
+  private warnedNoBat = false;
+
+  /** Non-fatal problems noticed while playing. Surfaced on exit and in --debug. */
+  readonly runtimeWarnings: string[] = [];
 
   private grid = new Map<number, number[]>();
 
@@ -569,8 +582,8 @@ export class World {
 
     if (this.time > this.tideUntil) this.tideFactor = 1;
 
-    // The boss owns the field: no ambient spawns during the fight.
-    if (this.boss !== null) return;
+    // The boss owns the field: no ambient spawns during the fight (halt_director).
+    if (this.boss !== null && countessParam(this.data.countess, 'halt_director') !== 0) return;
 
     const target = targetPopulation(d, this.time) * this.tideFactor;
     const ambient = this.enemies.filter((e) => !e.elite && !e.boss).length;
@@ -749,9 +762,12 @@ export class World {
         // her sitting in the dark summoning bats at a graveyard you can't see.
         const half = this.viewHalf();
         this.boss = this.spawnEnemy(def, this.x, this.y - half.y * 0.55);
-        this.clockRunning = false; // the sun rises when she dies, not on a timer
-        this.bossPhase = 'court';
+        // The sun rises when she dies, not on a timer.
+        if (countessParam(this.data.countess, 'freeze_clock') !== 0) this.clockRunning = false;
+        this.bossPhase = this.data.countess.phases[0]?.id ?? 'court';
+        this.bossState = 'idle';
         this.bossTimer = 0;
+        this.bossArrived = 0;
         return;
       }
     }
@@ -957,80 +973,168 @@ export class World {
   // ---------------------------------------------------------------- the boss
 
   /**
-   * Three phases (design.md §10). Court: stationary, summons bats in rings.
-   * Hunt: charges the player in straight lines, trailing damage. Dusk (<=25%):
-   * the world collapses to your lantern and she gets fast.
+   * The Countess (design.md §10, `countess.tsv`).
+   *
+   * Court: stationary, summons bats in a ring around herself. She isn't what's
+   * hurting you. Hunt: an 0.8s telegraph, then a 52 wu/s charge — you cannot
+   * outrun it, but she turns at only 90 deg/s, so you sidestep late. Her trail
+   * burns for 4s, and the arena slowly fills with her own exhaust. Dusk: the
+   * field goes black beyond your lantern, even with --no-dark. Your gore-carpet
+   * is the only map you have.
+   *
+   * Every number in here is read from her table. The only judgement call left in
+   * code is what "charge" means geometrically.
    */
   private updateBoss(dt: number): void {
     const b = this.boss;
     if (b === null) return;
 
+    const t = this.data.countess;
     b.age += dt;
     b.hitCd = Math.max(0, b.hitCd - dt);
     b.flash = Math.max(0, b.flash - dt);
-    this.bossTimer -= dt;
+    this.bossArrived += dt;
 
-    const frac = b.hp / b.maxHp;
-    const phase: BossPhase = frac <= 0.25 ? 'dusk' : frac <= 0.66 ? 'hunt' : 'court';
-    if (phase !== this.bossPhase) {
-      this.bossPhase = phase;
+    const phase = phaseFor(t, b.hp / b.maxHp);
+    if (phase === null) return;
+
+    if (phase.id !== this.bossPhase) {
+      this.bossPhase = phase.id;
+      this.bossState = 'idle';
       this.bossTimer = 0;
-      this.bossCharging = false;
       this.effects.push({ kind: 'flash', age: 0 });
     }
-    this.dusk = phase === 'dusk';
+    // Dusk collapses the world to the lantern, whatever --no-dark says: the one
+    // moment the darkness is the mechanic rather than the mood.
+    this.dusk = phase.id === 'dusk';
 
-    if (phase === 'court') {
-      if (this.bossTimer <= 0) {
-        this.bossTimer = 3.0;
-        this.summonRing(b, 12);
-      }
-    } else {
-      const speed = b.def.speed * (phase === 'dusk' ? 3.0 : 2.2);
+    // No stalling her out: past `enrage_after` her cadence tightens.
+    const enrageAt = countessParam(t, 'enrage_after');
+    const enraged = enrageAt > 0 && this.bossArrived > enrageAt;
+    const cadence = phase.cadence / (enraged ? 1.5 : 1);
 
-      if (!this.bossCharging) {
-        if (this.bossTimer <= 0) {
-          this.bossTarget = { x: this.x, y: this.y };
-          this.bossCharging = true;
-        }
-      } else {
-        const dx = this.bossTarget.x - b.x;
-        const dy = this.bossTarget.y - b.y;
-        const d = Math.hypot(dx, dy);
+    if (phase.action === 'summon_ring') this.bossCourt(b, phase, cadence, dt);
+    else this.bossHunt(b, phase, cadence, dt, t);
 
-        if (d < 2) {
-          this.bossCharging = false;
-          this.bossTimer = phase === 'dusk' ? 0.35 : 0.8; // slow turns; bait her
-        } else {
-          b.x += (dx / d) * speed * dt;
-          b.y += (dy / d) * speed * dt;
-          // A trail of `▓` that damages, left behind the charge.
-          if (this.rng.chance(dt / 0.05)) {
-            this.hazards.push({ x: b.x, y: b.y, life: 3.5, dmg: 6, color: 0xff3b3b });
-          }
-        }
-      }
-
-      if (phase === 'dusk' && this.bossTimer <= -4) {
-        this.bossTimer = 0;
-        this.summonRing(b, 8);
-      }
-    }
-
-    const dist = Math.hypot(this.x - b.x, this.y - b.y);
-    if (dist < 6 && b.hitCd === 0) {
+    const reach = this.hitRadius(b.def.id);
+    if (Math.hypot(this.x - b.x, this.y - b.y) < reach && b.hitCd === 0) {
       this.damagePlayer(b.def.power);
       b.hitCd = CONTACT_COOLDOWN;
     }
   }
 
-  private summonRing(b: Enemy, count: number): void {
+  /** Stationary. Summons bats in a closing ring around herself. Kill them or drown. */
+  private bossCourt(b: Enemy, phase: Phase, cadence: number, dt: number): void {
+    this.bossTelegraph = 0;
+    this.bossTimer -= dt;
+    if (this.bossTimer > 0) return;
+
+    this.bossTimer = cadence;
+
     const bat = this.table.entities.get('bat');
-    if (bat === undefined) return;
-    for (let i = 0; i < count; i++) {
-      const a = (i / count) * Math.PI * 2 + b.age;
-      this.spawnEnemy(bat, b.x + Math.cos(a) * 12, b.y + Math.sin(a) * 12);
+    if (bat === undefined) {
+      // Her whole first phase is "summon bats". Silently standing there would
+      // look like a hang, so say so once and let the fight continue.
+      if (!this.warnedNoBat) {
+        this.warnedNoBat = true;
+        this.runtimeWarnings.push("countess: glyphs.tsv has no 'bat' — Court phase cannot summon");
+      }
+      return;
     }
+
+    for (let i = 0; i < phase.count; i++) {
+      const a = (i / phase.count) * Math.PI * 2 + b.age;
+      this.spawnEnemy(bat, b.x + Math.cos(a) * 14, b.y + Math.sin(a) * 14);
+    }
+  }
+
+  /**
+   * Telegraph, then charge. The telegraph is the player's whole tell, and the
+   * turn rate is what makes her baitable: she commits to a heading and can only
+   * bend it so fast, so you sidestep *late* rather than early.
+   */
+  private bossHunt(b: Enemy, phase: Phase, cadence: number, dt: number, t: typeof this.data.countess): void {
+    const telegraph = countessParam(t, 'telegraph');
+    const chargeSpeed = countessParam(t, 'charge_speed');
+    const turnRate = (countessParam(t, 'turn_rate') * Math.PI) / 180;
+
+    switch (this.bossState) {
+      case 'idle': {
+        this.bossTelegraph = 0;
+        // Cruise toward the player at the phase's (slow) speed while she winds up.
+        this.moveToward(b, this.x, this.y, phase.speed * dt);
+
+        this.bossTimer -= dt;
+        if (this.bossTimer <= 0) {
+          this.bossState = 'telegraph';
+          this.bossTimer = telegraph;
+          this.bossTarget = { x: this.x, y: this.y };
+          this.bossHeading = Math.atan2(this.y - b.y, this.x - b.x);
+        }
+        return;
+      }
+
+      case 'telegraph': {
+        this.bossTimer -= dt;
+        this.bossTelegraph = Math.max(0, this.bossTimer / Math.max(0.001, telegraph));
+        // She locks on during the wind-up, so you can't just stand still.
+        this.bossHeading = this.turnToward(this.bossHeading, Math.atan2(this.y - b.y, this.x - b.x), turnRate * dt);
+
+        if (this.bossTimer <= 0) {
+          this.bossState = 'charging';
+          this.bossTimer = 1.6; // seconds of committed charge
+          this.bossTrailAcc = 0;
+        }
+        return;
+      }
+
+      case 'charging': {
+        this.bossTelegraph = 0;
+        this.bossTimer -= dt;
+
+        // Slow turns. Bait her.
+        this.bossHeading = this.turnToward(this.bossHeading, Math.atan2(this.y - b.y, this.x - b.x), turnRate * dt);
+        b.x += Math.cos(this.bossHeading) * chargeSpeed * dt;
+        b.y += Math.sin(this.bossHeading) * chargeSpeed * dt;
+
+        // A burning trail, laid at a fixed spatial rate rather than per frame,
+        // so it doesn't thin out when the framerate does.
+        this.bossTrailAcc += chargeSpeed * dt;
+        while (this.bossTrailAcc >= 1.5) {
+          this.bossTrailAcc -= 1.5;
+          this.hazards.push({
+            x: b.x,
+            y: b.y,
+            life: countessParam(t, 'trail_life'),
+            dmg: countessParam(t, 'trail_damage'),
+            color: 0xff3b3b,
+          });
+        }
+
+        if (this.bossTimer <= 0) {
+          this.bossState = 'idle';
+          this.bossTimer = cadence;
+        }
+        return;
+      }
+    }
+  }
+
+  private moveToward(e: Enemy, tx: number, ty: number, step: number): void {
+    const dx = tx - e.x;
+    const dy = ty - e.y;
+    const d = Math.hypot(dx, dy);
+    if (d < 0.001 || step <= 0) return;
+    e.x += (dx / d) * step;
+    e.y += (dy / d) * step;
+  }
+
+  /** Rotate `from` toward `to` by at most `maxStep` radians, the short way round. */
+  private turnToward(from: number, to: number, maxStep: number): number {
+    let delta = to - from;
+    while (delta > Math.PI) delta -= Math.PI * 2;
+    while (delta < -Math.PI) delta += Math.PI * 2;
+    return from + Math.max(-maxStep, Math.min(maxStep, delta));
   }
 
   // ---------------------------------------------------------------- weapons
@@ -1389,14 +1493,33 @@ export class World {
     this.columns = this.columns.filter((c) => c.life > 0);
   }
 
+  /**
+   * Her burning trail. `trail_damage` is *per second standing in it*, so we
+   * accumulate fractional damage rather than rolling a die each frame — a coin
+   * flip per tick would make an 8 dmg/s trail feel like a random 8-damage spike.
+   */
+  private trailDebt = 0;
+
   private updateHazards(dt: number): void {
+    let standingIn = 0;
     for (const h of this.hazards) {
       h.life -= dt;
       if (h.life > 0 && Math.hypot(this.x - h.x, this.y - h.y) < 1.5) {
-        // Reuse the contact cooldown budget: a slow drain, never a spike.
-        if (this.rng.chance(dt / CONTACT_COOLDOWN)) this.damagePlayer(h.dmg);
+        standingIn = Math.max(standingIn, h.dmg);
       }
     }
+
+    if (standingIn > 0) {
+      this.trailDebt += standingIn * dt;
+      if (this.trailDebt >= 1) {
+        const whole = Math.floor(this.trailDebt);
+        this.trailDebt -= whole;
+        this.damagePlayer(whole);
+      }
+    } else {
+      this.trailDebt = 0;
+    }
+
     this.hazards = this.hazards.filter((h) => h.life > 0);
   }
 

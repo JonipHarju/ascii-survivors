@@ -14,6 +14,7 @@ import { hash2 } from '../engine/rng.ts';
 import { frameAt } from '../assets/sprite.ts';
 import type { SpriteBank } from '../assets/bank.ts';
 import type { DecalDef } from '../data/entities.ts';
+import { countessParam } from '../data/countess.ts';
 import { formatTime, WU_PER_ROW, type Enemy, type World } from './world.ts';
 
 const PLAYER_COLOR: Color = 0xffffff;
@@ -176,11 +177,14 @@ export class GameView {
   }
 
   private drawHazards(r: Surface, w: World, p: Proj): void {
+    const glyph = w.data.countess.trailGlyph;
+    const life = Math.max(0.001, countessParam(w.data.countess, 'trail_life'));
     for (const h of w.hazards) {
       const sx = p.col(h.x);
       const sy = p.row(h.y);
       if (!p.inside(sx, sy)) continue;
-      r.set(sx, sy, '▓', shade(h.color, Math.min(1, 0.4 + h.life / 3.5)));
+      // Cools as it burns out, so the arena reads as filling with old exhaust.
+      r.set(sx, sy, glyph, shade(h.color, Math.min(1, 0.35 + (h.life / life) * 0.65)));
     }
   }
 
@@ -253,7 +257,7 @@ export class GameView {
       const sy = p.row(e.y);
 
       if (e.boss) {
-        this.drawBoss(r, e, sx, sy, field, w.time);
+        this.drawBoss(r, w, e, sx, sy, field);
         continue;
       }
       if (!p.inside(sx, sy)) continue;
@@ -297,10 +301,18 @@ export class GameView {
     if (p.inside(sx, sy)) r.set(sx, sy, '?', 0xa020a0);
   }
 
-  private drawBoss(r: Surface, e: Enemy, sx: number, sy: number, field: Rect, time: number): void {
+  private drawBoss(r: Surface, w: World, e: Enemy, sx: number, sy: number, field: Rect): void {
     const sprite = this.sprites.get('sprites/countess', 'C', e.def.color);
-    const frame = frameAt(sprite, time);
-    drawSprite(r, frame, sx, sy, field, e.flash > 0 ? FLASH_COLOR : null);
+    const frame = frameAt(sprite, w.timeAlive);
+
+    // The telegraph is the player's entire tell before a 52 wu/s charge they
+    // cannot outrun, so it has to be the loudest thing on the field.
+    let tint: Color | null = e.flash > 0 ? FLASH_COLOR : null;
+    if (w.bossTelegraph > 0) {
+      const pulse = 0.45 + 0.55 * Math.abs(Math.sin(w.timeAlive * 26));
+      tint = mix(0xff3b3b, 0xffffff, pulse * (1 - w.bossTelegraph));
+    }
+    drawSprite(r, frame, sx, sy, field, tint);
   }
 
   private drawEliteBar(r: Surface, e: Enemy, sx: number, sy: number, field: Rect): void {

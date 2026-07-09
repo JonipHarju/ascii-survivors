@@ -16,6 +16,7 @@ import { parsePassives, fallbackPassives, type PassiveTable } from './passives.t
 import { parseWeapons, type WeaponTable } from './weapons.ts';
 import { parseCharacters, fallbackCharacters, type CharacterTable } from './characters.ts';
 import { parseCrossroads, fallbackCrossroads, type CrossroadsTable } from './crossroads.ts';
+import { parseCountess, fallbackCountess, type CountessTable } from './countess.ts';
 
 export type GameData = {
   readonly glyphs: GlyphTable;
@@ -25,6 +26,7 @@ export type GameData = {
   readonly evolutions: EvolutionTable;
   readonly characters: CharacterTable;
   readonly crossroads: CrossroadsTable;
+  readonly countess: CountessTable;
   readonly warnings: readonly string[];
 };
 
@@ -37,6 +39,7 @@ export type TableSources = {
   evolutions: string;
   characters: string;
   crossroads: string;
+  countess: string;
 };
 
 export const TABLE_FILES = [
@@ -47,6 +50,7 @@ export const TABLE_FILES = [
   'evolutions',
   'characters',
   'crossroads',
+  'countess',
 ] as const;
 
 export function buildGameData(src: TableSources): GameData {
@@ -57,6 +61,7 @@ export function buildGameData(src: TableSources): GameData {
   const evolutions = parseEvolutions(src.evolutions);
   const characters = src.characters === '' ? fallbackCharacters() : parseCharacters(src.characters);
   const crossroads = src.crossroads === '' ? fallbackCrossroads() : parseCrossroads(src.crossroads);
+  const countess = src.countess === '' ? fallbackCountess() : parseCountess(src.countess);
 
   const warnings = [
     ...glyphs.warnings,
@@ -66,9 +71,10 @@ export function buildGameData(src: TableSources): GameData {
     ...evolutions.warnings,
     ...characters.warnings,
     ...crossroads.warnings,
+    ...countess.warnings,
   ];
 
   if (weapons.byId.size === 0) warnings.push('weapons.tsv missing or empty — the player will start unarmed');
 
-  return { glyphs, weapons, passives, director, evolutions, characters, crossroads, warnings };
+  return { glyphs, weapons, passives, director, evolutions, characters, crossroads, countess, warnings };
 }

@@ -15,7 +15,7 @@ import { SpriteLoader } from './assets/loader.ts';
 import { detectDepth } from './engine/color.ts';
 import { Renderer } from './engine/renderer.ts';
 import { TICK_DT } from './engine/loop.ts';
-import { loadGlyphTable } from './data/entities.ts';
+import { loadGameData } from './data/gamedata.node.ts';
 import { GameView } from './game/render.ts';
 import { World } from './game/world.ts';
 
@@ -40,11 +40,12 @@ async function main(): Promise<void> {
   const target = Number.parseInt(process.argv[2] ?? '300', 10);
   const FRAMES = 600;
 
-  const table = await loadGlyphTable(join(ASSETS, 'glyphs.tsv'));
+  const data = await loadGameData(ASSETS);
   const sprites = new SpriteLoader(ASSETS);
   await sprites.load();
 
-  const world = new World(table, 12345);
+  const world = new World(data, 12345);
+  world.setViewport(100, 32);
   const view = new GameView(sprites);
   const out = new NullStream();
   const renderer = new Renderer(100, 34, detectDepth(), out as unknown as NodeJS.WritableStream);
@@ -52,7 +53,7 @@ async function main(): Promise<void> {
 
   // Fast-forward the director to a late-game clock, then top up to `target`.
   world.time = 15 * 60;
-  const pool = [...table.entities.values()].filter((d) => d.cost > 0 && d.from !== null);
+  const pool = [...data.glyphs.entities.values()].filter((d) => d.cost > 0 && d.from !== null);
   while (world.enemies.length < target) {
     const def = world.rng.pick(pool);
     const a = world.rng.next() * Math.PI * 2;

@@ -84,8 +84,19 @@ export function colorNames(): string[] {
   return Object.keys(NAMES);
 }
 
+export type Env = Readonly<Record<string, string | undefined>>;
+
+/**
+ * Read the process environment without assuming there is one. This module is
+ * shared with the browser build, where `process` does not exist.
+ */
+function ambientEnv(): Env {
+  const p = (globalThis as { process?: { env?: Env } }).process;
+  return p?.env ?? {};
+}
+
 /** Detect what the current terminal can do. Honors FORCE_COLOR / NO_COLOR. */
-export function detectDepth(env: NodeJS.ProcessEnv = process.env): ColorDepth {
+export function detectDepth(env: Env = ambientEnv()): ColorDepth {
   if (env['NO_COLOR'] !== undefined && env['NO_COLOR'] !== '') return 'mono';
 
   const forced = env['FORCE_COLOR'];

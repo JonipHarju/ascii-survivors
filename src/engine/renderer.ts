@@ -13,30 +13,19 @@
  */
 
 import { DEFAULT, makeBgEncoder, makeFgEncoder, type Color, type ColorDepth } from './color.ts';
+import type { Capabilities, Surface } from './surface.ts';
+import { isWide } from './text.ts';
+
+export { isWide };
 
 const ESC = '\x1b[';
 
-/** True for glyphs that occupy two terminal columns (CJK, emoji, ...). */
-export function isWide(cp: number): boolean {
-  return (
-    cp >= 0x1100 &&
-    (cp <= 0x115f || // Hangul Jamo
-      cp === 0x2329 ||
-      cp === 0x232a ||
-      (cp >= 0x2e80 && cp <= 0xa4cf && cp !== 0x303f) || // CJK
-      (cp >= 0xac00 && cp <= 0xd7a3) || // Hangul syllables
-      (cp >= 0xf900 && cp <= 0xfaff) ||
-      (cp >= 0xfe30 && cp <= 0xfe6f) ||
-      (cp >= 0xff00 && cp <= 0xff60) || // Fullwidth forms
-      (cp >= 0xffe0 && cp <= 0xffe6) ||
-      (cp >= 0x1f300 && cp <= 0x1f9ff) || // Emoji
-      (cp >= 0x20000 && cp <= 0x3fffd))
-  );
-}
-
-export class Renderer {
+export class Renderer implements Surface {
   readonly width: number;
   readonly height: number;
+
+  /** A terminal has neither: the dark is faked per-cell, glyphs snap to cells. */
+  readonly caps: Capabilities = { smoothLight: false, subCell: false };
 
   private readonly size: number;
   private readonly out: NodeJS.WritableStream;
@@ -102,6 +91,14 @@ export class Renderer {
     this.backFg[i] = fg;
     if (bg !== DEFAULT) this.backBg[i] = bg;
   }
+
+  /** No sub-cell precision in a terminal, so we round to the nearest cell. */
+  setF(x: number, y: number, ch: string, fg: Color = DEFAULT): void {
+    this.set(Math.round(x), Math.round(y), ch, fg);
+  }
+
+  /** Terminals can't do a light falloff; GameView dims each cell instead. */
+  setLight(): void {}
 
   /** Recolor a cell without touching its glyph. Used for flashes and tinting. */
   tint(x: number, y: number, fg: Color): void {

@@ -12,8 +12,6 @@
  *   - decals:  5 columns, id starting with `decal`
  */
 
-import { readFile } from 'node:fs/promises';
-
 import { paletteColor } from '../assets/sprite.ts';
 import type { Color } from '../engine/color.ts';
 
@@ -155,14 +153,6 @@ function fallbackTable(): GlyphTable {
     ['ghoul', mk('ghoul', 'g', 'Ghoul', 10, 9, 4, 1, 0, 1)],
   ]);
   return { entities, decals: [], warnings: ['using built-in fallback entity table'] };
-}
-
-export async function loadGlyphTable(path: string): Promise<GlyphTable> {
-  try {
-    return parseGlyphTable(await readFile(path, 'utf8'));
-  } catch {
-    return fallbackTable();
-  }
 }
 
 /** Look up a definition, or die loudly — a missing id is a code bug, not art drift. */

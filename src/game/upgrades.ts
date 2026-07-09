@@ -1,92 +1,130 @@
 /**
  * Level-up cards. Freeze the sim, dim the field, draw three, pick one.
  *
- * A card is just a closure over the world plus enough text to render it. The
- * generator never offers a maxed weapon, a maxed passive, or a seventh slot.
+ * Every card is generated from Jane's tables — `weapons.tsv` supplies the name,
+ * glyph, colour and per-level note; `passives.tsv` supplies the stat curve. The
+ * generator never offers a maxed weapon, a maxed passive, an evolved weapon, or
+ * a seventh slot.
  */
 
+import type { Color } from '../engine/color.ts';
 import type { Rng } from '../engine/rng.ts';
+import type { GameData } from '../data/gamedata.ts';
+import { passiveMaxLevel } from '../data/passives.ts';
+import { maxLevel, weaponAt } from '../data/weapons.ts';
 import type { World } from './world.ts';
 
-export const MAX_LEVEL = 8;
 export const MAX_WEAPONS = 6;
 export const MAX_PASSIVES = 6;
 
 export type Card = {
   title: string;
   glyph: string;
-  kind: 'weapon' | 'passive';
-  /** One line of effect text, already resolved for the *next* level. */
+  color: Color;
+  kind: 'weapon' | 'passive' | 'bonus';
+  /** One line of effect text, already resolved for the level being granted. */
   effect: string;
+  /** `LV 3 → 4`, or `NEW`. */
+  levelText: string;
   isNew: boolean;
   apply(w: World): void;
 };
 
-type PassiveDef = {
-  id: string;
-  name: string;
-  glyph: string;
-  effect: string;
-};
+/** Describe what one more level of a passive does, from its own curve. */
+function passiveEffect(data: GameData, id: string, nextLevel: number): string {
+  const def = data.passives.byId.get(id);
+  if (def === undefined) return '';
 
-const PASSIVES: readonly PassiveDef[] = [
-  { id: 'might', name: 'Might', glyph: '↑', effect: '+10% damage' },
-  { id: 'haste', name: 'Haste', glyph: '»', effect: '-6% weapon cooldown' },
-  { id: 'area', name: 'Area', glyph: '○', effect: '+10% weapon size' },
-  { id: 'swiftness', name: 'Swiftness', glyph: '≫', effect: '+7% movement speed' },
-  { id: 'magnet', name: 'Magnet', glyph: '∪', effect: '+35% pickup radius' },
-  { id: 'growth', name: 'Growth', glyph: '↟', effect: '+8% experience gained' },
-  { id: 'armour', name: 'Armour', glyph: '▣', effect: '-1 damage taken per hit' },
-  { id: 'oil', name: 'Lantern Oil', glyph: '☼', effect: '+3 light radius' },
-];
+  const value = def.values[nextLevel - 1];
+  if (value === null || value === undefined) return def.note;
 
-/** Per-level flavour for The Chain, straight from design.md §7. */
-const CHAIN_LEVELS: Readonly<Record<number, string>> = {
-  2: '+4 damage',
-  3: '+3 width',
-  4: 'strikes behind you too',
-  5: '+6 damage',
-  6: '+3 width',
-  7: '-15% cooldown',
-  8: '+8 damage, band is 5 rows tall',
-};
+  if (def.kind === 'add') {
+    return `${def.stat.replace(/_/g, ' ')} +${round(value)}`;
+  }
+
+  // Multiplicative: show it as a percentage off the base, which is what a
+  // player actually reasons about. Cooldown goes down, everything else up.
+  const pct = Math.round((value - 1) * 100);
+  const label = def.stat.replace(/_/g, ' ');
+  return pct >= 0 ? `${label} +${pct}%` : `${label} ${pct}%`;
+}
+
+function round(n: number): number {
+  return Math.round(n * 100) / 100;
+}
 
 export function generateCards(w: World, rng: Rng, count = 3): Card[] {
+  const data = w.data;
   const pool: Card[] = [];
 
-  for (const weapon of w.weapons) {
-    if (weapon.level >= MAX_LEVEL) continue;
-    const next = weapon.level + 1;
+  // --- level up a weapon you already carry ---
+  for (const owned of w.weapons) {
+    if (owned.evolved !== null) continue; // evolved weapons are finished
+    const cap = maxLevel(data.weapons, owned.id);
+    if (cap === 0 || owned.level >= cap) continue;
+
+    const next = weaponAt(data.weapons, owned.id, owned.level + 1);
+    if (next === null) continue;
+
     pool.push({
-      title: weapon.name,
-      glyph: weapon.glyph,
+      title: next.name,
+      glyph: next.glyph,
+      color: next.color,
       kind: 'weapon',
-      effect: CHAIN_LEVELS[next] ?? `level ${next}`,
+      effect: next.note !== '' ? next.note : `${round(next.dmg)} damage · ${round(next.cd)}s cooldown`,
+      levelText: `LV ${owned.level} → ${owned.level + 1}`,
       isNew: false,
       apply: (world) => {
-        const wp = world.weapons.find((x) => x.id === weapon.id);
-        if (wp === undefined) return;
-        wp.level++;
-        if (wp.id === 'chain' && wp.level === 7) wp.cooldown *= 0.85;
+        const wp = world.weapons.find((x) => x.id === owned.id);
+        if (wp !== undefined) wp.level++;
       },
     });
   }
 
-  for (const def of PASSIVES) {
-    const owned = w.passives.find((p) => p.id === def.id);
-    if (owned !== undefined && owned.level >= MAX_LEVEL) continue;
+  // --- take a weapon you don't have ---
+  if (w.weapons.length < MAX_WEAPONS) {
+    for (const id of data.weapons.order) {
+      if (w.weapons.some((x) => x.id === id)) continue;
+      const first = weaponAt(data.weapons, id, 1);
+      if (first === null) continue;
+
+      pool.push({
+        title: first.name,
+        glyph: first.glyph,
+        color: first.color,
+        kind: 'weapon',
+        effect: first.note !== '' ? first.note : `${round(first.dmg)} damage · ${round(first.cd)}s cooldown`,
+        levelText: 'NEW WEAPON',
+        isNew: true,
+        apply: (world) => {
+          world.weapons.push({ id, level: 1, timer: 0, angle: 0, evolved: null });
+        },
+      });
+    }
+  }
+
+  // --- passives ---
+  for (const id of data.passives.order) {
+    const def = data.passives.byId.get(id)!;
+    const owned = w.passives.find((p) => p.id === id);
+    const cap = passiveMaxLevel(def);
+
+    if (owned !== undefined && owned.level >= cap) continue;
     if (owned === undefined && w.passives.length >= MAX_PASSIVES) continue;
 
+    const next = (owned?.level ?? 0) + 1;
     pool.push({
       title: def.name,
-      glyph: def.glyph,
+      glyph: PASSIVE_GLYPHS[id] ?? '◇',
+      color: 0x4ff0f0,
       kind: 'passive',
-      effect: def.effect,
+      effect: passiveEffect(data, id, next),
+      levelText: owned === undefined ? 'NEW' : `LV ${owned.level} → ${next}`,
       isNew: owned === undefined,
       apply: (world) => {
-        const existing = world.passives.find((p) => p.id === def.id);
+        const existing = world.passives.find((p) => p.id === id);
         if (existing !== undefined) existing.level++;
-        else world.passives.push({ id: def.id, name: def.name, level: 1 });
+        else world.passives.push({ id, level: 1 });
       },
     });
   }
@@ -97,8 +135,10 @@ export function generateCards(w: World, rng: Rng, count = 3): Card[] {
       {
         title: 'Nightfall Draught',
         glyph: '♥',
-        kind: 'passive',
+        color: 0xff3b3b,
+        kind: 'bonus',
         effect: 'restore 30 health',
+        levelText: '',
         isNew: false,
         apply: (world) => {
           world.hp = Math.min(world.maxHp, world.hp + 30);
@@ -109,3 +149,19 @@ export function generateCards(w: World, rng: Rng, count = 3): Card[] {
 
   return rng.shuffle([...pool]).slice(0, Math.min(count, pool.length));
 }
+
+/** Cosmetic only — the passive table doesn't carry glyphs, so the UI picks them. */
+const PASSIVE_GLYPHS: Readonly<Record<string, string>> = {
+  might: '↑',
+  haste: '»',
+  area: '○',
+  duration: '∞',
+  swift: '≫',
+  magnet: '∪',
+  growth: '↟',
+  luck: '☘',
+  armour: '▣',
+  regen: '+',
+  oil: '☼',
+  revival: '♁',
+};

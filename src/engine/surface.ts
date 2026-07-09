@@ -1,0 +1,67 @@
+/**
+ * The one interface every renderer implements.
+ *
+ * The game draws into a grid of character cells and knows nothing else. That
+ * lets the terminal backend (ANSI diffing) and the canvas backend (WebGL-free
+ * 2D, glyph atlas, real lighting) be swapped without the game noticing.
+ *
+ * Owner feedback 09.07: move off the terminal to canvas for smoother, richer
+ * output. This interface is why that's a new file rather than a rewrite.
+ */
+
+import type { Color } from './color.ts';
+
+/** What a given backend can do beyond plain cells. The game adapts to these. */
+export type Capabilities = {
+  /**
+   * True when the backend can render a smooth light falloff itself. The
+   * terminal can't — it fakes the dark by dimming each cell's colour — so on a
+   * terminal the game does that work and on canvas it hands over a light source.
+   */
+  readonly smoothLight: boolean;
+  /** True when glyphs can be drawn at fractional cell offsets. */
+  readonly subCell: boolean;
+};
+
+export interface Surface {
+  readonly width: number;
+  readonly height: number;
+  readonly caps: Capabilities;
+
+  /** Reset the back buffer. Call at the top of each frame. */
+  clear(bg?: Color): void;
+
+  /** Write one cell. Out-of-bounds writes are dropped, not clipped by callers. */
+  set(x: number, y: number, ch: string, fg?: Color, bg?: Color): void;
+
+  /**
+   * Write one cell at a fractional position. Backends with `subCell` nudge the
+   * glyph by the fraction; the terminal just rounds. Entities use this so they
+   * glide on canvas and snap in the terminal, from one call site.
+   */
+  setF(x: number, y: number, ch: string, fg?: Color): void;
+
+  /** Recolour a cell without touching its glyph. Used for flashes and dimming. */
+  tint(x: number, y: number, fg: Color): void;
+
+  getChar(x: number, y: number): string;
+
+  /** Draw a string left-to-right. Returns the columns advanced. */
+  text(x: number, y: number, s: string, fg?: Color, bg?: Color): number;
+
+  fillRect(x: number, y: number, w: number, h: number, ch: string, fg?: Color, bg?: Color): void;
+
+  inBounds(x: number, y: number): boolean;
+
+  /** Force a full repaint next flush (after a resize or a screen switch). */
+  invalidate(): void;
+
+  /**
+   * Place the player's lantern, in cell coordinates. Backends with `smoothLight`
+   * render a real falloff; others ignore it. Cleared implicitly by `clear()`.
+   */
+  setLight(cx: number, cy: number, radius: number): void;
+
+  /** Push the frame to the display. Returns bytes written, where meaningful. */
+  flush(): number;
+}

@@ -7,7 +7,7 @@
  */
 
 import { DEFAULT, type Color } from './color.ts';
-import type { Renderer } from './renderer.ts';
+import type { Surface } from './surface.ts';
 import type { Frame } from '../assets/sprite.ts';
 
 export type Rect = { x: number; y: number; w: number; h: number };
@@ -22,7 +22,7 @@ export function rectContains(r: Rect, x: number, y: number): boolean {
  * and for silhouetting things the player shouldn't read detail on.
  */
 export function drawSprite(
-  r: Renderer,
+  r: Surface,
   frame: Frame,
   sx: number,
   sy: number,
@@ -58,7 +58,7 @@ export function drawSprite(
 const EIGHTHS = ['', '▏', '▎', '▍', '▌', '▋', '▊', '▉'] as const;
 
 export function drawBar(
-  r: Renderer,
+  r: Surface,
   x: number,
   y: number,
   w: number,
@@ -79,7 +79,7 @@ export function drawBar(
   }
 }
 
-export function drawBox(r: Renderer, rect: Rect, fg: Color, bg: Color = DEFAULT, title?: string): void {
+export function drawBox(r: Surface, rect: Rect, fg: Color, bg: Color = DEFAULT, title?: string): void {
   const { x, y, w, h } = rect;
   if (w < 2 || h < 2) return;
 
@@ -107,6 +107,6 @@ export function textWidth(s: string): number {
   return [...s].length;
 }
 
-export function drawCentered(r: Renderer, cx: number, y: number, s: string, fg: Color, bg: Color = DEFAULT): void {
+export function drawCentered(r: Surface, cx: number, y: number, s: string, fg: Color, bg: Color = DEFAULT): void {
   r.text(cx - Math.floor(textWidth(s) / 2), y, s, fg, bg);
 }

@@ -31,7 +31,7 @@
  */
 
 import { DEFAULT, parseColor, type Color } from '../engine/color.ts';
-import { isWide } from '../engine/renderer.ts';
+import { isWide } from '../engine/text.ts';
 
 /**
  * Jane's colour palette (assets/README.md). Lowercase normal, uppercase bright.

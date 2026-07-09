@@ -10,6 +10,8 @@
  *   --watch         hot-reload assets/ while the game runs
  *   --seed <n>      deterministic run
  *   --start <mm:ss> begin the run at this clock time, to inspect the late game
+ *   --no-autoface   the Chain never aims itself; you turn only by walking
+ *   --god           invulnerable, for watching the late game
  *   --preview       dump every sprite in assets/ and exit (no game loop)
  */
 
@@ -23,7 +25,7 @@ import { GameLoop } from './engine/loop.ts';
 import { Input } from './engine/input.ts';
 import { Renderer } from './engine/renderer.ts';
 import { Terminal } from './engine/terminal.ts';
-import { loadGlyphTable } from './data/entities.ts';
+import { loadGameData } from './data/gamedata.node.ts';
 import { App, MIN_COLS, MIN_ROWS } from './game/app.ts';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -36,6 +38,8 @@ type Args = {
   preview: boolean;
   seed: number | undefined;
   startTime: number | undefined;
+  autoFace: boolean;
+  god: boolean;
 };
 
 /** `mm:ss` or a bare seconds count. */
@@ -54,10 +58,14 @@ function parseArgs(argv: readonly string[]): Args {
     preview: false,
     seed: undefined,
     startTime: undefined,
+    autoFace: true,
+    god: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--no-dark') args.dark = false;
+    else if (a === '--no-autoface') args.autoFace = false;
+    else if (a === '--god') args.god = true;
     else if (a === '--debug') args.debug = true;
     else if (a === '--watch') args.watch = true;
     else if (a === '--preview') args.preview = true;
@@ -123,7 +131,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  const [table] = await Promise.all([loadGlyphTable(join(ASSETS, 'glyphs.tsv')), loader.load()]);
+  const [data] = await Promise.all([loadGameData(ASSETS), loader.load()]);
 
   const term = new Terminal();
   if (!term.isTTY) {
@@ -146,11 +154,13 @@ async function main(): Promise<void> {
   input.start();
 
   let renderer = new Renderer(term.cols, term.rows, depth);
-  const app = new App(table, loader, input, {
+  const app = new App(data, loader, input, {
     dark: args.dark,
     debug: args.debug,
     seed: args.seed,
     startTime: args.startTime,
+    autoFace: args.autoFace,
+    god: args.god,
   });
 
   term.onResize((cols, rows) => {
@@ -177,7 +187,7 @@ async function main(): Promise<void> {
   input.teardown();
   term.restore();
 
-  const warnings = [...loader.warnings, ...table.warnings];
+  const warnings = [...loader.warnings, ...data.warnings];
   if (warnings.length > 0) {
     console.log('\nasset warnings:');
     for (const w of warnings) console.log(`  ${w}`);

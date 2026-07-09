@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>THE LONG NIGHT</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #07070a;
+        overflow: hidden;
+      }
+
+      body {
+        display: grid;
+        place-items: center;
+        font: 14px/1.5 "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+        color: #6a6a6a;
+      }
+
+      /* The canvas sizes itself to a whole number of cells, so let it be exact. */
+      #screen {
+        display: block;
+        image-rendering: auto;
+        /* A faint vignette sells the graveyard better than any glyph can. */
+        box-shadow:
+          0 0 120px rgba(0, 0, 0, 0.9) inset,
+          0 0 60px rgba(0, 0, 0, 0.6);
+      }
+
+      #status {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+      }
+
+      body.quit #screen {
+        opacity: 0.25;
+        transition: opacity 0.4s;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="screen"></canvas>
+    <div id="status">loading the night…</div>
+    <script type="module" src="./dist/web/boot.js"></script>
+  </body>
+</html>

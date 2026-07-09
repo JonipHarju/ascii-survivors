@@ -12,12 +12,9 @@
  * classic spiral of death.
  */
 
-export const TICK_HZ = 60;
-export const TICK_MS = 1000 / TICK_HZ;
-export const TICK_DT = 1 / TICK_HZ;
+import { MAX_CATCHUP_STEPS, TICK_DT, TICK_MS } from './tick.ts';
 
-/** Never run more than this many sim steps in one wake-up. */
-const MAX_CATCHUP_STEPS = 5;
+export { TICK_DT, TICK_HZ, TICK_MS } from './tick.ts';
 
 export type LoopCallbacks = {
   /** Advance the simulation by exactly `dt` seconds. */

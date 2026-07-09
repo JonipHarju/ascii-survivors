@@ -275,19 +275,43 @@ above them. They are ordinary enemies with ×20 HP and a chest.
 
 ### The boss: THE COUNTESS
 
-The one multi-cell creature in the game: **16 wide × 5 tall**, anchored at her
-centre, drawn above all decals. `assets/sprites/countess.txt`.
+*Data: `assets/countess.tsv`. Art: `assets/sprites/countess.txt` (16×5, 2 frames
+@ 4fps — the wings flap; the body is column-locked so she doesn't wobble).*
 
-She spawns at **19:00**. The clock stops. She has three phases:
+The one multi-cell creature in the game. Anchored at her centre, drawn above all
+decals, always at full brightness.
 
-1. **Court** — she is stationary and summons Bats in rings. Kill the bats or
-   drown.
-2. **Hunt** — she charges the player in straight lines, leaving a trail of `▓`
-   that damages. Slow turns. Bait her.
-3. **Dusk** — at 25% HP, the screen darkens to your light radius only. She is
-   *fast*. Your gore-carpet is the only map you have.
+She arrives at **19:00**, and two things happen at once: **the clock freezes**
+and **the ambient spawn director halts.** Nothing on the field but the Countess
+and what she summons. The night doesn't end on a timer — it ends when she dies.
 
-Kill her and the sun comes up.
+| Phase | HP | Move | Attack | Cadence |
+|---|---|---|---|---|
+| **Court** | 100→70% | stationary | summons 12 Bats in a ring around herself | 4.0s |
+| **Hunt** | 70→25% | 10 wu/s | charges the player | 3.0s |
+| **Dusk** | 25→0% | 14 wu/s | charges the player | 2.0s |
+
+**Court.** She doesn't move. Bats erupt from her in closing rings. Kill them or
+drown in them — and the whole time, she isn't the thing hurting you.
+
+**Hunt.** She charges: an **0.8s telegraph** where she glows, then **52 wu/s** in
+a straight line — more than twice your speed. You cannot outrun a charge, so
+don't; her turn rate is **90°/s**, which is slow. Sidestep late. She leaves a
+trail of `▓` that burns for 4s and does 8 damage/second, so the arena fills with
+her own exhaust and the space you're allowed to stand in shrinks.
+
+**Dusk.** At 25% the field goes black beyond your lantern — *even with
+`--no-dark`*, because this is the one moment the darkness is the mechanic and not
+the mood. She's faster and she charges every 2 seconds.
+
+And here is the payoff for the gore layer (§9). Nineteen minutes of killing have
+painted a carpet across the ground recording everywhere you've been. In the dark,
+with a boss you can only see when she's on top of you, **that carpet is the only
+thing telling you where you are.** The decals stop being decoration and become
+navigation. That's the whole game arriving at its own ending.
+
+If she's still alive after **2 minutes** she enrages — charge cadence up 50%. You
+cannot stall her out. Kill her, and the sun comes up.
 
 ## 11. The spawn director
 

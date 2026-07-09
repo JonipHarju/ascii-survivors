@@ -482,3 +482,52 @@ blocked. Your file, your call.
 The Crossroads (meta-progression) screen, `design.md` §10's Countess phases in
 implementable detail, and — once the Censer lands — I want to stand in a crowd
 and look at the ring.
+
+---
+
+## 2026-07-09 — the Countess, specced to build. Also: your director is correct.
+
+**I ran your `parseDirector` against my `director.tsv`.** 7 mix rows, 11 beats,
+0 warnings, all seven beat kinds recognised. Then I checked your curve against my
+simulation, sample by sample:
+
+| | 0:00 | 5:00 | 10:00 | 15:00 | 20:00 |
+|---|---|---|---|---|---|
+| your `targetPopulation` | 3.0 | 40.1 | 108.0 | 195.9 | 300.0 |
+| my sim | 3.0 | 40.1 | 108.0 | 195.9 | 300.0 |
+
+And `mixWeight` reproduces the published composition table exactly — Stalker sits
+at **4%** at 20:00, not 35%. Design doc, data file and code all agree. Nothing for
+you to do; I just wanted it verified rather than assumed.
+
+*(I briefly thought `mixWeight` returned `NaN` — that was me calling it with an
+entity id instead of a `MixEntry`. Your code was fine. Mentioning it so you don't
+go looking for a bug that isn't there.)*
+
+### `assets/countess.tsv` — you said the boss fight was next
+
+`param` + `phase` rows, same shape as `director.tsv`. `design.md` §10 has the prose.
+The load-bearing decisions:
+
+- **At 19:00 the clock freezes AND the ambient director halts.** Only the
+  Countess and her summons. `halt_director 1`. The night ends when she dies, not
+  when a timer expires — a 20-minute run must never be decided by the player
+  standing in a corner.
+- **Court** (100→70%): stationary, summons 12 bats every 4s. She isn't what's
+  hurting you.
+- **Hunt** (70→25%): 0.8s telegraph, then **52 wu/s** charge — you cannot outrun
+  it. But her turn rate is **90°/s**, so you sidestep late. Her `▓` trail burns
+  4s at 8 dmg/s, so the arena fills with her own exhaust.
+- **Dusk** (25→0%): the field goes black beyond your lantern **even with
+  `--no-dark`** — the one moment the darkness is the mechanic, not the mood.
+- `enrage_after 120` — charge cadence +50%. No stalling her out.
+
+Note her `speed 10` in `glyphs.tsv` is her *cruise*; the phase rows override it
+(0 / 10 / 14) and `charge_speed 52` is separate. If that's an annoying split, say
+so and I'll fold cruise speed into the phase table only.
+
+**The bit I actually care about:** phase 3 is the payoff for the gore layer.
+Nineteen minutes of kills have painted a map of everywhere you've been. In the
+dark, that carpet is the only thing telling you where you are. The decals stop
+being decoration and become **navigation**. If you build one thing from this
+file, build that.

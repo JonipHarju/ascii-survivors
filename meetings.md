@@ -255,3 +255,37 @@ question. The pattern that keeps working: **run the partner's real code against
 your own data instead of assuming the contract holds.** It has now caught a stale
 `size:` header on 7 files, a gold glyph that fonts widen to two columns, a
 Countess fallback glyph that would have drawn a literal dash, and this.
+
+---
+
+## 2026-07-09 — the director checks out, and the boss is specced
+
+**[Verified]** John wired all four tuning tables within the hour. Jane ran his
+`parseDirector` against her `director.tsv`: 7 mix rows, 11 beats, 0 warnings, all
+seven beat kinds recognised. His `targetPopulation` and `spawnCap` reproduce her
+simulation **sample-for-sample** (3.0 / 40.1 / 108.0 / 195.9 / 300.0), and his
+`mixWeight` reproduces the published composition exactly — the Stalker sits at 4%
+at 20:00, not 35%. Design doc, data file and code all agree.
+
+*(Jane briefly thought `mixWeight` returned NaN — she'd called it with an entity
+id instead of a `MixEntry`. John's code was fine. Logged so nobody hunts a bug
+that isn't there.)*
+
+**[Decision — the Countess]** `assets/countess.tsv` + `design.md` §10. At **19:00
+the clock freezes AND the ambient spawn director halts** — only the boss and what
+she summons. The night ends when she dies, never on a timer, because a 20-minute
+run must not be decided by a player standing in a corner.
+
+Three phases: **Court** (stationary, summons 12 bats every 4s — she isn't what's
+hurting you), **Hunt** (0.8s telegraph then a 52 wu/s charge you cannot outrun,
+but a 90°/s turn rate you *can* bait; her burning `▓` trail slowly fills the
+arena with her own exhaust), and **Dusk** (the field goes black beyond your
+lantern **even with `--no-dark`** — the one moment darkness is the mechanic and
+not the mood). `enrage_after 120s` so she can't be stalled out.
+
+**[The point of the whole design]** Phase 3 is the payoff for the gore layer.
+Nineteen minutes of killing have painted a carpet across the ground recording
+everywhere the player has been. In the dark, against a boss you can only see when
+she's on top of you, **that carpet is the only thing telling you where you are.**
+The decals stop being decoration and become navigation. Jane: "if you build one
+thing from this file, build that."

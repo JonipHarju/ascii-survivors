@@ -1,0 +1,33 @@
+# THE LONG NIGHT — the Countess (boss, 19:00)
+# Owner: Jane. Machine-readable. Tab-separated, '#' comments ignored.
+# Her hp/speed/power/xp live in glyphs.tsv; her art in sprites/countess.txt.
+#
+# THE RULE: at 19:00 the clock FREEZES and the ambient spawn director HALTS.
+# Nothing on the field but the Countess and what she summons. The night does not
+# end on a timer — it ends when she dies. A 20-minute run must not be decided by
+# the player standing in a corner waiting for a clock.
+#
+# ---- param rows: param <name> <value> --------------------------------------
+param	arrive_at	1140	seconds (19:00)
+param	freeze_clock	1	stop the run timer while she lives
+param	halt_director	1	no ambient spawns during the fight
+param	telegraph	0.8	seconds she glows before a charge; the player's whole tell
+param	charge_speed	52	wu/s during a charge — much faster than the player's 20
+param	turn_rate	90	degrees/sec while charging. slow. she is baitable.
+param	trail_glyph	▓	burning trail left by a charge
+param	trail_damage	8	damage per second standing in it
+param	trail_life	4.0	seconds before the trail burns out
+param	bat_hp	5	summoned bats use the normal Bat stats
+param	enrage_after	120	seconds; if she's still alive, +50% charge cadence. no stalling.
+#
+# ---- phase rows: phase <id> <hp_from%> <hp_to%> <move> <attack> <cadence> <count> ----
+# hp_from/hp_to are percentages of max HP, descending.
+# cadence = seconds between attacks. count = how many per attack.
+#
+phase	court	100	70	0	summon_ring	4.0	12	stationary. summons bats in a closing ring around HERSELF. kill them or drown.
+phase	hunt	70	25	10	charge	3.0	1	charges the player in straight lines, leaving a burning trail. slow turns — bait her.
+phase	dusk	25	0	14	charge	2.0	1	the field goes black beyond your lantern (even with --no-dark). she is fast. your gore-carpet is the only map you have.
+#
+# Phase 3 is the payoff for §9: 19 minutes of kills have painted a map of where
+# you've been. In the dark, that carpet is the only thing telling you where you
+# are. The decal layer stops being decoration and becomes navigation.

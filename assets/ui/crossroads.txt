@@ -1,0 +1,41 @@
+# name: The Crossroads
+# size: 72x18
+# anchor: topleft
+--- art ---
+  ____  ____    ___   ____   ____   ____    ___      _     ____   ____
+ / ___||  _ \  / _ \ / ___| / ___| |  _ \  / _ \    / \   |  _ \ / ___|
+| |    | |_) || | | |\___ \ \___ \ | |_) || | | |  / _ \  | | | |\___ \
+| |___ |  _ < | |_| | ___) | ___) ||  _ < | |_| | / ___ \ | |_| | ___) |
+ \____||_| \_\ \___/ |____/ |____/ |_| \_\ \___/ /_/   \_\|____/ |____/
+
+                 ___________________
+                |                   |
+     ===========|   S P E N D   IT  |===========
+                |___________________|
+                         |||
+        .-.              |||              .-.
+       (   )    _________|||_________    (   )
+        '-'    /                     \    '-'
+   ~~~~~~~~~~~/   $     $       $     \~~~~~~~~~~~
+             '-----------------------'
+
+        what the night gave you, the dawn can keep
+--- mask ---
+  YYYY  YYYY    YYY   YYYY   YYYY   YYYY    YYY      Y     YYYY   YYYY
+ Y YYYYY  Y Y  Y Y Y Y YYYY Y YYYY Y  Y Y  Y Y Y    Y Y   Y  Y Y Y YYYY
+Y Y    Y YYY YY Y Y YYYYY Y YYYY Y Y YYY YY Y Y Y  Y Y Y  Y Y Y YYYYY Y
+Y YYYY Y  Y Y Y YYY Y YYYY Y YYYY YY  Y Y Y YYY Y Y YYY Y Y YYY Y YYYY Y
+ YYYYYYYYY YYY YYYYY YYYYYY YYYYYY YYY YYY YYYYY YYY   YYYYYYYYY YYYYYY
+
+                 wwwwwwwwwwwwwwwwwww
+                w                   w
+     wwwwwwwwwwww   w w w w w   ww  wwwwwwwwwwww
+                wwwwwwwwwwwwwwwwwwwww
+                         www
+        www              www              www
+       w   w    wwwwwwwwwwwwwwwwwwwww    w   w
+        www    w                     w    www
+   eeeeeeeeeeew   Y     Y       Y     weeeeeeeeeee
+             wwwwwwwwwwwwwwwwwwwwwwwww
+
+        eeee eee eeeee eeee eeee eee eeee eee eeee

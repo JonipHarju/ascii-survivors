@@ -1,0 +1,17 @@
+# name: Luck
+# size: 12x5
+# anchor: topleft
+# fps: 0
+# colour: Y
+--- art ---
+  ,------.  
+ | o    o | 
+ |    o   | 
+ | o    o | 
+  '------'  
+--- mask ---
+  YYYYYYYY
+ Y W    W Y
+ Y    W   Y
+ Y W    W Y
+  YYYYYYYY

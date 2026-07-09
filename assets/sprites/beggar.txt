@@ -1,0 +1,21 @@
+# name: The Beggar
+# size: 3x3
+# anchor: center
+# fps: 5
+# colour: w
+--- art ---
+o% 
+ |\
+/ \
+--- mask ---
+yW
+ ww
+w w
+--- art ---
+o% 
+ |/
+ |\
+--- mask ---
+yW
+ ww
+ ww

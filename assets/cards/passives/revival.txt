@@ -1,0 +1,17 @@
+# name: Revival
+# size: 12x5
+# anchor: topleft
+# fps: 0
+# colour: R
+--- art ---
+  \  ^  /   
+   \ ^ /    
+  --( )--   
+   / ^ \    
+  /  ^  \   
+--- mask ---
+  R  Y  R
+   R Y R
+  RRR RRR
+   R Y R
+  R  Y  R

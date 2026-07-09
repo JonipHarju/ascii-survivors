@@ -1,0 +1,17 @@
+# name: Duration
+# size: 12x5
+# anchor: topleft
+# fps: 0
+# colour: y
+--- art ---
+ '-------'  
+  \ ::: /   
+    \:/     
+   / ::: \  
+  '-------' 
+--- mask ---
+ yyyyyyyyy
+  y YYY y
+    yYy
+   y YYY y
+  yyyyyyyyy

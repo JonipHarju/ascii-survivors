@@ -492,13 +492,42 @@ single key to run again. `assets/ui/death.txt`
 
 ## 13. Meta progression — The Crossroads
 
-Gold drops from chests, elites, and 1-in-40 ordinary kills. Between runs, spend
-it: `+Might%` · `+Max HP` · `+Armour` · `+Luck` · `+1 Reroll` · `+1 Banish` ·
-`+1 Revival` · unlock The Ashling · unlock The Beggar.
+*Data: `assets/crossroads.tsv`. Art: `assets/ui/crossroads.txt`.*
 
-**Endless mode** unlocks when you first see dawn: *the sun never rises*, the
-director budget never stops climbing, and at 30:00 the Reapers come and they
-cannot be killed. Nobody survives Endless. That's the point.
+Gold drops from chests, elites, and 1-in-40 ordinary kills. It persists between
+runs. Between runs you stand at a signpost and spend it, and it never comes back.
+
+`cost(level) = cost_base × cost_growth^(level−1)`, rounded to the nearest 10.
+
+| | Levels | Effect | From |
+|---|---|---|---|
+| **Might** | 5 | +5% damage | 100g |
+| **Vigour** | 5 | +10 max HP | 80g |
+| **Armour** | 3 | +1 flat reduction | 200g |
+| **Luck** | 4 | +5% luck | 150g |
+| **Greed** | 5 | +10% gold | 120g |
+| **Reroll** | 3 | +1 level-up reroll | 250g |
+| **Banish** | 3 | +1 banish | 250g |
+| **Revival** | 2 | come back once at 50% HP | 1000g |
+| **The Ashling** | — | unlock | 400g |
+| **The Beggar** | — | unlock | 900g |
+
+### The one rule that keeps this honest
+
+> **Meta-progression may make a bad run survivable. It may never make a good run
+> trivial.**
+
+Nothing at the Crossroads touches weapon damage *scaling* or the spawn curve. It
+moves the floor, never the ceiling. A player who has bought every upgrade should
+still lose to the Countess if they build badly — otherwise the game stops being
+about the twenty minutes and starts being about the grind, and every run before
+the last one is a chore you do to skip the game.
+
+This is why Might caps at +25% and Revival costs 1000g for one extra life.
+
+**Endless mode** unlocks when you first see dawn — with achievement, not gold.
+The sun never rises, the head-count target never stops climbing, and at 30:00 the
+Reapers come and they cannot be killed. Nobody survives Endless. That's the point.
 
 ---
 

@@ -1,0 +1,17 @@
+# name: Regen
+# size: 12x5
+# anchor: topleft
+# fps: 0
+# colour: r
+--- art ---
+  ,-. ,-.   
+ (  ' '  )  
+  \  +  /   
+   \ + /    
+    '-'     
+--- mask ---
+  rrr rrr
+ r  r r  r
+  r  G  r
+   r G r
+    rrr

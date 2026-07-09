@@ -1,0 +1,17 @@
+# name: Swiftness
+# size: 12x5
+# anchor: topleft
+# fps: 0
+# colour: B
+--- art ---
+___         
+___    @    
+___   /|\   
+___   / \   
+___         
+--- mask ---
+BBB
+BBB    W
+BBB   BBB
+BBB   B B
+BBB

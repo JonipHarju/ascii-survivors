@@ -1,0 +1,48 @@
+# THE LONG NIGHT — The Crossroads (meta-progression, design.md §13)
+# Owner: Jane. Machine-readable. John: parse this; don't invent gold costs.
+# Tab-separated. '#' comments and blank lines ignored.
+#
+# Gold persists between runs. It drops from chests, elites, and 1-in-40 ordinary
+# kills. You spend it here, between runs, and it never comes back.
+#
+# ---- the gold economy: param <name> <value> --------------------------------
+# Without these the cost curve below is a number with no denominator. Expected
+# yield for a run that reaches the Countess and wins:
+#   ~3000 kills x 2.5% x 3g = 225   +  4 elites x 100 = 400
+#   4 chests x 60 = 240             +  Countess 500
+#   ~= 1365g, or ~2000g on a Beggar (+50% gold) with Greed maxed.
+# A losing run around 15:00 yields ~500g. Full unlock is 15,230g, so buying
+# everything is roughly 15-20 runs. That is the intended length of the meta.
+#
+param	gold_kill_chance	0.025	fraction of ordinary kills that drop gold
+param	gold_per_kill	3
+param	gold_per_elite	100
+param	gold_per_chest	60
+param	gold_countess	500	only if you actually kill her
+#
+# cost(level) = cost_base * cost_growth^(level-1), rounded to the nearest 10.
+# levels = how many times it can be bought. kind: mult | add | unlock.
+# stat names match passives.tsv where they overlap, so John reuses one applier.
+#
+# THE RULE: meta-progression may make a bad run survivable. It may never make a
+# good run trivial. Nothing here touches weapon damage scaling or the spawn
+# curve; it only moves the floor, never the ceiling. A player who has bought
+# everything should still lose to the Countess if they build badly.
+#
+# id	name	icon	stat	kind	per_level	levels	cost_base	cost_growth	note
+#---------------------------------------------------------------------------------------
+might	Might	cards/passives/might	damage	mult	0.05	5	100	1.6	+5% damage per level
+maxhp	Vigour	cards/passives/regen	max_hp	add	10	5	80	1.6	+10 max HP
+armour	Armour	cards/passives/armour	flat_reduce	add	1	3	200	2.0	flat damage reduction
+luck	Luck	cards/passives/luck	luck	mult	0.05	4	150	1.7	chest + gold + rare drop odds
+greed	Greed	cards/passives/magnet	gold_gain	mult	0.10	5	120	1.5	+10% gold per level
+reroll	Reroll	cards/passives/haste	rerolls	add	1	3	250	1.8	reroll a level-up hand
+banish	Banish	cards/passives/duration	banishes	add	1	3	250	1.8	remove a card from the pool for the run
+revival	Revival	cards/passives/revival	revives	add	1	2	1000	2.5	come back once at 50% HP. expensive on purpose.
+
+# --- characters. one-off unlocks; see characters.tsv for their stats ---------
+ashling	The Ashling	sprites/ashling	-	unlock	-	1	400	1.0	fragile, fast, burns the floor
+beggar	The Beggar	sprites/beggar	-	unlock	-	1	900	1.0	weak damage, rich runs
+
+# --- endless mode. unlocked by seeing dawn, not by gold ----------------------
+endless	Endless	ui/dawn	-	unlock	-	1	0	1.0	FREE, but locked until you first survive the night. the sun never rises; at 30:00 the Reapers come and cannot be killed.

@@ -1,0 +1,17 @@
+# name: Magnet
+# size: 12x5
+# anchor: topleft
+# fps: 0
+# colour: m
+--- art ---
+ U U    .   
+ U U  .     
+ UUU    .   
+      .   . 
+        .   
+--- mask ---
+ M M    B
+ M M  B
+ MMM    B
+      B   B
+        B

@@ -1,0 +1,17 @@
+# name: Armour
+# size: 12x5
+# anchor: topleft
+# fps: 0
+# colour: c
+--- art ---
+ ,--------. 
+ |   ++   | 
+ |  ++++  | 
+  \  ++  /  
+   '----'   
+--- mask ---
+ cccccccccc
+ c   CC   c
+ c  CCCC  c
+  c  CC  c
+   cccccc

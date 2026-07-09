@@ -1,0 +1,21 @@
+# name: The Ashling
+# size: 3x3
+# anchor: center
+# fps: 8
+# colour: w
+--- art ---
+ & 
+/|\
+/ .
+--- mask ---
+ W
+www
+w R
+--- art ---
+ & 
+\|/
+, |
+--- mask ---
+ W
+www
+r w

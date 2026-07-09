@@ -1,0 +1,17 @@
+# name: Growth
+# size: 12x5
+# anchor: topleft
+# fps: 0
+# colour: G
+--- art ---
+     +      
+  \  |  /   
+   \ | /    
+     |      
+  ~~~~~~~   
+--- mask ---
+     B
+  G  G  G
+   G G G
+     G
+  GGGGGGG

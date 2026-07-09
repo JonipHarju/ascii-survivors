@@ -1,0 +1,17 @@
+# name: Haste
+# size: 12x5
+# anchor: topleft
+# fps: 0
+# colour: C
+--- art ---
+  >  >  >   
+ >  >  >    
+>  >  >     
+ >  >  >    
+  >  >  >   
+--- mask ---
+  C  C  C
+ C  C  C
+C  C  C
+ C  C  C
+  C  C  C

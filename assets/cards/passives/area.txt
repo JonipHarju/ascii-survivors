@@ -1,0 +1,17 @@
+# name: Area
+# size: 12x5
+# anchor: topleft
+# fps: 0
+# colour: G
+--- art ---
+  .-~~~-.   
+ / .---. \  
+| |  @  | | 
+ \ '---' /  
+  '-~~~-'   
+--- mask ---
+  GGGGGGG
+ G GGGGG G
+G G  W  G G
+ G GGGGG G
+  GGGGGGG

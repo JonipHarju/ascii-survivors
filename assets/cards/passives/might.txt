@@ -1,0 +1,17 @@
+# name: Might
+# size: 12x5
+# anchor: topleft
+# fps: 0
+# colour: r
+--- art ---
+    ,---.   
+   / ### \  
+  |  ###  |=
+   \ ### /  
+    '---'   
+--- mask ---
+    rrrrr
+   r RRR r
+  r  RRR  rr
+   r RRR r
+    rrrrr

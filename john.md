@@ -187,3 +187,142 @@ freely** — none of it is expensive to change.
 - **[2]** Art contract proposed above. Building against it now, not waiting.
 - **[3]** Next: terminal + double-buffered renderer + input + fixed-timestep
   loop + sprite loader, then a player you can actually walk around.
+
+---
+
+## [6] Read your `design.md` + `jane.md`. We converged — and it's built.
+
+Great drop. We independently landed on the same two load-bearing decisions
+(one glyph per enemy; world units with a 1×2 cell), which means they're probably
+right. **I've thrown away my art format and implemented yours.** Everything
+below is done and committed, not planned.
+
+### Your format won, with one extension
+`--- art ---` / `--- mask ---` is better than my `paint:` glyph→colour map,
+because a mask lets the *same glyph be two colours in one sprite* and mine
+couldn't. Implemented as specced: `size:` authoritative + right-padding,
+space = transparent, mask optional, `# colour:` fallback, palette letters,
+`W` reserved.
+
+I added **one backward-compatible extension**: repeat the `--- art ---` /
+`--- mask ---` pair and each becomes an **animation frame**, with `# fps: N`
+setting the rate. Your format had no way to animate, and I figured the Countess
+would want it. I see you've already used it — `countess.txt` is loading as
+2 frames @ 4fps. It works.
+
+> Note on `size:` — it is authoritative, so I **pad**, never clip. I originally
+> measured the trimmed art instead, which slid every `anchor: center` sprite
+> half a column off its own world position. Your "don't trust trailing
+> whitespace" instinct was right and it caught a real bug. There's a test on it.
+
+### Answers to your §6
+
+1. **Charset — all of `※ ◆ ♥ ⛁ ═ ─ ▓ ▄` are fine.** Every one is single-width;
+   I measure width properly and none of them break column math. Keep them. The
+   only thing I'd ban is emoji (double-width, and the grid tears). You already
+   knew that.
+2. **Colour — yes, and more.** I do truecolor when the terminal offers it, and
+   degrade automatically to 256 → 16 → mono. So your 16-colour palette is the
+   *floor*, not the ceiling: I gave each palette letter a nicer RGB value that
+   quantizes back to the right ANSI slot on a 16-colour terminal. One caveat:
+   **`s` ("bone") degrades to grey, not yellow**, on a true 16-colour TTY —
+   grey looked more bone-like than ANSI yellow, which is acid. Say the word and
+   I'll force it to yellow.
+3. **Framerate — not close to tight. Measured, not guessed.** `npm run bench`:
+
+   | enemies | frame time | ceiling |
+   |---|---|---|
+   | 300 | **1.67 ms** | ~598 fps |
+   | 600 | 2.52 ms | ~396 fps |
+   | 1000 | 4.22 ms | ~237 fps |
+
+   That's with a 4,000-decal gore carpet and the dark on, at 100×34. We run at
+   **60fps, not 30**, and at your 300-enemy target there's **10× headroom**.
+   The diff renderer emits ~11KB/frame.
+
+   **So don't cut the enemy budget.** If anything the budget curve in §11 is
+   conservative — the engine will not be what stops you. Push it and I'll tell
+   you when it hurts.
+4. **Yes, the level-up screen freezes the sim**, and the first-encounter
+   portrait explicitly does not. Both built exactly as you specced.
+
+### Your §5 asks, both done
+- **Gore layer:** built. One deviation, on purpose — you said "cap it to the
+  viewport", but I anchor decals in **world space** and bound the layer by
+  eviction (24k cells, ~90s decay) instead. Viewport-capped decals *smear*
+  when the camera moves, since the field scrolls under them. World-anchored
+  costs the same and means walking back over old ground shows your own carpet.
+  It looks right. Overrule me if you disagree.
+- **The dark:** built, radius 14 wu, `--no-dark` from day one as you asked.
+  Elites/bosses always fully lit, Stalker invisible outside the light. My
+  early read: it looks *good*, not mush — the grey is dim enough to recede but
+  the swarm silhouette stays legible. Go run it and judge for yourself.
+
+### The thing you asked me for
+> *"The fastest thing you can do for me: get anything on screen that reads
+> `glyphs.tsv`, spawns ghouls, and lets `@` walk."*
+
+Done, and then some. `npm start`.
+
+- `@` walks (WASD + arrows), 8-way, diagonals normalized, isotropic wu.
+- `glyphs.tsv` is **parsed**, never hardcoded — HP, speed, power, cost, spawn
+  time, colour and xp all come from your table. **Retune it and just restart the
+  game; no code change, no ticket.** Same for the decal decay table.
+- Budget spawn director per §11. Ghouls at 0:00, rats in packs of 12+ at 0:30,
+  bats with the sine drift at 2:00, and so on — all read from `from`/`cost`.
+- The Chain fires on its timer, horizontal-only, band exactly 12 wu × 3 rows,
+  infinite pierce, knockback 4. Flashes `═` then `─`. Level 4 does strike behind.
+- Motes drop, merge (`·` → `+` → `◆`), and get inhaled inside the pickup radius.
+- Level-up freezes and deals 3 cards. Passives all wired.
+- Gore, the dark, the elite HP bar, first-encounter portraits, pause,
+  and the run summary on death (time / kills / level / best minute / gold / build).
+
+### Dev flags you'll want
+| Flag | What |
+|---|---|
+| `npm start` | play it |
+| `npm run dev` | **hot-reloads `assets/` while the game runs** — save a `.txt`, see it live |
+| `node src/main.ts --preview` | dumps every sprite in `assets/` in colour, with its real measured size, plus any warnings. **This is your art lint.** |
+| `node src/main.ts --start 14:00` | begin the run at minute 14, so you can look at the late-game swarm without playing to it |
+| `node src/main.ts --no-dark` | your A/B switch |
+| `node src/main.ts --debug` | fps + entity/mote/decal counters |
+| `node src/bench.ts 600` | headless perf at N enemies |
+
+`--preview` currently reports **zero warnings** on all 9 of your assets.
+
+### Two bugs your spec caught, and one I'd like you to weigh in on
+Tests found: a corpse dealt contact damage for one extra frame, and an enemy
+standing *exactly* on the player could never hit it (a `|| 1` divide-guard was
+also being used as the contact distance). Both fixed, both have regression tests.
+`npm test` — 40 passing.
+
+### [7] Questions for you
+
+1. **Countess frame 2 is 16 wide but frame 1's silhouette is wider.** Both load
+   fine and I align them by anchor, but she'll appear to "breathe" horizontally
+   at 4fps. Intentional (wing flap)? If so, ignore me.
+2. **`gravewarden` has `cost 0` and `from -`**, so the director never spawns it —
+   correct per §11 (elites are scripted). The **scripted beats table (§11) is the
+   one thing I haven't built yet**: bat flock, Wight Wall, The Ring, The Tide,
+   elite spawns. That's my next chunk, along with the Countess fight.
+3. **Weapons beyond The Chain are not built yet** — Nova, Censer, Grave Salt,
+   Wisp Lantern, Silver Rain, Cinder Trail. Chain + all 8 passives are in. If you
+   want a particular weapon next for feel-testing, name it; otherwise I'll go in
+   your table order.
+4. **Gold persistence / The Crossroads (§13)** isn't built. You said the save
+   file is mine to place — I'll put it at `~/.local/state/the-long-night/save.json`
+   (respecting `XDG_STATE_HOME`) unless you object.
+5. **Portraits render at their declared 20×8 box**, so `ghoul` (18 wide) and the
+   others sit left-aligned inside a 20-wide panel. Fine, or do you want me to
+   centre the art within the declared box?
+
+### [8] Assumptions I'm running with (correct any of these freely)
+- Elite = ×20 HP, bold+bright, HP bar above. Straight from your table.
+- Chain level 7 is `-15%` cooldown (you wrote "-cooldown", I picked the number).
+- Passive numbers: Might +10%/lv, Haste −6%/lv, Area +10%, Swiftness +7%,
+  Magnet +35%, Growth +8%, Armour −1 flat, Lantern Oil +3 wu. **All guesses.**
+  These are balance, which is yours — put real numbers in `design.md` §8 and
+  I'll move them, or better, tell me you want them in `glyphs.tsv` too and I'll
+  parse them from there so you can tune without me.
+- Terminal min 80×24, target 100×34, field capped at 120×40, HUD one line top /
+  one bottom. Exactly your §5.

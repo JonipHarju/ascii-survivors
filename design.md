@@ -121,8 +121,9 @@ A whip. It knows where you're facing — the last **horizontal** direction you
 pressed. Left or right, never up or down.
 
 - **Cooldown** 1.1s · **Damage** 10 · **Pierce** ∞ (hits everything in the band)
-- **Shape** a band `12 wu wide × 3 rows tall`, starting at the player's edge, in
-  the facing direction. Knockback 4 wu.
+- **Shape** a band `12 wu wide × 6 wu tall` — which renders as 3 rows, because
+  cells are 1×2 — starting at the player's edge, in the facing direction.
+  Knockback 4 wu.
 - **Render:** the band flashes as `═` for ~60ms, then `─` for ~60ms, then clears.
   Two frames. That's the whole animation and it reads perfectly.
 
@@ -134,6 +135,22 @@ Levels: `2` +damage · `3` +width · `4` **strikes behind you too** · `5` +dama
 `6` +width · `7` -cooldown · `8` +damage, band is 5 rows tall.
 
 ### The rest of the arsenal
+
+*Numbers: `assets/weapons.tsv` — one row per (weapon, level), absolute values, all
+distances in wu. `assets/passives.tsv` and `assets/evolutions.tsv` likewise.
+Don't hardcode any of it.*
+
+Each weapon resolves one of seven **shapes**. A shape is the whole vocabulary:
+
+| Shape | `ax` | `ay` | `pspeed` |
+|---|---|---|---|
+| `band` | width | height | — |
+| `bolt` | hit radius | hit radius | wu/s, homing |
+| `ring` | radius | radius | — |
+| `arc` | burst radius | burst radius | wu/s, lobbed |
+| `orbit` | orbit radius | hit radius | degrees/s |
+| `column` | width | height | — |
+| `trail` | ember radius | ember radius | — |
 
 | Weapon | Glyph | Behaviour |
 |---|---|---|
@@ -269,12 +286,51 @@ Kill her and the sun comes up.
 
 ## 11. The spawn director
 
-Not a wave table — a **budget**. Every second the director gets
-`budget += 1.0 + t_minutes × 0.9` points and spends them on enemies (each enemy
-costs its `cost` from `glyphs.tsv`), spawning them just outside the viewport.
-This keeps pressure smooth and terminal-size-independent.
+*Data: `assets/director.tsv`. Don't hardcode any of this.*
 
-On top of the budget, **scripted beats** that the player learns to dread:
+The director is a **closed loop on head-count**, not a spend-down budget.
+
+```
+target(t) = 3 + 297 × (t/1200)^1.5      enemies alive: 3 at 0:00 → 300 at 20:00
+cap(t)    = 15 + 45  × (t/1200)         max spawns/sec: 15 → 60
+each tick: spawn min(target(t) − alive, cap(t)) enemies just outside the viewport
+```
+
+**Why not a budget.** I specced one first — `budget += 1.0 + minutes × 0.9`,
+spend it on enemies by `cost` — and then simulated it. It's open-loop: population
+is whatever `spawns − kills` integrates to, which depends entirely on the
+player's build. A normal build ends the run with **~8,400 enemies alive**. A
+strong one ends on an empty field. Two players, two different games, and no way
+to tune it for both.
+
+The closed loop holds within ~7 enemies of target across every build I
+simulated, from a deliberately awful one to a 4× overtuned one. Its failure mode
+is graceful: a build so strong it out-kills 60 spawns/sec thins the field, and
+that's a signal I've mis-tuned a weapon, not a crash.
+
+**Composition** is its own axis, in the `mix` rows. Weights lerp from *early* to
+*late* over the run and are gated by a first-appearance time. I originally
+weighted spawn choice by each enemy's `cost` — which made the **Stalker**, the
+rare invisible one, the single most common enemy at 20:00. Exactly backwards.
+Rarity is not cost. (`cost` in `glyphs.tsv` survives only as an advisory threat
+rating; it is no longer the spawn currency.)
+
+| | 0:00 | 10:00 | 15:00 | 20:00 |
+|---|---|---|---|---|
+| Ghoul | 100% | 39% | 25% | 9% |
+| Grave Rat | | 24% | 16% | 7% |
+| Bat | | 18% | 17% | 18% |
+| Wight | | 11% | 17% | 27% |
+| Rattlejack | | 8% | 13% | 20% |
+| Blood Wisp | | | 10% | 16% |
+| Stalker | | | 2% | 4% |
+
+The Ghoul is the whole game at 0:00 and a rounding error at 20:00. The Wight
+becomes the backbone. **The Stalker stays rare on purpose** — it's the only
+invisible enemy, so it must be a shock, not a tax.
+
+**Scripted beats** sit on top of the ambient director and ignore the target.
+These are the moments the player learns to dread:
 
 | Time | Beat |
 |---|---|
@@ -286,7 +342,7 @@ On top of the budget, **scripted beats** that the player learns to dread:
 | 10:00 | ELITE + rat swarm |
 | 12:00 | Blood Wisps enter the pool |
 | 15:00 | ELITE ×2 |
-| 17:00 | **The Tide** — everything, from every edge, for 90 seconds. |
+| 17:00 | **The Tide** — head-count target ×2, from every edge, for 90 seconds. |
 | 19:00 | **THE COUNTESS.** Clock stops. |
 
 ## 12. Screens, HUD, and where the art goes

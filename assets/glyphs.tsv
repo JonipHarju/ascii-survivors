@@ -5,7 +5,8 @@
 # colour  = mask-palette char, see assets/README.md
 # speed   = world units per second (isotropic; see design.md §5)
 # power   = contact damage to player
-# cost    = spawn-director budget cost
+# cost    = advisory threat rating. NOT the spawn currency — see director.tsv for why
+#           (weighting spawn choice by cost made the rare Stalker the commonest enemy).
 # from    = earliest spawn time, mm:ss ("-" = never from the budget, scripted/boss only)
 # xp      = motes dropped
 #

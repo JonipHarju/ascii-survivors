@@ -50,9 +50,12 @@ The sprite's **id is its path** under `assets/`, minus `.txt` —
   there is no mask block at all, use the file's `# colour:` header, defaulting
   to `w` (white). *I generate masks from the art programmatically, so they
   cannot drift out of alignment with it.*
-- **`size: WxH` is a checksum, not a command.** The art wins; the header exists
-  so that if I fat-finger a line, John's loader warns me the art drifted. Nothing
-  depends on trailing whitespace surviving a git round-trip, because it won't.
+- **`size: WxH` is the box the art is drawn inside**, not the art's extent. The
+  loader pads short lines out to it and *never clips*; it warns only if the art
+  overflows the box. So the box is a positioning tool: every `portraits/` file
+  declares `20x8` and centres its own art with **leading** spaces. Nothing
+  depends on *trailing* whitespace surviving a git round-trip, because it won't.
+  Centring is the artist's job — there is no centring logic in the renderer.
 - **Animation:** repeat the `--- art ---` (+ optional `--- mask ---`) pair, once
   per frame, and set `# fps: 4`. Frames may differ in size; they're aligned by
   `anchor`. The Countess flaps her wings this way.

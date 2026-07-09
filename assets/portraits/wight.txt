@@ -1,5 +1,5 @@
 # name: Wight
-# size: 19x8
+# size: 20x8
 # anchor: topleft
 # colour: C
 --- art ---

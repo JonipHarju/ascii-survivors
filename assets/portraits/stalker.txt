@@ -1,23 +1,22 @@
 # name: Stalker
-# size: 18x8
+# size: 20x8
 # anchor: topleft
 # colour: e
-
 --- art ---
-     ?         ?
-   .             .
-        o   o
-   '             '
-     \         /
-       \     /
-         ' '
-          ?
+      ?         ?
+    .             .
+         o   o
+    '             '
+      \         /
+        \     /
+          ' '
+           ?
 --- mask ---
-     m         m
-   e             e
-        M   M
-   e             e
-     e         e
-       e     e
-         e e
-          m
+      m         m
+    e             e
+         M   M
+    e             e
+      e         e
+        e     e
+          e e
+           m

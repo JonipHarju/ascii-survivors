@@ -1,0 +1,89 @@
+# THE LONG NIGHT — weapon table
+# Owner: Jane. Machine-readable. John: parse this, don't hardcode weapon numbers.
+# Tab-separated. '#' comments and blank lines ignored.
+#
+# One row per (weapon, level). Values are ABSOLUTE, not deltas — no formula for
+# you to reimplement, and I can hand-tune any single cell.
+#
+# ALL DISTANCES ARE WORLD UNITS. design.md §5: 1 cell = 1 wu wide x 2 wu tall.
+# A band 6 wu tall renders as 3 rows. A ring of radius r draws as an ellipse
+# rx=r, ry=r/2 cells.
+#
+# shape    ax                ay              pspeed
+# ------   ---------------   -------------   -----------------
+# band     width (wu)        height (wu)     -
+# bolt     hit radius        hit radius      wu/s, homing
+# ring     radius            radius          -
+# arc      burst radius      burst radius    wu/s, lobbed
+# orbit    orbit radius      hit radius      degrees/s
+# column   width (wu)        height (wu)     -
+# trail    ember radius      ember radius    -
+#
+# cd=0 means "always on" (orbit). pierce 99 = effectively infinite.
+# dur = lifetime of the effect in seconds (bolts, embers, columns).
+# count = simultaneous instances (bolts fired, orbiting motes, columns).
+#
+# id	level	name	glyph	colour	shape	cd	dmg	ax	ay	pierce	knock	dur	count	pspeed	note
+#-----------------------------------------------------------------------------------------------
+chain	1	The Chain	=	W	band	1.1	10	12.0	6.0	99	4	0.12	1	0	horizontal band in facing direction; you turn by walking
+chain	2	The Chain	=	W	band	1.05	12	12.7	6.4	99	4	0.12	1	0	
+chain	3	The Chain	=	W	band	1.0	14	13.4	6.7	99	4	0.12	1	0	
+chain	4	The Chain	=	W	band	0.95	15	14.2	7.1	99	4	0.12	2	0	ALSO strikes behind you
+chain	5	The Chain	=	W	band	0.9	17	14.9	7.4	99	4	0.12	2	0	
+chain	6	The Chain	=	W	band	0.85	19	15.6	7.8	99	4	0.12	2	0	
+chain	7	The Chain	=	W	band	0.8	21	16.3	8.2	99	4	0.12	2	0	
+chain	8	The Chain	=	W	band	0.75	23	17.0	10	99	4	0.12	2	0	band is 5 rows tall
+
+nova	1	Sanguine Nova	*	R	bolt	1.4	8	2.0	2.0	1	1	2.0	1	40	homing bolt at nearest enemy
+nova	2	Sanguine Nova	*	R	bolt	1.34	9	2.1	2.1	1	1	2.0	1	40	
+nova	3	Sanguine Nova	*	R	bolt	1.27	11	2.2	2.2	1	1	2.0	2	40	
+nova	4	Sanguine Nova	*	R	bolt	1.21	12	2.4	2.4	1	1	2.0	2	40	
+nova	5	Sanguine Nova	*	R	bolt	1.15	14	2.5	2.5	1	1	2.0	2	40	
+nova	6	Sanguine Nova	*	R	bolt	1.08	15	2.6	2.6	1	1	2.0	3	40	
+nova	7	Sanguine Nova	*	R	bolt	1.02	17	2.7	2.7	1	1	2.0	3	40	
+nova	8	Sanguine Nova	*	R	bolt	0.96	18	2.8	2.8	2	1	2.0	3	40	
+
+censer	1	Censer	~	G	ring	0.5	3	8.0	8.0	99	0	0	1	0	persistent damaging ring; ax = radius
+censer	2	Censer	~	G	ring	0.48	4	8.5	8.5	99	0	0	1	0	
+censer	3	Censer	~	G	ring	0.46	4	9.0	9.0	99	0	0	1	0	
+censer	4	Censer	~	G	ring	0.43	5	9.4	9.4	99	0	0	1	0	
+censer	5	Censer	~	G	ring	0.4	5	9.9	9.9	99	0	0	1	0	ticks faster
+censer	6	Censer	~	G	ring	0.4	6	10.4	10.4	99	0	0	1	0	
+censer	7	Censer	~	G	ring	0.4	6	10.9	10.9	99	0	0	1	0	
+censer	8	Censer	~	G	ring	0.4	7	11.4	11.4	99	0	0	1	0	
+
+gravesalt	1	Grave Salt	^	s	arc	1.6	14	5.0	5.0	3	2	1.2	1	30	lobs up, falls, shatters; ax = burst radius
+gravesalt	2	Grave Salt	^	s	arc	1.53	17	5.3	5.3	3	2	1.2	1	30	
+gravesalt	3	Grave Salt	^	s	arc	1.46	19	5.6	5.6	3	2	1.2	1	30	
+gravesalt	4	Grave Salt	^	s	arc	1.38	22	5.9	5.9	3	2	1.2	2	30	
+gravesalt	5	Grave Salt	^	s	arc	1.31	24	6.2	6.2	3	2	1.2	2	30	
+gravesalt	6	Grave Salt	^	s	arc	1.24	27	6.5	6.5	3	2	1.2	2	30	
+gravesalt	7	Grave Salt	^	s	arc	1.17	29	6.8	6.8	3	2	1.2	3	30	
+gravesalt	8	Grave Salt	^	s	arc	1.1	32	7.1	7.1	3	2	1.2	3	30	
+
+lantern	1	Wisp Lantern	o	Y	orbit	0	6	9.0	3.0	99	1	0	1	120	ax = orbit radius, ay = hit radius, pspeed = deg/s
+lantern	2	Wisp Lantern	o	Y	orbit	0	7	9.5	3.2	99	1	0	2	120	
+lantern	3	Wisp Lantern	o	Y	orbit	0	8	10.1	3.4	99	1	0	2	120	
+lantern	4	Wisp Lantern	o	Y	orbit	0	9	10.6	3.5	99	1	0	3	120	
+lantern	5	Wisp Lantern	o	Y	orbit	0	10	11.2	3.7	99	1	0	3	120	
+lantern	6	Wisp Lantern	o	Y	orbit	0	11	11.7	3.9	99	1	0	4	120	
+lantern	7	Wisp Lantern	o	Y	orbit	0	12	12.2	4.1	99	1	0	4	120	
+lantern	8	Wisp Lantern	o	Y	orbit	0	14	12.8	4.3	99	1	0	4	120	
+
+silverrain	1	Silver Rain	|	C	column	4.0	22	4.0	60.0	99	0	0.4	1	0	falling column in a random zone near you
+silverrain	2	Silver Rain	|	C	column	3.82	26	4.2	63.6	99	0	0.4	1	0	
+silverrain	3	Silver Rain	|	C	column	3.64	30	4.5	67.2	99	0	0.4	2	0	
+silverrain	4	Silver Rain	|	C	column	3.46	34	4.7	70.8	99	0	0.4	2	0	
+silverrain	5	Silver Rain	|	C	column	3.28	38	5.0	74.4	99	0	0.4	2	0	
+silverrain	6	Silver Rain	|	C	column	3.1	42	5.2	78.0	99	0	0.4	3	0	
+silverrain	7	Silver Rain	|	C	column	2.92	46	5.4	81.6	99	0	0.4	3	0	
+silverrain	8	Silver Rain	|	C	column	2.74	50	5.7	85.2	99	0	0.4	3	0	
+
+cinder	1	Cinder Trail	.	r	trail	0.25	2	2.0	2.0	99	0	3.0	1	0	burning embers behind you; dur = ember lifetime
+cinder	2	Cinder Trail	.	r	trail	0.24	2	2.1	2.1	99	0	3.0	1	0	
+cinder	3	Cinder Trail	.	r	trail	0.23	3	2.2	2.2	99	0	3.0	1	0	
+cinder	4	Cinder Trail	.	r	trail	0.22	3	2.4	2.4	99	0	3.0	1	0	
+cinder	5	Cinder Trail	.	r	trail	0.21	3	2.5	2.5	99	0	4.5	1	0	
+cinder	6	Cinder Trail	.	r	trail	0.19	4	2.6	2.6	99	0	4.5	1	0	
+cinder	7	Cinder Trail	.	r	trail	0.18	4	2.7	2.7	99	0	4.5	1	0	
+cinder	8	Cinder Trail	.	r	trail	0.17	5	2.8	2.8	99	0	4.5	1	0	

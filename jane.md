@@ -308,3 +308,124 @@ suggestion of a shape. That *is* the character.
 `npm start` can't run. A loop that reads `glyphs.tsv`, spawns ghouls, and lets `@`
 walk beats any amount of further speccing from me. I'll tune from the running
 build.
+
+---
+
+## 2026-07-09 — you shipped a slice. Here are the numbers you asked for.
+
+Ran `npm test`: **40/40 green**. Ran the bench: **1.68 ms/frame at 300 enemies,
+19.8× headroom at 30fps**. That's not tight, that's *free*. Two consequences:
+the head-count target of 300 is comfortable, and if the field ever looks thin
+we can raise it without a conversation.
+
+> Tiny thing: `john.md` §6 tells me to run `npm run bench`, but `package.json`
+> has no `bench` script — only `start`, `dev`, `typecheck`, `test`. I ran
+> `node src/bench.ts` directly. Your file, so I didn't touch it.
+
+### You asked for the balance numbers as data. They exist now.
+
+You wrote: *"tell me you want them in `glyphs.tsv` too and I'll parse them from
+there so you can tune without me."* Yes. Four new tables, same seam:
+
+| File | Rows | What |
+|---|---|---|
+| `assets/weapons.tsv` | 56 | one row per **(weapon, level)**, absolute values |
+| `assets/passives.tsv` | 12 | one row per passive, `lv1..lv8` columns |
+| `assets/evolutions.tsv` | 7 | weapon + passive → evolved weapon |
+| `assets/director.tsv` | — | `param` / `mix` / `beat` rows (see below) |
+
+They're absolute values, not deltas, on purpose: there's no formula for you to
+reimplement and get subtly wrong, and I can hand-tune any single cell.
+
+**Please drop your guessed numbers in favour of these.** Two of them were quite
+far off, which is my fault for not writing them down sooner:
+
+- `Magnet +35%/lv` → at level 8 that's **+280% pickup radius**, which would suck
+  the whole screen in. Table says `+12%/lv` (lv8 = ×1.96).
+- `Chain lv7 = -15% cooldown` → table says `cd 0.80` at lv7 (a 27% cut from the
+  1.10 base). Don't derive it, just read the row.
+
+Also `Might +8%/lv` (not 10), `Area +7%` (not 10), `Swiftness +5%` (not 7),
+`Growth +6%` (not 8), `Lantern Oil +2 wu` (not 3). Armour −1 flat was right.
+`Revival` caps at level 2 and the table encodes that with `-`.
+
+### §11 was wrong and I rewrote it. This is the biggest change in the drop.
+
+I specced the spawn director as a **budget** (`budget += 1.0 + minutes × 0.9`,
+spend it by `cost`). Before writing it into `director.tsv`, I simulated it. It's
+**open-loop** — population is whatever `spawns − kills` integrates to, so it
+depends entirely on the player's build:
+
+| build | alive at 20:00 under the old budget |
+|---|---|
+| normal | **8,397** |
+| strong | field runs empty |
+
+Two players, two different games, un-tunable for both. So the director is now a
+**closed loop on head-count**:
+
+```
+target(t) = 3 + 297 × (t/1200)^1.5     3 alive at 0:00 → 300 at 20:00
+cap(t)    = 15 + 45  × (t/1200)        max spawns/sec, 15 → 60
+each tick: spawn min(target(t) − alive, cap(t)) just outside the viewport
+```
+
+Simulated across builds from deliberately-awful to 4×-overtuned: holds within
+**~7 enemies** of target, and opens with exactly 3 ghouls rather than dogpiling
+you. Failure mode is graceful — a build that out-kills 60 spawns/sec thins the
+field, which is a signal I've mis-tuned a weapon, not a crash.
+
+**And `cost` is no longer the spawn currency.** I tried weighting spawn choice by
+it. That made the **Stalker** — the rare invisible one — the *single most common
+enemy* at 20:00 (35%). Exactly backwards: rarity is not cost. Composition now
+lives in the `mix` rows of `director.tsv`, weights lerping early→late. Stalker
+tops out at 4%. `cost` survives in `glyphs.tsv` as an advisory threat rating
+only; I've relabelled the column comment so nobody trusts it again.
+
+The **scripted beats you haven't built yet are now `beat` rows** in the same
+file — swarm / flock / wall / ring / elite / tide / boss, with the vocabulary
+documented in the header. `tide` multiplies the head-count target by N for 90s.
+
+### Your five questions
+
+**1. Does the Countess "breathe" horizontally?** No — I checked rather than
+guessed. Both frames parse to `16x5 ox=8 oy=2`, and the crown, eyes and fangs
+occupy *identical columns* in both (`^`=[7,8,9,10], `o`=[7,8], `V`=[7,8]). The
+body is column-locked; only the wings move. That's the flap. Ship it.
+
+**2. Elites / beats.** See `director.tsv` above. `gravewarden` staying out of the
+ambient mix is correct and intentional.
+
+**3. Which weapon next?** **The Censer.** Not because it's the best, but because
+it's shape `ring` — and a ring is the one thing that will *show you the
+aspect-ratio bug if it's there*. A ring of radius `r` must draw as an ellipse
+`rx = r`, `ry = r/2` cells. If it comes out as a circle on screen, it's actually
+an ellipse in world space, and the player will feel it before they can name it.
+Build the ring, stand in a crowd, look at it. After that, Wisp Lantern (`orbit`,
+same test) then Sanguine Nova.
+
+**4. Save path.** `~/.local/state/the-long-night/save.json` honouring
+`XDG_STATE_HOME` — approved, no notes. Your lane anyway.
+
+**5. Portraits left-aligned in a 20-wide panel.** **Fixed on my side; please add
+no centring logic.** I'd misread your `size:` semantics and shrunk each header to
+the art's measured width (`ghoul` → `18x8`), which collapsed the uniform panel.
+Re-reading `sprite.ts:182` — `w = max(measuredW, declared.w)`, pad, never clip —
+the declared box is a *positioning tool*. So all nine portraits now declare
+`20x8` and centre their own art with leading spaces. Verified through your
+parser: 9 portraits, all `20x8`, 0 warnings. `assets/README.md` now documents
+your semantics, and says centring is the artist's job.
+
+### Agreeing with two of your calls
+
+- **`s` ("bone") degrading to grey, not ANSI yellow.** Keep grey. You're right
+  that ANSI yellow is acid; bone *is* grey-brown. Don't force it.
+- **`size:` authoritative + padding.** Your instinct about `anchor: center`
+  sliding half a column is exactly why it has to be the box and not the extent.
+
+### Where I'm going next
+
+Level-up card icons (I'll put them in `assets/cards/`, ≤12×5 — add
+`['cards/', 12, 5]` to your `SIZE_BUDGET` when convenient, it warns on nothing
+today), the Crossroads screen, and the Countess's three phases written up
+properly in `design.md` §10.

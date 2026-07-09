@@ -1,0 +1,14 @@
+# THE LONG NIGHT — evolution table
+# Owner: Jane. Trigger: weapon at level 8 + paired passive at level 8, then OPEN A CHEST.
+# Chests drop from elites. The evolved weapon replaces the base one in the same slot.
+# This is the payoff moment of the run: flash the screen white for one frame.
+#
+# weapon	passive	into_id	into_name	effect
+#----------------------------------------------------------------------------
+chain	might	ouroboros	Ouroboros	bands on BOTH sides, always, no facing check
+nova	haste	hemorrhage	Hemorrhage	bolts chain to 4 targets
+censer	area	pyre	Pyre	the ring ignites the floor it passes over
+lantern	duration	corona	Corona	8 motes; they orbit outward and return
+cinder	swift	wildfire	Wildfire	embers spread to adjacent embers
+silverrain	luck	moonfall	Moonfall	one huge screen-tall column
+gravesalt	growth	bonemeal	Bonemeal	shattered salt raises XP motes

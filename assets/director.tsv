@@ -1,0 +1,70 @@
+# THE LONG NIGHT — spawn director
+# Owner: Jane. Machine-readable. John: parse this, don't hardcode the curve.
+# Tab-separated. '#' comments and blank lines ignored. Three row kinds: param, mix, beat.
+#
+# WHY THIS ISN'T A BUDGET
+# I originally specced "budget += 1.0 + minutes*0.9, spend it on enemies". I
+# simulated it. It's open-loop: the population is whatever (spawns - kills)
+# integrates to, so it depends entirely on the player's build. A normal build
+# ends the run with ~8,400 enemies alive; a strong one ends with an empty field.
+# Two players get two different games. So the director is a CLOSED LOOP instead:
+# it targets a head-count and spawns to fill the deficit. Holds within ~7 enemies
+# of target for every build I simulated. See design.md §11.
+#
+# ---- param rows: param <name> <value> --------------------------------------
+# Head-count target over the run:  target(t) = start + (end-start) * (t/dur)^curve
+# Spawn rate ceiling:              cap(t)    = cap_start + (cap_end-cap_start)*(t/dur)
+# The cap keeps 0:00 from dogpiling you and lets 20:00 keep up with a big build.
+#
+param	run_duration	1200	seconds; dawn (or the Countess) at the end
+param	target_start	3	enemies alive at 0:00
+param	target_end	300	enemies alive at 20:00
+param	target_curve	1.5	>1 = back-loaded, most of the ramp is late
+param	cap_start	15	max spawns/sec at 0:00
+param	cap_end	60	max spawns/sec at 20:00
+param	spawn_margin	4	spawn this many cells outside the viewport edge
+param	despawn_margin	40	cull enemies further than this (cells) from the player
+
+# ---- mix rows: mix <entity> <from mm:ss> <weight_early> <weight_late> -------
+# Spawn choice is weighted; weight(t) lerps early->late on t/run_duration and is
+# gated by <from>. NOTE: `cost` in glyphs.tsv is NOT the spawn currency — I tried
+# weighting by it and it made the Stalker the single most common enemy at 20:00,
+# which is exactly backwards. Rarity is its own axis, so it lives here.
+#
+# resulting mix:  0:00 ghoul 100%  |  10:00 ghoul 39 rat 24 bat 18 wight 11 rattlejack 8
+#                15:00 ghoul 25 rat 16 bat 17 wight 17 rattlejack 13 wisp 10 stalker 2
+#                20:00 ghoul  9 rat  7 bat 18 wight 27 rattlejack 20 wisp 16 stalker 4
+#
+mix	ghoul	0:00	100	10	the bread and butter; fades out as the night wears on
+mix	rat	0:30	60	8	chaff
+mix	bat	2:00	30	20	steady presence all run
+mix	wight	4:00	0	30	becomes the backbone of the late game
+mix	rattlejack	8:00	0	22
+mix	wisp	12:00	0	18
+mix	stalker	14:00	0	4	RARE ON PURPOSE. it is the only invisible enemy; make it a shock, not a tax.
+
+# ---- beat rows: beat <mm:ss> <kind> <entity> <count> <note> -----------------
+# Scripted set-pieces ON TOP of the ambient director. These are the moments the
+# player learns to dread, and they ignore the head-count target.
+#
+# kind    meaning
+# ------  ------------------------------------------------------------------
+# swarm   <count> spawn together at one nearby point
+# flock   <count> cross the whole viewport along one axis; get out of the way
+# wall    a solid line advancing from one random edge
+# ring    <count> spawn as a closing circle centred on the player; punch out
+# elite   a bright, bold, HP-barred version with x20 hp; drops a chest
+# tide    sustained: multiply the head-count target by <count> for 90s
+# boss    the Countess. clock stops. she must die for the sun to rise.
+#
+beat	0:30	swarm	rat	12	first rat swarm
+beat	2:00	flock	bat	40	forty bats cross the screen on one axis
+beat	4:00	wall	wight	14	THE WIGHT WALL — a line advances from one edge
+beat	5:00	elite	gravewarden	1	first chest
+beat	7:00	ring	ghoul	60	THE RING — 60 ghouls close around you. punch out.
+beat	10:00	elite	gravewarden	1
+beat	10:05	swarm	rat	20
+beat	12:00	swarm	wisp	8	Blood Wisps enter the pool
+beat	15:00	elite	gravewarden	2	two at once
+beat	17:00	tide	-	2	THE TIDE — everything, every edge, 90 seconds
+beat	19:00	boss	countess	1	THE COUNTESS. clock stops at 19:00.

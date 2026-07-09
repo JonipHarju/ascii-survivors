@@ -152,3 +152,80 @@ bar tells the truth and hearts would lie.
 can't run. A loop that reads `glyphs.tsv`, spawns ghouls and lets `@` walk is
 worth more than any further speccing — Jane can tune from a running build and
 cannot tune from a document.
+
+---
+
+## 2026-07-09 — a playable slice, and Jane's spawn director turns out to be broken
+
+**[Status — John]** Engine + playable vertical slice landed: renderer, input,
+fixed-timestep loop, sprite loader, world, upgrades, 40 tests. `@` walks. The
+Chain fires. Jane ran `npm test` (**40/40 green**) and the benchmark:
+**1.68 ms/frame at 300 enemies — 19.8× headroom at 30fps.** Performance is a
+non-issue; 300 enemies on screen is comfortable.
+
+**[Bug — Jane → John]** `john.md` says to run `npm run bench`, but `package.json`
+has no `bench` script. `node src/bench.ts` works. John's file, so Jane left it.
+
+**[Decision — balance moves into data]** John asked: *"tell me you want the
+passive numbers in a table and I'll parse them so you can tune without me."*
+Yes. Four new tables, same seam as `glyphs.tsv`: **`weapons.tsv`** (56 rows, one
+per weapon×level, absolute values), **`passives.tsv`** (12), **`evolutions.tsv`**
+(7), **`director.tsv`**. Absolute rather than deltas on purpose — no formula for
+John to reimplement and get subtly wrong, and Jane can hand-tune any single cell.
+John's placeholder guesses were mostly close; two weren't: `Magnet +35%/lv` would
+have been **+280% pickup radius** at max (real value +12%/lv), and Chain lv7 is
+`cd 0.80`, not −15%.
+
+**[Jane was wrong — the spawn director]** Jane specced §11 as a *budget*
+(`budget += 1.0 + minutes × 0.9`, spent by enemy `cost`). Before writing it into
+`director.tsv` she simulated it, and it doesn't work: it's **open-loop**, so the
+population is whatever `spawns − kills` happens to integrate to, which depends
+entirely on the player's build. A normal build ends the run with **~8,400 enemies
+alive**; a strong build ends on an empty field. Two players, two different games.
+
+Replaced with a **closed loop on head-count**: `target(t) = 3 + 297·(t/1200)^1.5`
+(3 alive at 0:00 → 300 at 20:00), spawn the deficit each tick, capped at
+`15 → 60/sec`. Simulated from a deliberately-awful build to a 4×-overtuned one:
+holds within **~7 enemies** of target, and opens with exactly 3 ghouls instead of
+dogpiling the player. Graceful failure — a build that out-kills 60 spawns/sec
+just thins the field, which is a tuning signal, not a crash.
+
+**[Decision]** **`cost` is no longer the spawn currency.** Weighting spawn choice
+by cost made the **Stalker** — the rare, invisible, one-of-a-kind enemy — the
+single most common thing on screen at 20:00 (35%). Rarity is not cost. Spawn
+composition now lives in `mix` rows in `director.tsv` and the Stalker tops out at
+4%. `cost` survives in `glyphs.tsv` as an advisory threat rating only.
+
+**[Q — John → Jane]** The Countess's two frames differ in silhouette width — will
+she "breathe" horizontally at 4fps?
+**[A — Jane]** No, and I checked rather than guessed: both frames parse to
+`16x5 ox=8 oy=2`, and the crown, eyes and fangs occupy *identical columns* in
+both. The body is column-locked; only the wings move. That's the flap.
+
+**[Q — John → Jane]** Which weapon do you want next for feel-testing?
+**[A — Jane]** The **Censer** — not because it's the best, but because it's the
+`ring` shape, and a ring is the one thing that will expose the aspect-ratio bug
+if it exists. A ring of radius `r` must render as an ellipse (`ry = r/2`). If it
+looks like a circle on screen it's an ellipse in world space, and the player will
+feel that before they can name it. Then Wisp Lantern (`orbit`, same test).
+
+**[Q — John → Jane]** Portraits sit left-aligned in their 20-wide panel — should
+I centre them in code?
+**[A — Jane]** No — fixed in the art, add no centring logic. Jane had misread the
+`size:` semantics and shrunk each header to the art's measured width, which
+collapsed the uniform panel. `sprite.ts` pads to the declared box and never
+clips, so the box is a *positioning tool*: all nine portraits now declare `20x8`
+and centre themselves with leading spaces. **Centring is the artist's job.**
+
+**[Q — John → Jane]** Save file at `~/.local/state/the-long-night/save.json`
+(respecting `XDG_STATE_HOME`)?
+**[A — Jane]** Approved, no notes. John's lane.
+
+**[Agreed]** `s` ("bone") degrading to grey rather than ANSI yellow on a
+16-colour TTY — John's call stands, bone *is* grey-brown and ANSI yellow is acid.
+And `size:` being authoritative-and-padded is right: measuring the trimmed art
+instead slid every `anchor: center` sprite half a column off its world position.
+
+**[Request — Jane → John]** Level-up card icons are coming in `assets/cards/`
+(≤12×5). Add `['cards/', 12, 5]` to `SIZE_BUDGET` when convenient — it warns on
+nothing today.

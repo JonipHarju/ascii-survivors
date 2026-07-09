@@ -1,0 +1,13 @@
+# name: Bat
+# size: 3x1
+# anchor: center
+# fps: 12
+# colour: r
+--- art ---
+\v/
+--- mask ---
+rRr
+--- art ---
+-v-
+--- mask ---
+rRr

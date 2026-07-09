@@ -289,3 +289,115 @@ everywhere the player has been. In the dark, against a boss you can only see whe
 she's on top of you, **that carpet is the only thing telling you where you are.**
 The decals stop being decoration and become navigation. Jane: "if you build one
 thing from this file, build that."
+
+---
+
+## 2026-07-09 20:15 — OWNER FEEDBACK. Three demands; the design bends to all three.
+
+The product owner played the build and left `owner-feedback.md`. Verbatim gist:
+*(1)* why is this in a terminal — move to canvas for smoother, higher-framerate
+gameplay; *(2)* the first weapon is clunky, you have to walk toward enemies to aim
+it, so you walk into them; *(3)* "singular characters walking around… is this the
+1960s still?" — ASCII art can be far more impressive; canvas would let Jane
+unleash more creativity and smoother animation.
+
+**[Decision — platform]** **The game leaves the terminal for a canvas in the
+browser.** Techstack is John's lane and the shape is his call, but the direction
+is an owner mandate and `design.md` §5.0 now records it as settled.
+
+**[The finding that ties (1) and (3) together]** Jane costed out multi-cell
+enemies before writing anything down. At the late-game head-count they average
+**8 cells each**:
+
+| grid | screen filled by 220 enemies |
+|---|---|
+| 100×34 (terminal) | **52%** |
+| 180×60 (canvas) | **16%** |
+
+So the owner's two art complaints are **one complaint**. Sprites bigger than a
+single cell simply do not fit in a terminal at survivors density. Jane: *"I spent
+this whole project defending one-glyph enemies on readability grounds, and I was
+defending a conclusion that only held because of a premise I had the power to
+change. Canvas isn't a nicer coat of paint on the art problem — it's the
+precondition for it."*
+
+**[What survives the port]** The `.txt` + mask art format, all six `.tsv` tables,
+the sprite loader, world units, the fixed-timestep loop, the spawn director, the
+upgrade system, the gore layer, the dark. The art contract is
+renderer-independent — that is the whole reason it survives. What dies: the ANSI
+diff renderer, the colour-degradation ladder, the key-repeat input hack.
+
+**[Jane → John, what the new renderer must do]** In priority order: **sub-cell
+float positions** (glyphs drawn at fractional pixel offsets — everything snaps to
+a cell today, and *that*, more than sprite size or colour, is what looks like
+1978); a **180×60 grid** (12×24px cells keep the world-unit maths byte-identical);
+**draw order by world y** so 220 sprites read as a crowd; and **hitboxes stay
+circles in world units, not bounding boxes** — big sprites must not become unfair
+sprites.
+
+---
+
+**[Jane was wrong — the starting weapon]** The owner is right and it's a design
+error, not a tuning one. The Chain fired along the player's facing, and facing
+came from the last horizontal input — so **to hit a thing you had to walk toward
+it, in a game whose entire threat model is that things hurt you by touching
+you.** The starting weapon was asking the player to walk into the damage.
+
+Two fixes: **the Warden now starts with Sanguine Nova**, which seeks the nearest
+enemy — no aiming, no facing, no positioning tax. It is deliberately the least
+interesting weapon in the game and it is the right first one, because it teaches
+the correct lesson in ten seconds: *movement is for dodging, not for aiming.* And
+**The Chain now strikes both sides from level 1** (was level 4), so you can whip
+what you're running away from; facing survives as skill expression (the front band
+is wider) rather than as a toll. Its level 4 becomes "adds a vertical band — a
+cross."
+
+New file **`assets/characters.tsv`**, so the starting weapon is data and not a
+hardcoded `'chain'`. The rule is written at the top of it: **no starting weapon
+may require aiming.**
+
+---
+
+**[Jane was wrong — and John was right first]** This one is worth recording
+properly. In his *very first note*, John proposed a tiered sprite-size table
+(trash 1×1–3×2, elites 4–6 wide, bosses up to 12×6) and wrote: *"your call, you
+own design. I just want the tradeoff on the table before you draw 40 sprites at
+the wrong size."* Jane overruled him and made every enemy a single glyph. **The
+owner has now overruled Jane, landing roughly where John started.**
+
+`design.md` §10 is rewritten with the correction recorded rather than quietly
+patched. New rules: **size is threat** (danger readable from silhouette alone,
+with no colour), and **every mob animates** — a field of 220 static sprites is
+wallpaper; 220 breathing ones is a horde. That is most of what the owner is
+actually asking for.
+
+Shipped, all two-frame, all masked, `--preview` clean: player 3×3, rat 2×1,
+bat 3×1, ghoul / rattlejack / wisp 3×2, wight / stalker 5×3, gravewarden elite
+9×5 — and **the Countess redrawn at 28×11** (was 16×5), with crown, face, spread
+wings and gown. Her wings beat while the body stays column-locked, so she doesn't
+breathe.
+
+**[Craft note]** Jane built the Countess as a *left half, mirrored*, rather than
+drawing 28 columns by hand. Her first hand-drawn pass put the crown a cell and a
+half off her own anchor and rendered it as `^^  ^^` with a hole in the middle —
+caught only because the symmetry check was written as an assertion instead of
+trusted to the eye. Same principle as deriving the colour masks from the art:
+**make the error unrepresentable rather than checking for it.**
+
+The player's head is still `@`, still the only bright white in the game. That rule
+does not move.
+
+**[Jane → John, chores]** `SIZE_BUDGET` needs the new prefixes **ordered
+specific-first** (`.find()` takes the first match), `characters.tsv` needs
+parsing, and `director.tsv` drops `target_end` 300 → 220 — not for performance
+(John measured 10× headroom and Jane believes him) but for legibility.
+
+**[John was right, twice, and design.md now says so]** Gore decals are anchored in
+**world space** and bounded by eviction, not capped to the viewport as Jane
+originally specced — viewport-capped decals smear as the camera scrolls under
+them, and walking back over old ground should show you your own carpet. That
+isn't just correct, it's load-bearing: the Countess's Dusk phase is *entirely* the
+player navigating by their own gore in the dark. And `size:` is the padded box,
+not the art's extent.
+
+`npm test`: **56/56 green** — nothing Jane changed today is code.

@@ -1,0 +1,13 @@
+# name: Grave Rat
+# size: 2x1
+# anchor: center
+# fps: 10
+# colour: s
+--- art ---
+o~
+--- mask ---
+ws
+--- art ---
+o,
+--- mask ---
+ws

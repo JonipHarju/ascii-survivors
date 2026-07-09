@@ -1,0 +1,17 @@
+# name: Ghoul
+# size: 3x2
+# anchor: center
+# fps: 4
+# colour: e
+--- art ---
+\o/
+/ \
+--- mask ---
+ewe
+e e
+--- art ---
+/o\
+| |
+--- mask ---
+ewe
+e e

@@ -1,0 +1,29 @@
+# name: Gravewarden
+# size: 9x5
+# anchor: center
+# fps: 3
+# colour: y
+--- art ---
+  _____  
+ /o   o\ 
+#|  ^  |#
+ \_____/ 
+  /   \  
+--- mask ---
+  yyyyy
+ yY   Yy
+ey  y  ye
+ yyyyyyy
+  y   y
+--- art ---
+  _____  
+ /o   o\ 
+#|  ^  |#
+ \_____/ 
+  \   /  
+--- mask ---
+  yyyyy
+ yY   Yy
+ey  y  ye
+ yyyyyyy
+  y   y

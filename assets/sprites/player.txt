@@ -1,0 +1,21 @@
+# name: The Warden
+# size: 3x3
+# anchor: center
+# fps: 6
+# colour: w
+--- art ---
+ @ 
+/|\
+/ \
+--- mask ---
+ W
+www
+w w
+--- art ---
+ @ 
+\|/
+ | 
+--- mask ---
+ W
+www
+ w

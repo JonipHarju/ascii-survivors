@@ -10,10 +10,25 @@ parser you hate.*
 
 | Folder | What | Max size |
 |---|---|---|
-| `sprites/` | Multi-cell things drawn **in the world**. Bosses only. | **16 w × 5 h** |
+| `sprites/mobs/` | Ordinary enemies, drawn **in the world**. Animated. | **5 w × 3 h** |
+| `sprites/elites/` | Elites. Animated. | **9 w × 5 h** |
+| `sprites/` | Player (3×3) and the boss (28×11). | **28 w × 11 h** |
 | `portraits/` | Bestiary cards, first-encounter panels, evolution slams. | **20 w × 8 h** |
 | `cards/` | Level-up card icons — a diagram of each weapon's *shape*. | **12 w × 5 h** |
 | `ui/` | Title, dawn, death banners. Full-width. | **78 w × 20 h** |
+
+> ⚠️ **John:** `SIZE_BUDGET` in `sprite.ts` must match, and its `.find()` is
+> first-match, so the **specific prefixes have to come before the general one**:
+> `sprites/mobs/` and `sprites/elites/` before `sprites/`. Today the whole tree is
+> capped at the old `16×5`, so the Countess warns (and draws anyway, correctly).
+
+Everything on the field is a **multi-cell animated sprite** now, tiered by threat
+(`design.md` §10). This replaces the old one-glyph-per-enemy rule, which only ever
+worked because the field was 100×34; at 180×60 it's just small. **Size is threat**
+— a player reads danger from silhouette alone, with no colour.
+
+The `glyph` column in `glyphs.tsv` survives as the **loader fallback** for any mob
+whose sprite file doesn't exist yet, so a half-drawn bestiary still ships.
 
 And the tuning tables, which are data, not art — John parses them, Jane owns the
 numbers, and neither of us needs the other to change a value:

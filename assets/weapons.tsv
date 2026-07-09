@@ -25,14 +25,14 @@
 #
 # id	level	name	glyph	colour	shape	cd	dmg	ax	ay	pierce	knock	dur	count	pspeed	note
 #-----------------------------------------------------------------------------------------------
-chain	1	The Chain	=	W	band	1.1	10	12.0	6.0	99	4	0.12	1	0	horizontal band in facing direction; you turn by walking
-chain	2	The Chain	=	W	band	1.05	12	12.7	6.4	99	4	0.12	1	0	
-chain	3	The Chain	=	W	band	1.0	14	13.4	6.7	99	4	0.12	1	0	
-chain	4	The Chain	=	W	band	0.95	15	14.2	7.1	99	4	0.12	2	0	ALSO strikes behind you
-chain	5	The Chain	=	W	band	0.9	17	14.9	7.4	99	4	0.12	2	0	
-chain	6	The Chain	=	W	band	0.85	19	15.6	7.8	99	4	0.12	2	0	
-chain	7	The Chain	=	W	band	0.8	21	16.3	8.2	99	4	0.12	2	0	
-chain	8	The Chain	=	W	band	0.75	23	17.0	10	99	4	0.12	2	0	band is 5 rows tall
+chain	1	The Chain	=	W	band	1.1	10	12.0	6.0	99	4	0.12	2	0	bands BOTH sides from lv1 (front band wider). no longer the starting weapon.
+chain	2	The Chain	=	W	band	1.05	12	12.7	6.4	99	4	0.12	2	0	
+chain	3	The Chain	=	W	band	1.0	14	13.4	6.7	99	4	0.12	2	0	
+chain	4	The Chain	=	W	band	0.95	15	14.2	7.1	99	4	0.12	4	0	adds a vertical band — a cross
+chain	5	The Chain	=	W	band	0.9	17	14.9	7.4	99	4	0.12	4	0	
+chain	6	The Chain	=	W	band	0.85	19	15.6	7.8	99	4	0.12	4	0	
+chain	7	The Chain	=	W	band	0.8	21	16.3	8.2	99	4	0.12	4	0	
+chain	8	The Chain	=	W	band	0.75	23	17.0	10	99	4	0.12	4	0	bands are 5 rows tall
 
 nova	1	Sanguine Nova	*	R	bolt	1.4	8	2.0	2.0	1	1	2.0	1	40	homing bolt at nearest enemy
 nova	2	Sanguine Nova	*	R	bolt	1.34	9	2.1	2.1	1	1	2.0	1	40	

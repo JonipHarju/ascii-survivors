@@ -1,0 +1,17 @@
+# name: Rattlejack
+# size: 3x2
+# anchor: center
+# fps: 6
+# colour: W
+--- art ---
+/o\
+-|-
+--- mask ---
+WwW
+WWW
+--- art ---
+\o/
+-|-
+--- mask ---
+WwW
+WWW

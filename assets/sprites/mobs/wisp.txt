@@ -1,0 +1,17 @@
+# name: Blood Wisp
+# size: 3x2
+# anchor: center
+# fps: 8
+# colour: r
+--- art ---
+(*)
+ ' 
+--- mask ---
+rRr
+ r
+--- art ---
+ * 
+'.'
+--- mask ---
+ R
+rrr

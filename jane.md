@@ -526,8 +526,151 @@ Note her `speed 10` in `glyphs.tsv` is her *cruise*; the phase rows override it
 (0 / 10 / 14) and `charge_speed 52` is separate. If that's an annoying split, say
 so and I'll fold cruise speed into the phase table only.
 
-**The bit I actually care about:** phase 3 is the payoff for the gore layer.
+**The bit I actually care about (pre-owner-feedback):** phase 3 is the payoff for the gore layer.
 Nineteen minutes of kills have painted a map of everywhere you've been. In the
 dark, that carpet is the only thing telling you where you are. The decals stop
 being decoration and become **navigation**. If you build one thing from this
 file, build that.
+
+---
+
+## 2026-07-09 20:15 — `owner-feedback.md` landed. Three demands. Two of them are mine to fix, one is yours.
+
+Read `owner-feedback.md` before anything else here. Summary and my decisions:
+
+### 1. "Why is it in terminal? Move to canvas." — your lane, but not optional
+
+Techstack is yours and I'm not going to design your renderer. But the direction
+is an owner mandate, so I've written it into `design.md` §5.0 as settled.
+
+**Before you mourn the terminal renderer, here's the thing I found:** the owner's
+two art complaints are *the same complaint*. I costed out multi-cell enemies:
+
+| grid | avg 8 cells/enemy, 220 alive |
+|---|---|
+| 100×34 (terminal) | **52% of the screen** |
+| 180×60 (canvas) | **16%** |
+
+Sprites bigger than one cell simply do not fit in a terminal at survivors
+density. I spent this whole project defending one-glyph enemies on readability
+grounds, and I was defending a conclusion that only held *because* of a premise I
+had the power to change. Canvas isn't a nicer coat of paint on the art problem —
+it's the precondition for it.
+
+**What survives, and it's most of it:** the `.txt` + mask art format, all six
+`.tsv` tables, the loader, world units, the fixed-timestep loop, the director,
+the upgrade system, the gore layer, the dark. The art contract is
+renderer-independent — that's the whole reason it survives — and `# colour:`
+already accepts `#rrggbb`. What dies is the ANSI diff renderer, the colour
+degradation ladder, and the key-repeat input hack. I'm sorry about the diff
+renderer; it was good work and it measured 1.68ms.
+
+**What I need from the new renderer, in priority order:**
+
+1. **Sub-cell positions.** Entities at float wu coordinates, glyphs drawn at
+   fractional pixel offsets. Everything currently snaps to a cell, and *this is
+   the single thing that makes it look like 1978*. More than sprite size, more
+   than colour.
+2. **A 180×60 cell grid** (12×24 px cells keeps the wu maths byte-identical —
+   §5.1 is unchanged). Min 120×40; below that scale the canvas, don't show less
+   world.
+3. **Draw order by world y**, so 220 overlapping sprites read as a crowd.
+4. **Hitboxes stay circles in wu**, sized to a sprite's inner mass, *not* its
+   bounding box. Big sprites must not become unfair sprites.
+5. Per-sprite `fps` — you already have it.
+
+Effects the owner is implicitly asking for, in the order I'd want them: lantern
+glow, screen shake on a Countess charge, damage numbers, ember particles, a
+vignette. All cosmetic, all after the above.
+
+### 2. "The first weapon feels clunky — you walk into enemies to aim it." — mine, and he's right
+
+Dead right, and it's a design error, not a tuning one. The Chain fires along your
+facing; facing came from your last horizontal input; so **to hit a thing you had
+to walk toward it, in a game whose entire threat model is that things hurt you by
+touching you.** The starting weapon was asking the player to walk into the damage.
+
+Two changes, both already in the tables:
+
+- **The Warden now starts with Sanguine Nova**, which seeks the nearest enemy.
+  No aiming, no facing, no positioning tax. It's deliberately the least
+  interesting weapon in the game and it's the right first one, because it teaches
+  the correct lesson in ten seconds: *movement is for dodging, not for aiming.*
+- **The Chain strikes both sides from level 1** (was level 4), so you can whip
+  what you're running away from. Facing survives as skill expression — the front
+  band is wider — instead of as a toll. Its level 4 is now "adds a vertical band,
+  making a cross."
+
+**New file: `assets/characters.tsv`.** Starting weapon is data now, please parse
+it rather than hardcoding `'chain'`. Rule written at the top of that file: *no
+starting weapon may require aiming.* Nova seeks, Cinder Trail drops behind you,
+Wisp Lantern orbits. Directional weapons are things the player *chooses*.
+
+### 3. "Singular characters walking around... is this 1960?" — mine, and you were right first
+
+This one I owe you directly.
+
+Your very first note proposed a tiered sprite-size table — trash 1×1 to 3×2,
+elites 4–6 wide, bosses up to 12×6 — and said *"your call, you own design. I just
+want the tradeoff on the table before you draw 40 sprites at the wrong size."*
+I overruled you and made every enemy one glyph. The owner has overruled me, and
+he's landed roughly where you started.
+
+`design.md` §10 is rewritten, with the reasoning and the correction recorded
+rather than quietly patched. New tiers, and **every mob animates** — a field of
+220 static sprites is wallpaper; 220 breathing ones is a horde. That's most of
+what the owner is actually asking for.
+
+Shipped, all 2-frame, all masked, `--preview` clean:
+
+| | | |
+|---|---|---|
+| `sprites/player` 3×3 | `sprites/mobs/rat` 2×1 | `sprites/mobs/bat` 3×1 |
+| `sprites/mobs/ghoul` 3×2 | `sprites/mobs/rattlejack` 3×2 | `sprites/mobs/wisp` 3×2 |
+| `sprites/mobs/wight` 5×3 | `sprites/mobs/stalker` 5×3 | `sprites/elites/gravewarden` 9×5 |
+
+And **the Countess is redrawn at 28×11** (was 16×5). Crown, face, spread wings,
+gown. Two frames: the wings beat and the body is column-locked, so she doesn't
+breathe. I built her as a left half and mirrored it — hand-drawing a 28-wide
+symmetric creature got me a boss whose crown sat a cell and a half off her own
+anchor, and I only caught it because I wrote the symmetry check as an assertion
+rather than trusting my eyes.
+
+The player's head is still the `@`, still the only bright white in the game.
+Whatever else is on screen, the eye finds it first. That rule doesn't move.
+
+### Things for you, concretely
+
+1. **`SIZE_BUDGET` needs the new prefixes, ordered specific-first**, because
+   `.find()` takes the first match:
+   ```ts
+   ['sprites/mobs/',   5,  3],
+   ['sprites/elites/', 9,  5],
+   ['sprites/',       28, 11],   // player + boss
+   ['portraits/',     20,  8],
+   ['cards/',         12,  5],
+   ['ui/',            78, 20],
+   ```
+   Right now the whole tree is capped at `16×5`, so `--preview` reports exactly
+   one warning: the Countess, over budget, *drawing it anyway*. Your loader
+   degrading instead of clipping is why this pivot cost me nothing today.
+2. **Parse `assets/characters.tsv`** for the starting weapon.
+3. **`director.tsv`: `target_end` 300 → 220.** Not perf — you measured 10×
+   headroom and I believe you. Legibility: 220 × 8 cells ≈ 16% of a 180×60 field
+   *before* they clump on the player. It's one cell in a `.tsv`; I'll raise it the
+   moment it looks thin.
+4. **Sprite lookup by convention:** `sprites/mobs/<id>`, falling back to the
+   `glyph` column in `glyphs.tsv`. That fallback is how we ship a half-drawn
+   bestiary — `wisp`, `rattlejack` and `stalker` still need portraits at the new
+   fidelity and I'd rather you not wait.
+
+### And two things where you were right and I've corrected the design doc
+
+- **Gore decals in world space, bounded by eviction** — not viewport-capped as I
+  specced. You said viewport-capped decals smear as the camera scrolls under
+  them, and that walking back over old ground should show you your own carpet.
+  That's not just correct, it's load-bearing: §10's Dusk phase is *entirely* the
+  player navigating by their own gore in the dark. `design.md` §9 now says so.
+- **`size:` as the padded box, not the art's extent.** Already folded in.
+
+`npm test`: 56/56 green after all of this. Nothing I changed is code.

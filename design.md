@@ -55,7 +55,35 @@ The HUD clock counts **up** from `00:00`. Dawn is at `20:00`.
 
 ## 5. Space, and the thing everyone gets wrong
 
-**A terminal cell is twice as tall as it is wide.** If we treat the grid as
+### 5.0 Platform: we are leaving the terminal
+
+*Owner mandate, 2026-07-09. Techstack is John's lane and the final shape is his
+call, but the direction is not up for debate.*
+
+The game renders to a **canvas in the browser**, not a TTY. It is still an ASCII
+game — every entity is still made of characters — but the characters are drawn as
+glyphs onto a canvas, which buys us four things a terminal cannot give:
+
+1. **A grid big enough for real sprites.** This is the one that matters. See §10:
+   multi-cell enemies at a 100×34 terminal grid would cover **71% of the screen**
+   at the late-game head-count. They need ~**180×60**. No terminal is 180×60.
+   The owner's two asks — bigger art, leave the terminal — are the same ask.
+2. **Sub-cell motion.** Glyphs drawn at arbitrary pixel offsets instead of
+   snapping to a character cell. Enemies *glide*. This, more than anything else,
+   is what stops it looking like 1978.
+3. **Real framerate and real animation.** 60fps+, per-sprite frame rates, no
+   ~11KB of ANSI per frame.
+4. **Effects.** Lantern glow, screen shake on a charge, damage numbers, ember
+   particles, a vignette. Colour without a 16-slot budget.
+
+**What does not change:** the `.txt` + mask art format, the `.tsv` tuning tables,
+world units, and every design decision below except sprite sizes. The art
+contract is renderer-independent, which is the whole reason it survives this.
+`# colour:` already takes `#rrggbb`.
+
+### 5.1 The grid
+
+**A character cell is twice as tall as it is wide.** If we treat the grid as
 square, circles come out as ovals, "run away" is twice as fast vertically as
 horizontally, and every AoE lies to the player.
 
@@ -70,18 +98,29 @@ Consequence for feel: a player moving at 20 wu/s covers 20 cells/s horizontally
 and 10 rows/s vertically. That is correct and it will *look* right. Diagonal
 movement must be normalized (`× 0.707`), not additive.
 
-**Camera & bounds:** the world is **unbounded**. No walls, ever — walls let you
-camp a corner and the genre dies. The camera hard-centers on the player.
+This survives the move to canvas unchanged: pick a cell of `12×24` px and the wu
+maths is identical. **Positions are floats, not integers** — on canvas a glyph
+may be drawn at a fractional cell offset, and it must be, or everything snaps and
+stutters. Entity *hitboxes* stay circles in wu; sprite size is cosmetic.
 
-**Viewport:** minimum supported terminal `80×24`. Target `100×34`. Render the
-play field to whatever the terminal actually is, capped at `120×40` so the
-player can still see their own `@`. HUD is a thin overlay: one line top, one
-line bottom. Everything else is the field.
+**Camera & bounds:** the world is **unbounded**. No walls, ever — walls let you
+camp a corner and the genre dies. The camera hard-centers on the player, at
+sub-cell precision.
+
+**Viewport:** target **180 × 60 cells** (≈2160×1440 px at a 12×24 cell, scaled to
+fit). Minimum **120 × 40**; below that we scale the whole canvas down rather than
+show less world, because seeing the wave coming *is* the game. HUD is a thin
+overlay: one line top, one bottom. Everything else is the field.
 
 ## 6. The player
 
-The player is a single glyph: **`@`**, bright white, bold. Nothing else on the
-field is bright white. It is always the most legible thing on screen.
+The player is a **3×3 sprite** (`assets/sprites/player.txt`) — a hooded figure
+with a lantern — whose head is the character **`@`**, in bright white. Nothing
+else in the game may use bright white. Whatever else is happening, the player's
+eye finds the `@` first.
+
+Two frames, a walking cycle. The hitbox is a small circle in wu at the sprite's
+centre, not its bounding box.
 
 | | |
 |---|---|
@@ -96,11 +135,14 @@ swarm feels like a bug even when it isn't.
 
 ### Characters (unlocked with gold)
 
-| Glyph | Name | Starts with | Twist |
-|---|---|---|---|
-| `@` | **The Warden** | The Chain | +10% Area. The default. |
-| `&` | **The Ashling** | Cinder Trail | +20% move, 70 HP. Fragile, fast, burns the floor. |
-| `%` | **The Beggar** | Wisp Lantern | +30% Luck, +50% gold. Weak damage, rich runs. |
+| Name | Starts with | Twist |
+|---|---|---|
+| **The Warden** | Sanguine Nova | +10% Area. The default. |
+| **The Ashling** | Cinder Trail | +20% move, 70 HP. Fragile, fast, burns the floor. |
+| **The Beggar** | Wisp Lantern | +30% Luck, +50% gold. Weak damage, rich runs. |
+
+Note that **no starting weapon requires aiming.** Nova seeks, Cinder Trail drops
+behind you, Wisp Lantern orbits. Directional weapons are things you *choose*.
 
 ## 7. Weapons — how auto-attacking works
 
@@ -115,24 +157,44 @@ occasionally add a clause, like "also strikes behind you").
 
 You may carry **6 weapons** and **6 passives**. Each caps at **level 8**.
 
-### The starting weapon: THE CHAIN
+### The starting weapon: SANGUINE NOVA
 
-A whip. It knows where you're facing — the last **horizontal** direction you
-pressed. Left or right, never up or down.
+*Changed 2026-07-09. It used to be The Chain, and that was a mistake — see below.*
 
-- **Cooldown** 1.1s · **Damage** 10 · **Pierce** ∞ (hits everything in the band)
-- **Shape** a band `12 wu wide × 6 wu tall` — which renders as 3 rows, because
-  cells are 1×2 — starting at the player's edge, in the facing direction.
-  Knockback 4 wu.
+A seeking bolt. Every 1.4s it fires at the **nearest enemy**, wherever it is.
+No aiming, no facing, no positioning tax.
+
+- **Cooldown** 1.4s · **Damage** 8 · **Pierce** 1 · **Homing**, 40 wu/s
+- **Render:** a `*` that tracks its target and pops on contact.
+
+It is deliberately the least interesting weapon in the game, and it is the right
+first one, because it teaches the correct lesson in the first ten seconds:
+**your movement is for dodging, not for aiming.** The build does the killing.
+A player who learns that at 0:10 is a player who understands the genre by 2:00.
+
+> **Why this changed.** The Chain was the opener. It fires horizontally in your
+> facing direction, and facing came from your last horizontal input — so to hit
+> something you had to *walk toward it*. In a game whose entire threat model is
+> "things touch you and you take damage," the starting weapon was asking the
+> player to walk into the damage. The owner hit this immediately. A weapon that
+> punishes the only verb you have is a broken weapon, however elegant its story.
+
+### THE CHAIN (still in, still great, no longer first)
+
+A whip, and now a level-up pick rather than a starting tax.
+
+- **Cooldown** 1.1s · **Damage** 10 · **Pierce** ∞ · Knockback 4 wu
+- **Shape** a band `12 wu wide × 6 wu tall` (3 rows, cells being 1×2), starting
+  at the player's edge — **on both sides, from level 1.**
 - **Render:** the band flashes as `═` for ~60ms, then `─` for ~60ms, then clears.
-  Two frames. That's the whole animation and it reads perfectly.
 
-Because it's horizontal-only, the Chain teaches the game's first real skill:
-**you turn by walking.** Good players flick left-right to keep the band on the
-swarm. It should feel like snapping a towel.
+Striking both ways from level 1 is the second half of the fix: you can now whip
+the thing you're *running away from*. Facing still exists and still matters —
+the front band is wider — so "you turn by walking" survives as skill expression
+instead of a toll.
 
-Levels: `2` +damage · `3` +width · `4` **strikes behind you too** · `5` +damage
-`6` +width · `7` -cooldown · `8` +damage, band is 5 rows tall.
+Levels: `2` +damage · `3` +width · `4` **adds a vertical band (a cross)** ·
+`5` +damage · `6` +width · `7` −cooldown · `8` +damage, bands are 5 rows tall.
 
 ### The rest of the arsenal
 
@@ -244,34 +306,61 @@ cell and it decays over ~90 seconds:
 Decals never block movement, never collide, never think. It is a character grid
 and a timestamp grid. By minute 18 the field is a red-brown carpet that thins
 out where you haven't walked. **This is the single best-looking thing in the
-game and it costs nothing.** Cap the layer at the viewport; don't persist it into
-the unbounded world.
+game and it costs nothing.**
+
+Decals are anchored in **world space**, not the viewport, and the layer is bounded
+by eviction (~24k cells) rather than by clipping. *This corrects my original
+spec, which said to cap it to the viewport — John pointed out that viewport-capped
+decals smear as the camera scrolls under them, and that walking back over old
+ground should show you your own carpet. He's right; it's the whole point of §10's
+Dusk phase.*
 
 ## 10. The bestiary
 
-Every enemy on the field is **one glyph**. Not a sprite — one cell.
+Enemies are **multi-cell animated ASCII sprites**, sized by tier.
 
-This is not a limitation, it's the core rendering decision: we want *three
-hundred* enemies visible at once, and at that density a multi-cell sprite is an
-unreadable smear. Multi-cell art is reserved for **bosses**, and for **portraits**
-shown in the HUD (§12). See `assets/glyphs.tsv` for the machine-readable table.
+> **I was wrong about this, and it's worth recording why.** My original rule was
+> "every enemy is exactly one glyph," on the grounds that 300 multi-cell sprites
+> would be an unreadable smear. John proposed a tiered size table in his very
+> first note and I overruled him. The owner has overruled me.
+>
+> The arithmetic that convinced me: at the late-game head-count, these tiers
+> average **8 cells per enemy**. On the old 100×34 terminal grid that's **71% of
+> the screen** — I was right that it doesn't work *in a terminal*. On the 180×60
+> canvas grid (§5.0) it's **16%**, which is a wall of bodies you can still read.
+> The size rule and the platform were never separate questions. I'd argued the
+> conclusion without noticing it depended on a premise I could change.
 
-| Glyph | Name | HP | Speed | Power | From | Behaviour |
+| Sprite | Name | HP | Speed | Power | From | Behaviour |
 |---|---|---|---|---|---|---|
-| `g` | **Ghoul** | 10 | 9 | 4 | 0:00 | Walks straight at you. The bread and butter. |
-| `r` | **Grave Rat** | 2 | 14 | 2 | 0:30 | Spawns in packs of 12+. Dies to a stiff breeze. |
-| `w` | **Bat** | 5 | 26 | 3 | 2:00 | Faster than you. Drifts on a sine wave, so it *misses*. |
-| `W` | **Wight** | 40 | 6 | 9 | 4:00 | Slow, tanky, hits hard. Advances in a line. |
-| `*` | **Blood Wisp** | 12 | 16 | 5 | 12:00 | Ignores enemy collision. Floats through the pile. |
-| `x` | **Rattlejack** | 16 | 11 | 6 | 8:00 | On death, splits into two Grave Rats. |
-| `S` | **Stalker** | 30 | 18 | 12 | 14:00 | **Invisible outside your light.** The only one. Rare, deadly, telegraphed by a `?` at the light's edge one second before it enters. |
+| `2×1` | **Grave Rat** | 2 | 14 | 2 | 0:30 | Packs of 12+. Dies to a stiff breeze. Scurries. |
+| `3×1` | **Bat** | 5 | 26 | 3 | 2:00 | Faster than you. Sine-wave drift, so it *misses*. Wings flap. |
+| `3×2` | **Ghoul** | 10 | 9 | 4 | 0:00 | Walks straight at you. The bread and butter. Shambles. |
+| `3×2` | **Rattlejack** | 16 | 11 | 6 | 8:00 | On death, splits into two Grave Rats. |
+| `3×2` | **Blood Wisp** | 12 | 16 | 5 | 12:00 | Ignores enemy collision. Floats through the pile. |
+| `5×3` | **Wight** | 40 | 6 | 9 | 4:00 | Slow, tanky, hits hard. Advances in a line. |
+| `5×3` | **Stalker** | 30 | 18 | 12 | 14:00 | **Invisible outside your light.** Rare, deadly, telegraphed by a `?` at the light's edge one second before it enters. |
+| `9×5` | **Gravewarden** *(elite)* | ×20 | 7 | 16 | scripted | Bold, bright, HP bar above. Drops a chest. 5:00, 10:00, 15:00 (×2). |
+| `28×11` | **The Countess** *(boss)* | 9000 | — | 25 | 19:00 | See below. |
 
-**Elites** are still one glyph, drawn **bold + bright**, with a small HP bar
-above them. They are ordinary enemies with ×20 HP and a chest.
+Rules that keep this readable at 220 enemies:
 
-| Glyph | Name | Arrives |
-|---|---|---|
-| `G` | **Gravewarden** | 5:00, 10:00, 15:00 (×2) |
+- **Size is threat.** A player must be able to read danger from silhouette alone,
+  at a glance, with no colour. Chaff is small. Tanks are big.
+- **Every mob animates**, minimum 2 frames. A field of 220 static sprites is a
+  wallpaper; a field of 220 breathing ones is a horde. This is most of what the
+  owner is asking for.
+- **Sprite size is cosmetic. The hitbox is a circle in wu**, roughly the sprite's
+  inner mass. Big sprites must not become unfair sprites.
+- **Draw order is by world y**, so the horde overlaps like a crowd rather than a
+  spreadsheet.
+- **The player must never be lost.** The `@` at the player's heart stays the only
+  bright-white glyph in the game.
+
+Machine-readable stats: `assets/glyphs.tsv`. Art: `assets/sprites/mobs/*.txt`,
+`assets/sprites/elites/*.txt`, `assets/sprites/countess.txt`. The `glyph` column in
+`glyphs.tsv` survives as the **loader fallback** when a sprite file is missing —
+which is exactly how we ship a half-drawn bestiary without breaking the build.
 
 ### The boss: THE COUNTESS
 
@@ -320,10 +409,15 @@ cannot stall her out. Kill her, and the sun comes up.
 The director is a **closed loop on head-count**, not a spend-down budget.
 
 ```
-target(t) = 3 + 297 × (t/1200)^1.5      enemies alive: 3 at 0:00 → 300 at 20:00
+target(t) = 3 + 217 × (t/1200)^1.5      enemies alive: 3 at 0:00 → 220 at 20:00
 cap(t)    = 15 + 45  × (t/1200)         max spawns/sec: 15 → 60
 each tick: spawn min(target(t) − alive, cap(t)) enemies just outside the viewport
 ```
+
+*(300 → 220 because enemies are no longer one cell each. At the §10 tiers, 220
+enemies average 8 cells apiece = ~16% of a 180×60 field, before they clump on the
+player. Perf is not the constraint here — John measured 10× headroom — legibility
+is. This is one number in `director.tsv`; I'll raise it the moment it looks thin.)*
 
 **Why not a budget.** I specced one first — `budget += 1.0 + minutes × 0.9`,
 spend it on enemies by `cost` — and then simulated it. It's open-loop: population

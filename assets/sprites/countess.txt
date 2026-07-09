@@ -1,30 +1,53 @@
 # name: The Countess
-# size: 16x5
+# size: 28x11
 # anchor: center
-# fps: 4
-# colour: R
+# fps: 3
+# colour: e
+--- art ---
+  \                      /  
+   \        ^^^^        /   
+    \    ,--------.    /    
+     \  /  o    o  \  /     
+      \ |    VV    | /      
+       \   \____/   /       
+        '.        .'        
+         |        |         
+        /|  ####  |\        
+       / |________| \       
+         '--'  '--'         
+--- mask ---
+  e                      e
+   e        YYYY        e
+    e    eeeeeeeeee    e
+     e  e  R    R  e  e
+      e e    ww    e e
+       e   eeeeee   e
+        ee        ee
+         e        e
+        ee  rrrr  ee
+       e eeeeeeeeee e
+         eeee  eeee
+--- art ---
+                            
+            ^^^^            
+         ,--------.         
+ __     /  o    o  \     __ 
+/  \__  |    VV    |  __/  \
+\      \   \____/   /      /
+        '.        .'        
+         |        |         
+        /|  ####  |\        
+       / |________| \       
+         '--'  '--'         
+--- mask ---
 
---- art ---
-  \\   ^^^^   //
- \ \ ( oo ) / /
-\ \_\  VV  /_/ /
- \__/|    |\__/
-     '----'
---- mask ---
-  ee   YYYY   ee
- e e e RR e e e
-e eee  ww  eee e
- eeeee    eeeee
-     rrrrrr
---- art ---
-       ^^^^
-_    ( oo )    _
- \__\  VV  /__/
-  \_/|    |\_/
-     '----'
---- mask ---
-       YYYY
-e    e RR e    e
- eeee  ww  eeee
-  eeee    eeee
-     rrrrrr
+            YYYY
+         eeeeeeeeee
+ ee     e  R    R  e     ee
+e  eee  e    ww    e  eee  e
+e      e   eeeeee   e      e
+        ee        ee
+         e        e
+        ee  rrrr  ee
+       e eeeeeeeeee e
+         eeee  eeee

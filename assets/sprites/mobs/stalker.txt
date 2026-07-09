@@ -1,0 +1,21 @@
+# name: Stalker
+# size: 5x3
+# anchor: center
+# fps: 5
+# colour: e
+--- art ---
+\   /
+  o  
+ / \ 
+--- mask ---
+e   e
+  M
+ e e
+--- art ---
+ \ / 
+  o  
+/   \
+--- mask ---
+ e e
+  M
+e   e

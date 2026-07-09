@@ -1,0 +1,21 @@
+# name: Wight
+# size: 5x3
+# anchor: center
+# fps: 3
+# colour: c
+--- art ---
+ ___ 
+|o o|
+ /|\ 
+--- mask ---
+ ccc
+cC Cc
+ ccc
+--- art ---
+ ___ 
+|o o|
+ \|/ 
+--- mask ---
+ ccc
+cC Cc
+ ccc

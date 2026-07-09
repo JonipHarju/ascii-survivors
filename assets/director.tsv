@@ -18,7 +18,7 @@
 #
 param	run_duration	1200	seconds; dawn (or the Countess) at the end
 param	target_start	3	enemies alive at 0:00
-param	target_end	300	enemies alive at 20:00
+param	target_end	220	enemies alive at 20:00. was 300 when enemies were 1 cell each; they now average 8 cells (design.md §10), so 220 is ~16% of a 180x60 field before they clump. legibility is the constraint, not perf.
 param	target_curve	1.5	>1 = back-loaded, most of the ramp is late
 param	cap_start	15	max spawns/sec at 0:00
 param	cap_end	60	max spawns/sec at 20:00

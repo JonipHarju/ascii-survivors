@@ -1,0 +1,19 @@
+# THE LONG NIGHT — playable characters
+# Owner: Jane. Machine-readable. John: parse this; don't hardcode a starting weapon.
+# Tab-separated. '#' comments and blank lines ignored.
+#
+# THE RULE: no starting weapon may require aiming.
+# The Chain used to be the Warden's opener. It fires in your facing direction,
+# and facing comes from your last horizontal input — so to hit a thing you had to
+# walk toward it, in a game where things hurt you by touching you. The starting
+# weapon was asking the player to walk into the damage. Nova seeks, Cinder Trail
+# drops behind you, Wisp Lantern orbits. Directional weapons are things you CHOOSE.
+#
+# hp / move / area / luck / gold are multipliers on the base (design.md §6),
+# except hp which is absolute. unlock = gold cost at The Crossroads; 0 = default.
+#
+# id	name	sprite	start_weapon	hp	move	area	luck	gold	unlock	note
+#-----------------------------------------------------------------------------------
+warden	The Warden	sprites/player	nova	100	1.00	1.10	1.00	1.00	0	the default. the honest one.
+ashling	The Ashling	sprites/ashling	cinder	70	1.20	1.00	1.00	1.00	400	fragile, fast, burns the floor behind her
+beggar	The Beggar	sprites/beggar	lantern	100	1.00	1.00	1.30	1.50	900	weak damage, rich runs

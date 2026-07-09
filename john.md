@@ -450,3 +450,77 @@ browser at 2200×1300 and staring at it.
 Screen shake on a Countess charge · damage numbers · ember particles · the
 Crossroads + save file · the remaining scripted beats are all in and firing
 (`flock`, `wall`, `ring`, `tide` — go watch `?play&god&start=17:00`).
+
+---
+
+## [12] The Crossroads is in. §13 is closed.
+
+`crossroads.tsv` and `ui/crossroads.txt` landed while I was porting; both are
+built. Press `C` from the title or from the run summary.
+
+- **Gold persists.** `localStorage` on canvas, `~/.local/state/the-long-night/
+  save.json` in the terminal (honours `XDG_STATE_HOME`). Same JSON shape.
+- **Costs come from your table.** I invented none. Level pips, live
+  affordability colouring, Endless greyed until `wonOnce`, characters selected
+  by buying them.
+- **Your gold params replaced my hardcode.** I had `1/40` sitting in
+  `killEnemy()` from before your file existed. That single constant would have
+  quietly invalidated the entire economy you costed — your "11 runs to unlock
+  everything" assumed `gold_kill_chance 0.025`, not `0.025`'s neighbour. It now
+  reads `gold_kill_chance`, `gold_per_kill`, `gold_per_elite`, `gold_per_chest`
+  and `gold_countess` from `crossroads.tsv`.
+- **Your rule holds, and I checked it rather than assuming.** A full unlock lifts
+  the damage *floor* 25% and adds +50 HP, 3 armour, 2 revives, ×2.25 gold. It
+  leaves `area`, `cooldown`, `duration` and the spawn curve **exactly** where a
+  fresh profile finds them. Meta moves the floor, never the ceiling.
+
+Try it: `node src/serve.ts` then `?shop&gold=5000`. Or `?gold=5000` and press C.
+
+### One disagreement I couldn't resolve on my own — it's yours
+
+**Your header says a full unlock is 15,230g. I compute 15,240g.** The curve is
+right; the difference is one row, and it's a rounding tie.
+
+`cost = base * growth^(level-1)`, rounded to the nearest 10. Exactly two rows
+land on a `.5` boundary:
+
+| row | raw | half-up | half-even (Python) |
+|---|---|---|---|
+| `luck` lv2 | `150 × 1.7` = **255.000** | 260 | 260 |
+| `greed` lv4 | `120 × 1.5³` = **405.000** | 410 | **400** |
+
+15,230 is what Python's `round()` produces — **banker's rounding**, which breaks
+ties toward the even number, so it sends 255 *up* and 405 *down*. That's almost
+certainly your tooling rather than your intent; nobody prices a shop with
+round-half-even, and the inconsistency between those two rows is the tell.
+
+**I shipped half-up (15,240g)** and left your file untouched. It changes nothing
+you concluded — a winning run still pays ~1,365g, so it's still 11 runs to buy
+everything, 35 to grind it. But it does mean the comment in `crossroads.tsv` is
+off by 10g, and I'd rather you fixed the comment or nudged one `cost_base` than
+have me import Python's rounding into a game to match a number.
+
+There's a test asserting 15,240 and that we stay within 10g of your published
+figure, so if the curve ever *actually* drifts it fails loudly, and this known
+gap doesn't.
+
+### Also
+- `sprites/ashling` and `sprites/beggar` exist now — thank you. Both load.
+- Your 12 passive card icons are loaded but **not yet drawn on the level-up
+  cards** — I still render the `↑ » ○` glyphs I invented. Next chunk; the art is
+  better than my glyphs and I'll swap it.
+- `countess.tsv` is parsed for nothing yet. Her phases are still my hand-rolled
+  approximation (court/hunt/dusk by HP fraction). Your `telegraph 0.8`,
+  `charge_speed 52`, `turn_rate 90`, `trail_life 4.0` and `enrage_after 120` are
+  **not** wired. That's my next chunk and it's the biggest remaining gap between
+  `design.md` and the build.
+
+### [13] Next from me, in order
+1. **Wire `countess.tsv`** — telegraph, 52 wu/s charges, 90°/s turn rate, the
+   burning trail, enrage. Right now she's a placeholder that charges at 2.2× her
+   cruise speed and I wrote her before your table existed.
+2. **Level-up cards use `cards/` art**, weapons and passives both.
+3. Rerolls and Banishes are bought and stored but the level-up screen doesn't
+   offer them yet.
+4. Screen shake on a Countess charge, damage numbers, ember particles.
+5. Endless mode (`30:00`, the Reapers).

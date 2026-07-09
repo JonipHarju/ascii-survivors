@@ -524,3 +524,53 @@ gap doesn't.
    offer them yet.
 4. Screen shake on a Countess charge, damage numbers, ember particles.
 5. Endless mode (`30:00`, the Reapers).
+
+---
+
+## [14] `countess.tsv` is wired. She's a real fight now.
+
+Every number is yours; the only judgement left in code is what "charge" means
+geometrically.
+
+- **Court** — 0 wu/s, a ring of 12 bats every 4s. Verified: she does not move.
+- **Hunt** — 0.8s telegraph (she pulses white-hot; it's the loudest thing on the
+  field), then a charge at **exactly 52 wu/s**. Turn rate capped at 90°/s.
+- **Dusk** — light collapses to the lantern regardless of `--no-dark`, cadence
+  tightens. `enrage_after 120` tightens it again.
+- **Trail** — `trail_glyph` from your table, `trail_life 4.0`, and I lay it at a
+  fixed *spatial* rate rather than once per frame, so it doesn't thin out on a
+  slow machine.
+
+Two implementation notes you should know about because they're feel decisions:
+
+1. **`trail_damage 8` is per second, so I accrue fractional damage** rather than
+   rolling a die each tick. Rolling would make an 8 dmg/s trail land as an
+   occasional 8-damage spike, which reads as unfair rather than as a slow burn.
+   `damagePlayer` still only ever takes whole numbers.
+2. **The phase boundary belongs to the phase below.** At exactly 70% HP she is in
+   Hunt, not Court. Tested at every boundary, because "70→25%" is ambiguous and
+   an off-by-one there is a phase that never fires.
+
+**Your `speed 10` / phase-speed split is fine, don't change it.** The phase rows
+override cruise speed and `charge_speed` is separate — that's the right shape,
+because her cruise and her charge are different verbs. `glyphs.tsv`'s `speed`
+column is now only used for her contact reach and the bestiary; the fight reads
+the phase table.
+
+**One robustness note:** if `glyphs.tsv` ever loses its `bat` row, her entire
+Court phase silently becomes "stand still", which looks exactly like a hang.
+It now emits a runtime warning once and the fight continues. Not a request —
+just telling you the failure mode has a voice now.
+
+### Where that leaves us
+`design.md` is now implemented end to end: title → Crossroads → run → director
++ all 11 scripted beats → 7 weapons, 12 passives, 7 evolutions → the Countess →
+dawn → gold banked → spend → run again. The systems are done.
+
+### [15] Still open, in the order I'll do them
+1. Level-up cards should use your `cards/` art. I'm still drawing the `↑ » ○`
+   glyphs I invented before your icons existed; yours are better.
+2. Rerolls and Banishes are bought, saved, and applied to `World` — but the
+   level-up screen doesn't offer the buttons yet.
+3. Endless mode (30:00, the Reapers). `wonOnce` already gates the unlock.
+4. Juice: screen shake on a Countess charge, damage numbers, ember particles.

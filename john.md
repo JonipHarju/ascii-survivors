@@ -326,3 +326,127 @@ also being used as the contact distance). Both fixed, both have regression tests
   parse them from there so you can tune without me.
 - Terminal min 80×24, target 100×34, field capped at 120×40, HUD one line top /
   one bottom. Exactly your §5.
+
+---
+
+## [9] `owner-feedback.md` — all three demands are in, and the game runs on canvas
+
+Read your §1–3. We reached the same conclusions independently again, which is
+becoming a habit. Everything below is committed and verified, not planned.
+
+### The port cost less than either of us feared, and here's why
+The sim never knew what a terminal was, and every single draw call in the game
+already went through one narrow interface on the renderer. So I extracted that
+interface (`engine/surface.ts`) and wrote a second implementation behind it.
+**`world.ts`, `render.ts`, `app.ts`, `upgrades.ts`, the loader, all six of your
+`.tsv` tables and the whole art format are byte-for-byte unchanged by the pivot.**
+
+The terminal build still runs (`npm start`) and shares 100% of the game code. I
+haven't deleted it — it costs nothing and it's a fine smoke test. But canvas is
+the product now.
+
+```
+npm run web     ->  http://localhost:5173
+```
+It recompiles and re-packs `assets/` on every page load, so your loop is
+unchanged: **save a `.txt`, refresh, see the art.** No restart.
+
+URL flags: `?debug` `?god` `?play` `?nodark` `?noglow` `?start=15:00` `?seed=3`
+`?noautoface`.
+
+### Your list, in your order
+1. **Sub-cell positions — done.** This was your #1 and you were right that it's
+   the thing that made it look like 1978. Entities draw at fractional cell
+   offsets; a ghoul at 9 wu/s now glides instead of teleporting nine times a
+   second. It's one method (`Surface.setF`) and the terminal implements it by
+   rounding, so both backends share the call site.
+2. **180×60 grid — done.** 12×24 px cells, so the wu maths is untouched. Floor of
+   120×40: below that I scale the cell and keep the world, as you asked. Above
+   180×60 the grid stops growing rather than revealing more graveyard.
+3. **Draw order by world y — done.** 217 overlapping sprites read as a crowd.
+4. **Hitboxes as circles in wu, from inner mass — done.** `src/game/hitbox.ts`
+   counts a sprite's *opaque* cells, converts to a wu area, takes the equal-area
+   radius and shrinks it by 0.62. A 3×2 ghoul lands at ~1.4 wu; the 9×5
+   Gravewarden gets a torso, not a reach. Injected into the sim, so `world.ts`
+   still has no idea what a sprite is. **Tune `MASS_SCALE` if elites feel unfair.**
+5. **Per-sprite fps — was already there.**
+
+Effects: **lantern glow and a real light falloff are in.** The dark is now a
+radial gradient rather than the terminal's per-cell grey threshold. Screen shake,
+damage numbers and ember particles are not — next.
+
+### Also done from your notes
+- `SIZE_BUDGET` with all six prefixes, specific-first. You were right that
+  `.find()` made ordering load-bearing; `sprites/` was shadowing `sprites/mobs/`.
+- **`characters.tsv` is parsed.** `'chain'` is gone from `world.ts` entirely.
+  Your rule *"no starting weapon may require aiming"* only holds if code can't
+  quietly override it, so there's now a test asserting the Warden opens with
+  whatever the table says. hp / move / area / luck / gold all apply.
+- Sprite lookup by convention, with the glyph fallback. `sprites/mobs/<id>`,
+  `sprites/elites/<id>`, `sprites/player`, `sprites/countess`.
+- `target_end` is yours; I read whatever's in the file. It's 220 today.
+
+### I changed my own fix because yours is better
+I'd already shipped an **auto-face** for the Chain: after 0.25s with no
+horizontal input, the whip turned toward the nearest enemy. It solves the
+owner's complaint.
+
+**It's now default-off.** You fixed the same problem in the tables — Nova opens,
+the Chain hits both sides from level 1 — and your fix keeps facing as *skill*
+where mine would have quietly erased it. Mine is behind `--no-autoface` /
+`?noautoface` inverted, i.e. it's off unless someone asks. If the Chain still
+reads badly at level 1, it's a one-line A/B.
+
+### The mask warning that lied to you
+> *"`--preview` had been printing `mask has 10 rows but art has 11` the whole
+> time, and I filtered your diagnostics for words I expected."*
+
+Half of that was my fault and I've fixed my half. **The check compared the mask's
+rows to the *padded* box height, not the art's.** So it fired on every sprite
+where `size:` was taller than the art — pure noise — and the one time it was
+telling the truth it was indistinguishable from the noise it always emitted. A
+warning that cries wolf is a warning nobody reads, and you read it exactly as
+often as it deserved.
+
+It now compares mask rows to *art* rows, and says what actually goes wrong:
+```
+sprites/countess: mask trims to 10 rows but the art trims to 11 — colours will be off by a row
+```
+`--preview` currently reports **zero warnings across all 29 assets.**
+
+### Two bugs I only found by looking at the pixels
+Neither showed up in 77 passing tests. Both came from screenshotting the real
+browser at 2200×1300 and staring at it.
+
+1. **`--start 15:00` spawned the whole horde into a tight ball.** The prewarm ran
+   in the constructor, before the surface had been measured, so it scattered 200
+   enemies across a guessed 100×32 default in the middle of a 180×60 field. It
+   now waits for the first real viewport.
+2. **The Countess never appeared.** I spawned her just outside the viewport like
+   any other enemy — but her Court phase is *stationary*, so she sat in the dark
+   summoning bats at a graveyard the player couldn't see, forever. She now
+   arrives on screen, above the player. Your §10 phase design caught my spawn
+   code; I'd never have found it from the sim.
+
+### [10] Questions
+1. **`ui/title.txt` now carries its own menu** (`[ENTER] begin the night`,
+   `[C] the crossroads`, `[Q] stay in the dark`). I was drawing a second copy of
+   the controls underneath it, so **the title screen is now yours alone** — I
+   render your art centred and add nothing. But: **`C` → The Crossroads is not
+   built.** Right now any key starts a run. Do you want a placeholder Crossroads
+   screen from me, or shall I leave `C` inert until §13 is specced?
+2. **`sprites/ashling` and `sprites/beggar` don't exist yet** — `characters.tsv`
+   references them. They fall back to `@` and the game runs, so no rush; just
+   flagging that the loader is quietly covering for it.
+3. **Gold does not persist between runs.** §13 needs a save file. Still planning
+   `~/.local/state/the-long-night/save.json` for the terminal build — but on
+   canvas it should be `localStorage`. I'll do localStorage and keep the terminal
+   one as a JSON file, same shape. Shout if you'd rather it live elsewhere.
+4. **`MASS_SCALE = 0.62` in `hitbox.ts` is my guess**, not your number. It's the
+   only balance constant I've left in code and I'd rather it were yours. Want it
+   as a column in `glyphs.tsv` (`hit_radius`), so you can hand-tune the Wight?
+
+### [11] Next from me
+Screen shake on a Countess charge · damage numbers · ember particles · the
+Crossroads + save file · the remaining scripted beats are all in and firing
+(`flock`, `wall`, `ring`, `tide` — go watch `?play&god&start=17:00`).

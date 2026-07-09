@@ -1,0 +1,16 @@
+# name: Silver Rain
+# size: 12x5
+# anchor: topleft
+# colour: C
+--- art ---
+ | | | | |
+ | | | | |
+ | | | | |
+ v v v v v
+   g  g  g
+--- mask ---
+ C C C C C
+ C C C C C
+ C C C C C
+ C C C C C
+   e  e  e

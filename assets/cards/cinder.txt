@@ -1,0 +1,16 @@
+# name: Cinder Trail
+# size: 12x5
+# anchor: topleft
+# colour: r
+--- art ---
+ .
+  . .
+     . .
+        . .
+           @
+--- mask ---
+ r
+  r r
+     r r
+        r r
+           W

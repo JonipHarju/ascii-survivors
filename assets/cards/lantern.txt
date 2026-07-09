@@ -1,0 +1,16 @@
+# name: Wisp Lantern
+# size: 12x5
+# anchor: topleft
+# colour: Y
+--- art ---
+     o
+  .      .
+ o    @    o
+  .      .
+     o
+--- mask ---
+     Y
+  e      e
+ Y    W    Y
+  e      e
+     Y

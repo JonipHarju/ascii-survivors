@@ -12,8 +12,19 @@ parser you hate.*
 |---|---|---|
 | `sprites/` | Multi-cell things drawn **in the world**. Bosses only. | **16 w × 5 h** |
 | `portraits/` | Bestiary cards, first-encounter panels, evolution slams. | **20 w × 8 h** |
+| `cards/` | Level-up card icons — a diagram of each weapon's *shape*. | **12 w × 5 h** |
 | `ui/` | Title, dawn, death banners. Full-width. | **78 w × 20 h** |
-| `glyphs.tsv` | The entity table. Every enemy is one cell. | — |
+
+And the tuning tables, which are data, not art — John parses them, Jane owns the
+numbers, and neither of us needs the other to change a value:
+
+| File | What |
+|---|---|
+| `glyphs.tsv` | Every entity: glyph, colour, hp, speed, power, xp. Plus the gore decay table. |
+| `weapons.tsv` | One row per (weapon, level). Absolute values, distances in wu. |
+| `passives.tsv` | One row per passive, `lv1..lv8`. |
+| `evolutions.tsv` | weapon + passive → evolved weapon. |
+| `director.tsv` | Spawn director: `param` / `mix` / `beat` rows. |
 
 Everything on the *field* except the Countess is a single glyph from
 `glyphs.tsv`. That's a deliberate rendering decision, not a shortcut — see

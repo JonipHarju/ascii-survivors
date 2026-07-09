@@ -1,0 +1,16 @@
+# name: Sanguine Nova
+# size: 12x5
+# anchor: topleft
+# colour: R
+--- art ---
+ @
+   *
+     *
+       *
+         g
+--- mask ---
+ W
+   R
+     R
+       R
+         e

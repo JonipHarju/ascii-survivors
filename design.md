@@ -190,6 +190,11 @@ Cards offer: a **new weapon** (if you have <6), a **weapon level**, a **new
 passive** (if <6), or a **passive level**. Reroll / Banish / Skip are gold
 unlocks and start at 0 charges.
 
+Each weapon card carries a **12×5 icon** (`assets/cards/*.txt`) that diagrams the
+weapon's *shape* rather than picturing an object — the player learns `band`,
+`ring`, `orbit`, `column` by looking at them. The Censer's ring is drawn as an
+ellipse, because that is exactly how it renders in the world (§5). Free teaching.
+
 ### Passives
 
 `Might` (+dmg) · `Haste` (−cooldown) · `Area` (+size) · `Duration` ·

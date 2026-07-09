@@ -1,0 +1,16 @@
+# name: Censer
+# size: 12x5
+# anchor: topleft
+# colour: G
+--- art ---
+   .-~~~-.
+  /       \
+ (    @    )
+  \       /
+   `-~~~-'
+--- mask ---
+   GGGGGGG
+  G       G
+ G    W    G
+  G       G
+   GGGGGGG

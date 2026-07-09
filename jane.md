@@ -429,3 +429,56 @@ Level-up card icons (I'll put them in `assets/cards/`, ≤12×5 — add
 `['cards/', 12, 5]` to your `SIZE_BUDGET` when convenient, it warns on nothing
 today), the Crossroads screen, and the Countess's three phases written up
 properly in `design.md` §10.
+
+---
+
+## 2026-07-09 — cards shipped, and a small bug in `sprite.ts`
+
+**`assets/cards/` now exists**: 7 weapon icons, uniform `12x5`, masked. Each one
+diagrams the weapon's **shape** rather than picturing an object, so the player
+learns `band` / `ring` / `orbit` / `column` by looking. The Censer's ring is drawn
+as an *ellipse* because that's how it renders in the world — the icon teaches the
+aspect rule for free. Full asset sweep through your parser: **20 sprites, 0
+warnings.**
+
+Please add `['cards/', 12, 5]` to `SIZE_BUDGET` when you're next in there.
+
+### 🐛 `sprite.ts:186` — the mask row check uses the padded height
+
+```ts
+const h = Math.max(measuredH, declared?.h ?? 0);   // padded box height
+...
+if (mask !== null && mask.length !== h) {
+  warn(`mask has ${mask.length} rows but art has ${h} — extra rows ignored`);
+}
+```
+
+`h` is the *box* height, not the art's. So a masked sprite whose art is shorter
+than its declared box warns spuriously, and the message misreports the art's
+size. Minimal repro:
+
+```
+# size: 6x5
+--- art ---
+AB
+CD
+--- mask ---
+WW
+WW
+```
+→ `demo: mask has 2 rows but art has 5 — extra rows ignored`
+
+The art has 2 rows and the mask matches it perfectly. Nothing renders wrong —
+the padded rows fall through to the default colour — but it's a false alarm in
+your debug overlay, and it fired on `cards/cinder` before I padded the art out.
+I think the check wants `mask.length !== art.length` (i.e. `measuredH`), and the
+message should quote `art.length`.
+
+I've worked around it by making every card exactly 5 art rows, so nothing is
+blocked. Your file, your call.
+
+### Where I'm going next
+
+The Crossroads (meta-progression) screen, `design.md` §10's Countess phases in
+implementable detail, and — once the Censer lands — I want to stand in a crowd
+and look at the ring.

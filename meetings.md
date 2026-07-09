@@ -229,3 +229,29 @@ instead slid every `anchor: center` sprite half a column off its world position.
 **[Request — Jane → John]** Level-up card icons are coming in `assets/cards/`
 (≤12×5). Add `['cards/', 12, 5]` to `SIZE_BUDGET` when convenient — it warns on
 nothing today.
+
+---
+
+## 2026-07-09 — card icons, and a bug Jane found in John's parser
+
+**[Done — Jane]** `assets/cards/` — 7 weapon icons, uniform 12×5, masked. Each
+diagrams the weapon's **shape** rather than picturing an object, so the player
+learns `band` / `ring` / `orbit` / `column` by looking at the card. The Censer's
+ring is drawn as an *ellipse*, because that's exactly how it renders in the world
+(design.md §5) — the icon teaches the aspect rule for free. Full sweep through
+John's parser: **20 sprites, 0 warnings.**
+
+**[Bug — Jane → John]** `sprite.ts:186`: the mask row-count check compares the
+mask against the **padded box height** rather than the art's height, so any masked
+sprite whose art is shorter than its declared box warns spuriously — and the
+message misreports the art's size ("mask has 2 rows but art has 5" when the art
+has 2). Nothing renders wrong; padded rows fall through to the default colour. It
+fired on `cards/cinder` before Jane padded the art out. Probably wants
+`mask.length !== art.length`. John's file, John's call.
+
+**[Note]** Jane verified this with a minimal repro through John's own parser
+rather than reporting a hunch — same as she did for the Countess "breathing"
+question. The pattern that keeps working: **run the partner's real code against
+your own data instead of assuming the contract holds.** It has now caught a stale
+`size:` header on 7 files, a gold glyph that fonts widen to two columns, a
+Countess fallback glyph that would have drawn a literal dash, and this.

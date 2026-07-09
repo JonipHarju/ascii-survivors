@@ -589,3 +589,62 @@ Jane: *"That's the third time today something I trusted did something I didn't a
 — `banner.py` rewriting three files on import, `--preview` warnings I'd grepped
 away, and now a red suite that wasn't mine. The tooling is fine. Believing the
 first plausible story is the problem, and checking is cheap."*
+
+---
+
+## 2026-07-09 — Jane plays the game (headlessly) and finds her own design broken
+
+Unable to open a browser, Jane drove John's sim directly — `World` +
+`generateCards`, 180×60 viewport, god mode, a kiting player and an auto-picker —
+for three full 20-minute runs at HEAD. Better than watching, because it let her
+replay the same build across seeds.
+
+**[Verified — John's director is exact]** Alive-count tracks `target(t)` nearly to
+the enemy (81 vs 80 at 10:00; 130 vs 130 at 14:00), and every overshoot was a
+scripted beat doing its job. At 18:00 the Tide puts **381 enemies and 40% of the
+field** under sprite-cells. The rest of the run sits at 8–15%. It reads as a horde,
+not soup.
+
+**[Jane was wrong — evolution was unreachable]** The gate required *weapon lv8 +
+paired passive lv8*, and John implemented it exactly as written. Jane simulated a
+player who does nothing but rush Chain→8 then Might→8, taking no other card ever:
+across three seeds he evolved **once, at 18:50**, with 70 seconds left; the other
+two never got there. In the three *normal* runs, **nothing evolved in any build**.
+The payoff moment of the entire run was unreachable.
+
+New gate: **weapon at level 8 + the paired passive merely OWNED (level ≥ 1)** —
+the genre standard. The weapon is the commitment; the passive is the key.
+Evolutions should now land 12:00–15:00. *Needs a code change in `evolutions.ts`.*
+
+**[Jane was wrong — a focused build can be starved by the shuffle]** On one seed
+the player took the Chain card whenever offered for twenty minutes and **never
+reached level 8**, because it wasn't offered often enough. New rule (`design.md`
+§8): **every hand of three must contain at least one card that levels something
+you already own.** The other two stay random. *"That isn't difficulty, it's a slot
+machine."*
+
+**[Bug — The Ring, and it's Jane's spec]** `world.ts:686` uses a ring radius of
+`max(halfWidth, 40) × 0.95` = 85.5 wu. The viewport half is 90 wu wide but only
+**60 wu tall** (cells are 1×2), so **half the 60 ghouls spawn off-screen** and the
+player sees a band closing from the sides, not a ring closing around them. §11 only
+ever said "a closing circle." It now specifies a circle in wu *inscribed* in the
+viewport — `min(half_w, half_h) × 0.95` = 57 wu — which draws as a 57×28 ellipse
+with all 60 ghouls visible. New `param ring_radius_frac` in `director.tsv`.
+
+**[Jane was wrong — the gold economy was calibrated on an invented number]**
+`crossroads.tsv` assumed ~3,000 kills per run. Measured: passive-hungry **1,317**,
+greedy **6,404**, weapon-hungry **11,442**. A weapon build kills nine times what a
+passive build does. *"The kill count isn't a constant, so nothing may be tuned
+against it as if it were"* — which is why gold-per-kill must be small. Retuned to
+`0.02 × 2g`, restoring the intended 11-winning-runs / 32-losing-runs spread.
+
+**[Checked, and NOT reported]** `pendingChests` read 0 in every run, which looked
+like elites failing to drop chests. They don't fail: a chest is a walk-over pickup
+and Jane's circle-kiting harness never touched one. John's code was fine.
+
+**[Q — Jane → John]** The one thing the sim cannot answer: **does the Censer's
+ring render as an ellipse?** A ring of radius `r` must draw `rx = r`, `ry = r/2`
+cells. If it comes out circular on the canvas, the aspect rule has slipped in the
+new backend, and it will feel wrong long before anyone can name why. Screenshot it
+at `?play&god&start=12:00` and compare against the `cards/censer` icon, which is
+drawn as the ellipse it ought to be.

@@ -35,7 +35,7 @@ countess	M	The Countess	R	9000	10	25	0	-	200	7.0	BOSS. drawn from sprites/counte
 mote1	·	XP Mote	b	-	0	0	-	-	1	0	merges with adjacent motes -> mote5
 mote5	+	XP Shard	G	-	0	0	-	-	5	0	merges -> mote20
 mote20	◆	XP Heart	Y	-	0	0	-	-	20	0	does not merge further
-gold	$	Gold	Y	-	0	0	-	-	0	0	1-in-40 kills, all chests/elites
+gold	$	Gold	Y	-	0	0	-	-	0	0	1-in-50 kills, all chests/elites
 chest	▄	Chest	Y	-	0	0	-	-	0	0	from elites; triggers evolution if eligible
 heal	♥	Roast Chicken	R	-	0	0	-	-	0	0	rare drop, heals 30
 

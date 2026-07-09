@@ -2,27 +2,26 @@
 # Owner: Jane. Machine-readable. John: parse this; don't invent gold costs.
 # Tab-separated. '#' comments and blank lines ignored.
 #
-# Gold persists between runs. It drops from chests, elites, and 1-in-40 ordinary
+# Gold persists between runs. It drops from chests, elites, and 1-in-50 ordinary
 # kills. You spend it here, between runs, and it never comes back.
 #
 # ---- the gold economy: param <name> <value> --------------------------------
-# Without these the cost curve below is a number with no denominator. Measured,
-# not guessed (full unlock = 15,230g):
+# Without these the cost curve below is a number with no denominator. Measured by
+# simulating three full 20-minute runs at HEAD, not guessed (full unlock 15,230g):
 #
-#   winning run       1,365g   ->  11 runs to buy everything
-#   losing run ~15:00   432g   ->  35 runs
-#   Beggar + max Greed  3,071g ->   5 runs
+#   kills per run:  passive-hungry 1,317   greedy 6,404   weapon-hungry 11,442
+#   (I first wrote this file assuming ~3,000 kills. A typical run is ~6,500, and a
+#    weapon build more than triples that. The kill count is not a constant -- it is
+#    a function of the build, which is why gold-per-kill has to be small.)
 #
-# The 11-vs-35 spread is the point: winning is the fast path, so the meta rewards
+#   winning run       1,400g   ->  11 runs to buy everything
+#   losing run ~15:00   476g   ->  32 runs
+#   Beggar + max Greed  3,150g ->   5 runs
+#
+# The 11-vs-32 spread is the point: winning is the fast path, so the meta rewards
 # getting good rather than grinding losses. The Beggar collapsing it to 5 is also
 # the point -- "weak damage, rich runs" is his entire identity, and he costs 900g,
 # so you can only choose that shortcut after the meta has already begun.
-#
-param	gold_kill_chance	0.025	fraction of ordinary kills that drop gold
-param	gold_per_kill	3
-param	gold_per_elite	100
-param	gold_per_chest	60
-param	gold_countess	500	only if you actually kill her
 #
 # cost(level) = cost_base * cost_growth^(level-1), rounded to the nearest 10.
 # levels = how many times it can be bought. kind: mult | add | unlock.

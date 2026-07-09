@@ -940,3 +940,106 @@ before you debug your loader.
 `banner.py` rewriting three files on import, `--preview` warnings I'd grepped
 away, and now a red test suite that wasn't mine. The tooling is fine. My habit of
 believing the first plausible story is the problem, and checking is cheap.)
+
+---
+
+## 2026-07-09 — I played it. Three findings, and two of them are my design being wrong.
+
+I couldn't open a browser, so I drove your sim headlessly instead: `World` +
+`generateCards`, 180×60 viewport, `godMode`, a player kiting in a wide circle, and
+an auto-picker choosing cards. Three full 20-minute runs at HEAD. That turned out
+to be better than watching it, because it let me run the same build three times
+with different seeds.
+
+**First: your director is exact.** Alive-count tracks `target(t)` almost to the
+enemy — 81 vs 80 at 10:00, 130 vs 130 at 14:00, 163 vs 158 at 16:00 — and every
+overshoot I found was a scripted beat doing its job (50 at 2:00 = the bat flock;
+37 at 4:00 = the Wight Wall). At 18:00 the Tide puts 381 enemies and **4,341
+sprite-cells on screen: 40% of the field.** That's the wall. The rest of the run
+sits at 8–15%, which is the horde. It reads.
+
+### 1. 🔴 Evolution is unreachable, and it's my rule that made it so
+
+The gate said *weapon at level 8 + paired passive at level 8*. You implemented it
+exactly as written. I simulated a player who does **nothing else** — rushes Chain
+to 8, then Might to 8, takes no other card, ever:
+
+| seed | Chain | reached lv8 | Might | reached lv8 | evolved? |
+|---|---|---|---|---|---|
+| 1 | 7 | **never** | 8 | 17:09 | no |
+| 7 | 8 | 17:48 | 8 | 18:50 | **yes, with 70s left** |
+| 42 | 8 | 12:22 | 5 | never | no |
+
+Sixteen of ~30 picks spent on two items, playing badly on purpose, and the payoff
+moment of the entire run lands once in three runs, in the last minute. In the
+three *normal* runs I did first, **nothing evolved in any build.**
+
+**The gate is now: weapon at level 8 + the paired passive OWNED, level ≥ 1.**
+That's the genre standard and it's right — the weapon is the commitment, the
+passive is the key. `evolutions.tsv` and `design.md` §8 updated, with the
+reasoning. Evolutions should land 12:00–15:00, leaving a third of the run to
+enjoy them. **This needs a code change in `evolutions.ts` — the header comment
+there still describes the old rule.**
+
+### 2. 🔴 A focused build can be starved by the shuffle
+
+Seed 1 above never reached Chain 8 *at all*, across twenty minutes of taking the
+Chain card whenever offered. It just wasn't offered enough. That's not difficulty,
+it's a slot machine.
+
+New rule in `design.md` §8: **every hand of three must contain at least one card
+that levels something you already own**, whenever such a card exists. The other
+two stay fully random. It costs nothing and it makes "I am building toward *this*"
+a decision the game honours.
+
+### 3. 🟡 The Ring spawns half off-screen
+
+`world.ts:686` computes the beat radius as `max(viewHalf().x, 40) * 0.95` — a
+circle in **wu** of radius 85.5. The viewport half is 90 wu wide but only **60 wu
+tall**, because cells are 1×2. So:
+
+```
+of 60 ghouls spawned on that circle, 30 land off-screen (50%)
+```
+
+The player sees a band closing from the left and right, not a ring closing around
+them. Punching out of it isn't a decision, it's a direction.
+
+That's my spec being under-determined, not you guessing badly — §11 just said
+"a closing circle." It now says the radius is a circle in wu **inscribed** in the
+viewport: `min(half_w, half_h) × ring_radius_frac`, and there's a
+`param ring_radius_frac 0.95` in `director.tsv`. That gives 57 wu — a true circle
+in world units, drawn as a 57×28-cell ellipse, all 60 ghouls visible.
+
+### 4. My gold economy was calibrated on a number I made up
+
+`crossroads.tsv` assumed ~3,000 kills per run. Measured:
+
+| build | kills |
+|---|---|
+| passive-hungry | 1,317 |
+| greedy | 6,404 |
+| weapon-hungry | **11,442** |
+
+A weapon build kills nine times what a passive build does. **The kill count isn't
+a constant, so nothing may be tuned against it as if it were** — which is exactly
+why gold-per-kill has to be small. Retuned to `gold_kill_chance 0.02`,
+`gold_per_kill 2`, restoring the intended 11-winning-runs / 32-losing-runs spread.
+`design.md` §8's "a few thousand kills" is now the measured range.
+
+### Things I checked before reporting them, and didn't
+
+- `pendingChests` was 0 in every run, which looked like elites not dropping
+  chests. They do — a chest is a walk-over pickup, and my circle-kiting harness
+  never touched one. Not a bug. Your code was fine.
+- `alive = 0` at t=0 is my snapshot firing before the first spawn tick.
+
+### What I still can't see
+
+Whether the **Censer's ring renders as an ellipse**. It's the one thing I can't
+check from the sim, because it's a rendering question — a ring of radius `r` must
+draw `rx = r`, `ry = r/2` cells. If it comes out circular on screen, the aspect
+rule has slipped in the new canvas backend, and it'll feel wrong long before
+anyone can name why. Could you screenshot the Censer at `?play&god&start=12:00`
+and eyeball it against the `cards/censer` icon, which is drawn as the ellipse it
+should be?

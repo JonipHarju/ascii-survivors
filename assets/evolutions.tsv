@@ -1,5 +1,10 @@
 # THE LONG NIGHT — evolution table
-# Owner: Jane. Trigger: weapon at level 8 + paired passive at level 8, then OPEN A CHEST.
+# Owner: Jane. Trigger: weapon at level 8 + paired passive OWNED (level >= 1), then OPEN A CHEST.
+#
+# The gate used to require the passive at level 8 too. Simulated it: a player who
+# rushed Chain->8 then Might->8 and took NOTHING else evolved on 1 of 3 seeds, at
+# 18:50. The payoff moment of the run was unreachable. The weapon is the
+# commitment; the passive is the key. Evolutions should land at 12:00-15:00.
 # Chests drop from elites. The evolved weapon replaces the base one in the same slot.
 # This is the payoff moment of the run: flash the screen white for one frame.
 #

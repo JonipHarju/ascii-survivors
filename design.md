@@ -241,8 +241,11 @@ inhale from across the screen.
 | `+` | green | 5 | merged, or elites |
 | `◆` | yellow | 20 | merged, or chests |
 
-`xp_to_next(L) = ceil(5 × 1.16^(L-1))`. Expect **~28–35 levels** and a few
-thousand kills per completed run.
+`xp_to_next(L) = ceil(5 × 1.16^(L-1))`. Measured over three full simulated runs:
+**level 20–39**, and **1,300–11,400 kills**, depending entirely on the build. A
+weapon-hungry player kills nine times as much as a passive-hungry one. The kill
+count is not a constant, which is why nothing may be tuned against it as though
+it were — see the gold economy in `assets/crossroads.tsv`.
 
 ### Level-up
 
@@ -251,6 +254,14 @@ Freeze the sim. Dim the field to grey. Draw three cards. Pick one. Unfreeze.
 Cards offer: a **new weapon** (if you have <6), a **weapon level**, a **new
 passive** (if <6), or a **passive level**. Reroll / Banish / Skip are gold
 unlocks and start at 0 charges.
+
+**Every hand of three must contain at least one card that levels something you
+already own**, whenever such a card exists. Without this, a player committed to
+one weapon is at the mercy of the shuffle: in simulation, a build rushing the
+Chain to level 8 simply *never got there* on one of three seeds, because the card
+wasn't offered often enough. That isn't difficulty, it's a slot machine. The
+guarantee costs nothing — the other two cards stay fully random — and it makes
+"I am building toward *this*" a decision the game honours.
 
 Each weapon card carries a **12×5 icon** (`assets/cards/*.txt`) that diagrams the
 weapon's *shape* rather than picturing an object — the player learns `band`,
@@ -265,9 +276,21 @@ ellipse, because that is exactly how it renders in the world (§5). Free teachin
 
 ### Evolution
 
-Max a weapon (lv8), hold the paired passive at max, then **open a chest**. The
-weapon transforms. This is the payoff moment of the entire run and it should be
-loud: screen flash, the field goes white for one frame, a 20×8 card slams up.
+Max a weapon (lv8), **own** the paired passive — at *any* level, level 1 is
+enough — then **open a chest**. The weapon transforms. This is the payoff moment
+of the entire run and it should be loud: screen flash, the field goes white for
+one frame, a 20×8 card slams up.
+
+> **This rule used to say "hold the paired passive at max," and it made evolution
+> unreachable.** I simulated a player doing nothing else — rushing Chain to 8,
+> then Might to 8, ignoring every other card. Across three seeds he evolved
+> *once*, at **18:50**, with 70 seconds of run left. The other two runs never got
+> there. Sixteen of roughly thirty picks spent on two items, playing badly on
+> purpose, and the payoff still didn't land.
+>
+> Owning the passive is the genre standard, and it's right: the weapon is the
+> commitment, the passive is the key. Evolutions should land around **12:00–15:00**,
+> leaving a third of the run to enjoy them.
 
 | Weapon | + Passive | → | Evolution |
 |---|---|---|---|
@@ -465,7 +488,7 @@ These are the moments the player learns to dread:
 | 2:00 | **Bat flock** — 40 bats cross the screen on one axis. Get out of the way. |
 | 4:00 | **The Wight Wall** — a solid line of Wights advances from one edge. |
 | 5:00 | ELITE: Gravewarden |
-| 7:00 | **The Ring** — 60 ghouls spawn as a closing circle around you. Punch out. |
+| 7:00 | **The Ring** — 60 ghouls spawn as a closing circle around you. Punch out. Radius is a circle in **wu**, *inscribed* in the viewport (`min(half_w, half_h) × 0.95`), so all 60 are visible. It draws as an ellipse. A circle in *cells* would put half the ring off-screen, and the beat would read as a band closing from the sides. |
 | 10:00 | ELITE + rat swarm |
 | 12:00 | Blood Wisps enter the pool |
 | 15:00 | ELITE ×2 |
@@ -498,7 +521,7 @@ single key to run again. `assets/ui/death.txt`
 
 *Data: `assets/crossroads.tsv`. Art: `assets/ui/crossroads.txt`.*
 
-Gold drops from chests, elites, and 1-in-40 ordinary kills. It persists between
+Gold drops from chests, elites, and 1-in-50 ordinary kills. It persists between
 runs. Between runs you stand at a signpost and spend it, and it never comes back.
 
 `cost(level) = cost_base × cost_growth^(level−1)`, rounded to the nearest 10.

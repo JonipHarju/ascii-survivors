@@ -24,6 +24,16 @@ param	cap_start	15	max spawns/sec at 0:00
 param	cap_end	60	max spawns/sec at 20:00
 param	spawn_margin	4	spawn this many cells outside the viewport edge
 param	despawn_margin	40	cull enemies further than this (cells) from the player
+param	ring_radius_frac	0.95	see below
+
+# THE RING must be INSCRIBED in the viewport, not circumscribed around it:
+#   radius_wu = min(half_width_wu, half_height_wu) * ring_radius_frac
+# The viewport is 180x60 cells = 180 wu wide but only 120 wu tall (cells are 1x2),
+# so half is 90 wu x 60 wu. Using max(half.x, 40)*0.95 = 85.5 wu makes a circle
+# that fits horizontally and overshoots vertically: HALF THE RING SPAWNS OFF
+# SCREEN, and the player sees a band closing from left and right instead of a
+# ring closing around them. Inscribed gives 57 wu -- a true circle in world
+# units, which renders as a 57x28 cell ellipse. Correct, and entirely visible.
 
 # ---- mix rows: mix <entity> <from mm:ss> <weight_early> <weight_late> -------
 # Spawn choice is weighted; weight(t) lerps early->late on t/run_duration and is

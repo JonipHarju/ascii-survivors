@@ -1,0 +1,22 @@
+# name: The Warden
+# size: 20x8
+# anchor: topleft
+# colour: w
+--- art ---
+        ______
+      .'      '.
+     /  ,----.  \
+    |  /      \  |
+    |  |  @@  |  |
+    |  '.____.'  |
+    _\          /_
+   (___`------'___)
+--- mask ---
+        eeeeee
+      ee      ee
+     e  eeeeee  e
+    e  e      e  e
+    e  e  WW  e  e
+    e  eeeeeeee  e
+    ee          ee
+   eeeeeeeeeeeeeeee

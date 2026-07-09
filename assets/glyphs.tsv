@@ -1,0 +1,44 @@
+# THE LONG NIGHT — entity glyph table
+# Owner: Jane. Machine-readable. John: parse this, don't hardcode glyphs.
+# Tab-separated. Lines starting with # are comments. Blank lines ignored.
+#
+# colour  = mask-palette char, see assets/README.md
+# speed   = world units per second (isotropic; see design.md §5)
+# power   = contact damage to player
+# cost    = spawn-director budget cost
+# from    = earliest spawn time, mm:ss ("-" = never from the budget, scripted/boss only)
+# xp      = motes dropped
+#
+# id	glyph	name	colour	hp	speed	power	cost	from	xp	notes
+#--------------------------------------------------------------------------------------
+player	@	The Warden	W	100	20	0	-	-	0	bright white, bold; nothing else may be bright white
+ashling	&	The Ashling	Y	70	24	0	-	-	0	unlockable character
+beggar	%	The Beggar	M	100	20	0	-	-	0	unlockable character
+
+ghoul	g	Ghoul	e	10	9	4	1	0:00	1	walks straight at player
+rat	r	Grave Rat	s	2	14	2	1	0:30	1	spawns in packs of 12+
+bat	w	Bat	r	5	26	3	2	2:00	1	sine-wave drift, amplitude 6wu period 1.2s
+wight	W	Wight	C	40	6	9	5	4:00	2	advances in a line
+rattlejack	x	Rattlejack	W	16	11	6	4	8:00	2	on death spawns 2 rats
+wisp	*	Blood Wisp	R	12	16	5	4	12:00	2	ignores enemy-enemy collision
+stalker	S	Stalker	m	30	18	12	9	14:00	5	INVISIBLE outside light radius; show ? at light edge 1.0s before entry
+
+gravewarden	G	Gravewarden	Y	600	7	16	0	-	40	ELITE. bold+bright, hp bar above, drops chest. scripted only.
+countess	-	The Countess	R	9000	10	25	0	-	200	BOSS. multi-cell, see sprites/countess.txt. spawns 19:00, clock stops.
+
+# --- pickups (not enemies; same table so John has one parser) ---
+mote1	·	XP Mote	b	-	0	0	-	-	1	merges with adjacent motes -> mote5
+mote5	+	XP Shard	G	-	0	0	-	-	5	merges -> mote20
+mote20	◆	XP Heart	Y	-	0	0	-	-	20	does not merge further
+gold	⛁	Gold	Y	-	0	0	-	-	0	1-in-40 kills, all chests/elites
+chest	▄	Chest	Y	-	0	0	-	-	0	from elites; triggers evolution if eligible
+heal	♥	Roast Chicken	R	-	0	0	-	-	0	rare drop, heals 30
+
+# --- decals (gore layer, design.md §9) --------------------------------------
+# age is seconds since the kill. Decals never collide, never move, never think.
+# decal	glyph	colour	age_from	age_to
+decal0	※	R	0	6
+decal1	%	r	6	20
+decal2	*	r	20	40
+decal3	,	e	40	65
+decal4	.	k	65	90

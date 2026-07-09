@@ -1,0 +1,13 @@
+# name: Grave Rat
+# size: 20x8
+# anchor: topleft
+# colour: s
+--- art ---
+      ,     ,
+     /(     )\
+    (  \___/  )
+     \  o o  /
+      \  ^  /~~~~~
+       '---'
+   ,-.  ,-.  ,-.
+  (o..) (o..) (o..)

@@ -1,0 +1,13 @@
+# name: Bat
+# size: 20x8
+# anchor: topleft
+# colour: r
+--- art ---
+  \                /
+   \__          __/
+   |  \__    __/  |
+    \    \()/    /
+     \   /oo\   /
+      \_/ ^^ \_/
+        \____/
+         ^  ^

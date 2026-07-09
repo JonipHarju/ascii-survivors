@@ -1,0 +1,16 @@
+# name: The Countess
+# size: 16x5
+# anchor: center
+# colour: R
+--- art ---
+  \\   ^^^^   //
+ \ \ ( oo ) / /
+\ \_\  VV  /_/ /
+ \__/|    |\__/
+     '----'
+--- mask ---
+  ee   YYYY   ee
+ e e e RR e e e
+e eee  ww  eee e
+ eeeee    eeeee
+     rrrrrr

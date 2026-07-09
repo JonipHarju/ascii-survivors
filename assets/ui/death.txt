@@ -1,0 +1,14 @@
+# name: Death
+# colour: r
+# size: 60x9
+# anchor: topleft
+--- art ---
+    __   __  ___   _   _    ____   ___  _____  ____
+    \ \ / / / _ \ | | | |  |  _ \ |_ _|| ____||  _ \
+     \ V / | | | || | | |  | | | | | | |  _|  | | | |
+      | |  | |_| || |_| |  | |_| | | | | |___ | |_| |
+      |_|   \___/  \___/   |____/ |___||_____||____/
+
+        the night takes another lantern-bearer
+
+                  [ ENTER ]  run again

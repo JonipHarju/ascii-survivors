@@ -1,0 +1,13 @@
+# name: Ghoul
+# size: 20x8
+# anchor: topleft
+# colour: e
+--- art ---
+     ___     ___
+    /   \___/   \
+    \  o     o  /
+     \    ^    /
+      )  ___  (
+     / \_VVV_/ \
+    / /|     |\ \
+   '-' |_____| '-'

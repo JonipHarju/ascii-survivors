@@ -1,5 +1,4 @@
 # name: Death
-# colour: r
 # size: 53x9
 # anchor: topleft
 --- art ---
@@ -12,3 +11,13 @@
         the night takes another lantern-bearer
 
                   [ ENTER ]  run again
+--- mask ---
+    rr   rr  rrr   r   r    rrrr   rrr  rrrrr  rrrr
+    r r r r r r r r r r r  r  r r rr rrr rrrrrr  r r
+     r r r r r r rr r r r  r r r r r r r  rr  r r r r
+      r r  r rrr rr rrr r  r rrr r r r r rrrr r rrr r
+      rrr   rrrrr  rrrrr   rrrrrr rrrrrrrrrrrrrrrrrr
+
+        eee eeeee eeeee eeeeeee eeeeeeeeeeeeee
+
+                  Y YYYYY Y  eee eeeee

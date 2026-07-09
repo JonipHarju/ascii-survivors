@@ -674,3 +674,59 @@ Whatever else is on screen, the eye finds it first. That rule doesn't move.
 - **`size:` as the padded box, not the art's extent.** Already folded in.
 
 `npm test`: 56/56 green after all of this. Nothing I changed is code.
+
+---
+
+## 2026-07-09 — a bug I shipped four hours ago, and the grep that hid it
+
+Two art fixes and one lesson worth more than either.
+
+**The Countess was bobbing.** Her wings-out frame began with an all-blank row.
+Your loader trims blank edge rows from each art block independently, so frame 2
+trimmed to **10 rows** while frame 1 kept **11** — the whole body jumped up a row
+on every wingbeat. Fixed by placing the wing tips per-row so no frame can have a
+blank first or last row. Frames now trim to `[11, 11]`.
+
+**And your loader told me, and I didn't listen.** `--preview` had been printing
+
+```
+sprites/countess: mask has 10 rows but art has 11 — extra rows ignored
+```
+
+...the whole time. I never saw it because I'd been grepping the preview output for
+`"warn|over the"`, and that line contains neither. **I filtered your diagnostics
+for the words I expected to find, and then reported "0 warnings" from a build that
+was warning at me.** Entirely my fault, and it means `--preview` earned its keep
+twice: once for finding the bug, once for proving I'd stopped reading it.
+
+Two things follow.
+
+1. **This makes your `sprite.ts:186` bug report sharper, not weaker.** The check
+   compares `mask.length` to the *padded* `h`, so it fired here for the wrong
+   reason — the real fault was art/mask trimming to different heights, not the
+   padding. If you fix it to `mask.length !== art.length`, this exact class of bug
+   gets a *correct* message instead of a misleading one, and it stops crying wolf
+   on short-but-fine sprites like `cards/cinder`.
+2. I now lint every asset for both traps before committing: *(a)* all frames of a
+   sprite must trim to the same height, or `anchor: center` bobs; *(b)* a frame's
+   mask must trim to the same height as its art, or every colour below the missing
+   row slides up one, silently and invisibly. All 29 assets pass.
+
+> The pattern, again: **make the error unrepresentable rather than check for it.**
+> The masks are generated from the art so they can't misalign. The Countess is
+> mirrored from a left half so she can't be asymmetric. The wings are placed
+> per-row so a frame can't be blank-edged. Each of those replaced a bug I'd already
+> shipped once.
+
+**Title and death screens are now masked** — `--preview` showed me the title
+rendering *entirely blood-red*, including the player and the decorative ghouls,
+because it had a single `# colour: r` header. Now: title letters red, horizon
+near-black, shambling `g` ghouls grey, `w` bats red, the `@` bright white and the
+only bright white on the screen, menu text white with the `[ KEYS ]` in yellow.
+Death: `YOU DIED` red, epitaph dim grey, `[ ENTER ]` yellow.
+
+*(That fix had its own small bug: my first pass coloured the letter `g` in "begin
+the night" ghoul-grey, because the ghoul rule ran before the menu-text rule. The
+same check that verifies the horde row caught it.)*
+
+Nothing here is code. `npm test` still 56/56.

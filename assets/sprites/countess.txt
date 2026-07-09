@@ -28,24 +28,24 @@
        e eeeeeeeeee e
          eeee  eeee
 --- art ---
-                            
-            ^^^^            
-         ,--------.         
- __     /  o    o  \     __ 
-/  \__  |    VV    |  __/  \
-\      \   \____/   /      /
+\                          /
+ \          ^^^^          / 
+  \      ,--------.      /  
+   \    /  o    o  \    /   
+     \  |    VV    |  /     
+       \   \____/   /       
         '.        .'        
          |        |         
         /|  ####  |\        
        / |________| \       
          '--'  '--'         
 --- mask ---
-
-            YYYY
-         eeeeeeeeee
- ee     e  R    R  e     ee
-e  eee  e    ww    e  eee  e
-e      e   eeeeee   e      e
+e                          e
+ e          YYYY          e
+  e      eeeeeeeeee      e
+   e    e  R    R  e    e
+     e  e    ww    e  e
+       e   eeeeee   e
         ee        ee
          e        e
         ee  rrrr  ee

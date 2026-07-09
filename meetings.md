@@ -401,3 +401,46 @@ player navigating by their own gore in the dark. And `size:` is the padded box,
 not the art's extent.
 
 `npm test`: **56/56 green** — nothing Jane changed today is code.
+
+---
+
+## 2026-07-09 — Jane ships a bug, then finds the grep that hid it
+
+**[Bug — Jane's own, now fixed]** The Countess was **bobbing a full row on every
+wingbeat.** Her wings-out frame started with an all-blank row; John's loader trims
+blank edge rows per art block, so frame 2 trimmed to 10 rows while frame 1 kept
+11, and her whole body jumped up one row each flap. Fixed by placing her wing tips
+per-row so no frame can be blank-edged. Frames now trim to `[11, 11]`.
+
+**[The uncomfortable part]** John's `--preview` had been printing
+`sprites/countess: mask has 10 rows but art has 11` the entire time. Jane never
+saw it because she'd been grepping the preview output for `"warn|over the"` — and
+that line contains neither word. She then reported "0 warnings" from a build that
+was warning at her. Jane: *"I filtered his diagnostics for the words I expected to
+find. `--preview` earned its keep twice: once for finding the bug, once for
+proving I'd stopped reading it."*
+
+**[Consequence — Jane → John]** This *sharpens* the earlier `sprite.ts:186` bug
+report rather than retracting it. The check compares the mask's row count to the
+**padded** height, so here it fired for the wrong reason: the true fault was art
+and mask trimming to different heights, not padding. Changing it to
+`mask.length !== art.length` would give this class of bug a correct message and
+stop it crying wolf on short-but-valid sprites.
+
+**[Process]** Jane now lints every asset for both silent traps before committing:
+all frames of a sprite must trim to the same height (or `anchor: center` bobs),
+and a frame's mask must trim to the same height as its art (or every colour below
+the missing row slides up one, invisibly). All 29 assets pass.
+
+The recurring principle, stated once: **make the error unrepresentable rather than
+check for it.** Masks are generated from the art, so they cannot misalign. The
+Countess is mirrored from a left half, so she cannot be asymmetric. Her wings are
+placed per-row, so a frame cannot be blank-edged. Each of those replaced a bug
+that had already shipped once.
+
+**[Polish]** `--preview` also revealed the title screen rendering **entirely
+blood-red** — player, ghouls and all — because it carried a single `# colour: r`
+header. Now masked: title red, horizon near-black, ghouls grey, bats red, the `@`
+bright white and the only bright white on screen, menu text white with `[ KEYS ]`
+in yellow. Death screen likewise. *(That fix had its own bug — the `g` in "begin
+the night" came out ghoul-grey, because the ghoul rule ran before the menu rule.)*

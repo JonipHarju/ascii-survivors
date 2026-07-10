@@ -176,10 +176,17 @@ overlay: one line top, one bottom. Everything else is the field.
 
 ## 6. The player
 
-The player is a **3×3 sprite** (`assets/sprites/player.txt`) — a hooded figure
-with a lantern — whose head is the character **`@`**, in bright white. Nothing
-else in the game may use bright white. Whatever else is happening, the player's
-eye finds the `@` first.
+The player is a **5×5 sprite** (`assets/sprites/player.txt`) — a hooded, cloaked
+figure with a lantern that swings as he walks — whose face is the character
+**`@`**, in bright white. Nothing else in the game may use bright white. Whatever
+else is happening, the player's eye finds the `@` first.
+
+*(Was 3×3, a literal stick figure `@ /|\ / \`. The owner named it — "stick
+figures ... I want it to look like an actual game," Effulgence RPG as the
+reference — and he was right. See §10.5: the fix was volume through glyph density,
+not a bigger colour budget, and drawing to the canvas grid we already committed to
+in §5.0. His head `@` and legs `/ \` are still his own strokes; the cloak is a
+solid `█` core with `▐ ▌` half-block edges, and the lantern is a yellow `◆`.)*
 
 Two frames, a walking cycle. The hitbox is a small circle in wu at the sprite's
 centre, not its bounding box.
@@ -584,9 +591,9 @@ Enemies are **multi-cell animated ASCII sprites**, sized by tier.
 
 | Sprite | Name | HP | Speed | Power | From | Behaviour |
 |---|---|---|---|---|---|---|
-| `2×1` | **Grave Rat** | 2 | 14 | 2 | 0:30 | Packs of 12+. Dies to a stiff breeze. Scurries. |
+| `3×1` | **Grave Rat** | 2 | 14 | 2 | 0:30 | Packs of 12+. Dies to a stiff breeze. Scurries. |
 | `3×1` | **Bat** | 5 | 26 | 3 | 2:00 | Faster than you. Sine-wave drift, so it *misses*. Wings flap. |
-| `3×2` | **Ghoul** | 10 | 9 | 4 | 0:00 | Walks straight at you. The bread and butter. Shambles. |
+| `3×3` | **Ghoul** | 10 | 9 | 4 | 0:00 | Walks straight at you. The bread and butter. Shambles. |
 | `3×2` | **Rattlejack** | 16 | 11 | 6 | 8:00 | On death, splits into two Grave Rats. |
 | `3×2` | **Blood Wisp** | 12 | 16 | 5 | 12:00 | Ignores enemy collision. Floats through the pile. |
 | `5×3` | **Wight** | 40 | 6 | 9 | 4:00 | Slow, tanky, hits hard. Advances in a line. |
@@ -660,7 +667,7 @@ Rules that keep this readable at 220 enemies:
 - **Sprite size is cosmetic. The hitbox is a circle in wu** — the `hit_rad`
   column of `glyphs.tsv`, never the sprite's bounding box. Big sprites must not
   become unfair sprites: the 9×5 Gravewarden gets a torso, not a reach.
-- **The player's hitbox is smaller than the player.** 1.2 wu inside a 3×3 sprite.
+- **The player's hitbox is smaller than the player.** 1.2 wu inside a 5×5 sprite.
   Getting hit should feel like being *caught*, not like being *near*. Every
   survivors game that feels good cheats here, and cheats in the player's favour.
 - **Draw order is by world y**, so the horde overlaps like a crowd rather than a
@@ -674,6 +681,65 @@ Machine-readable stats: `assets/glyphs.tsv`. Art: `assets/sprites/mobs/*.txt`,
 `assets/sprites/elites/*.txt`, `assets/sprites/countess.txt`. The `glyph` column in
 `glyphs.tsv` survives as the **loader fallback** when a sprite file is missing —
 which is exactly how we ship a half-drawn bestiary without breaking the build.
+
+### 10.5 Volume through shading — the Effulgence direction
+
+*Added 2026-07-10, from owner feedback 22:27: "characters currently look like
+stick figures ... I want it to look like an actual game. Take inspiration from
+Effulgence RPG." He's right, and I want to be exact about what the fix is and —
+more importantly — what it is **not**, so it doesn't quietly break the two laws
+that keep the field readable at 220 bodies.*
+
+The old sprites were **wireframes**: `(o)` over `) (` is a ghoul drawn as two lines
+with air between them. Air has no weight. What makes Effulgence's ASCII read as
+*illustration* and not *diagram* is that its forms are **filled and shaded** — the
+eye reads a mass, a volume, a thing with a lit side and a dark side. That is the
+whole difference, and it costs us **nothing we can't afford**:
+
+> **Volume is glyph DENSITY, not colour brightness.**
+
+The luminance ladder (§9) caps what an enemy is *coloured* — grey `e`, bone `s`,
+never brighter than an XP mote. It says nothing about how much *ink* a glyph puts
+in its cell. So a ghoul's gut can be a solid `▓` and a Wight's core a `█`, both
+still dim grey, and suddenly they have bodies. The ladder and the illustration
+were never in conflict; I just hadn't used the second axis.
+
+**The density ramp** (darkest/most-ink → lightest, all available to enemy fill):
+
+```
+█  ▓        solid mass, a shaded core
+▐ ▌ ▄ ▀     half-blocks: one-sided volume, an edge caught in light
+# %         hatching / texture (the Countess's mouth, a Gravewarden's rivets)
+[ ] ( ) { } box- and bracket-work: the family silhouette, the OUTLINE of the mass
+```
+
+**Reserved away from enemy fill, and why** — this is the trap:
+
+- **`▒` and `░` belong to the gore layer** (§9, the decals). Light shade is the
+  floor's texture. An enemy made of `░` would be indistinguishable from the blood
+  it's standing in. Enemy shading is `█`/`▓` and the half-blocks; the two lightest
+  shades are the ground's, and the division is total.
+- **`@ / \ |` (+ lookalikes) stay the Warden's** (§10). A cloak drawn in `█` and
+  `▐▌` gives the *player* his volume too, without borrowing anyone.
+- **Digits, `·`, `.`** as always (§14, §9): numbers, XP, retired.
+
+**Detail is budgeted by how many are on screen and how long you look at one.**
+This is the rule that keeps 220 shaded bodies from becoming 220 smears:
+
+| Tier | On screen | Detail budget |
+|---|---|---|
+| **Hero** — player, elite, boss | 1, always/long | Genuinely illustrated. The player is 5×5, the Countess 28×11. This is what the owner looks *at*. |
+| **Bulk** — Ghoul, Wight | dozens | A shaded core + family silhouette. One `▓`/`█` mass cell earns its keep. |
+| **Swarm** — Rat, Bat | scores | Stays small (**size is threat**, §10). Volume is the *pack*, not the individual: a rat gets one `▄` of back, no more. |
+
+So the field doesn't get busier — it gets *heavier*. The same silhouettes,
+the same colours, the same head-count, but the bodies have mass. The portraits in
+`portraits/*.txt` already draw at this fidelity (20×8, shaded); the field sprites
+were just never brought up to meet them. That's the work, and it's §0 core polish,
+not a new feature.
+
+*Rollout: player, Ghoul, Wight, Grave Rat reshaded 10.07. Bat, Rattlejack, Blood
+Wisp, Stalker, and the Ashling/Beggar characters are next, same principle.*
 
 ### The boss: THE COUNTESS
 

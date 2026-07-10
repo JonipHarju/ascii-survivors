@@ -12,7 +12,7 @@ parser you hate.*
 |---|---|---|
 | `sprites/mobs/` | Ordinary enemies, drawn **in the world**. Animated. | **5 w × 3 h** |
 | `sprites/elites/` | Elites. Animated. | **9 w × 5 h** |
-| `sprites/` | Player (3×3) and the boss (28×11). | **28 w × 11 h** |
+| `sprites/` | Player (5×5) and the boss (28×11). | **28 w × 11 h** |
 | `portraits/` | Bestiary cards, first-encounter panels, evolution slams. | **20 w × 8 h** |
 | `cards/` | Level-up card icons — a diagram of each weapon's *shape*. | **12 w × 5 h** |
 | `ui/` | Title, dawn, death banners. Full-width. | **78 w × 20 h** |
@@ -123,10 +123,23 @@ The sprite's **id is its path** under `assets/`, minus `.txt` —
 - The per-folder sizes above are **advisory budgets** — over-size art warns and
   draws anyway rather than getting clipped.
 - Files are UTF-8. Art may use box-drawing and a *small* set of symbols
-  (`※ ◆ ♥ ═ ─ ▓ ▄ ·`). All of those are Unicode *Ambiguous* width, which every
+  (`※ ◆ ♥ ═ ─ ·`). All of those are Unicode *Ambiguous* width, which every
   mainstream terminal renders as one column. Avoid emoji and anything in the
   misc-symbols block that fonts like to emoji-ify — that's why gold is a plain
-  `$` and not `⛁`.
+  `$` and not `⛁`, and the player's lantern is `◆` (U+25C6) and not the card-suit
+  `♦` (U+2666), which fonts colour-emojify.
+- **The shading ramp** (design.md §10.5 — this is how a sprite gets a *body*
+  instead of an outline): full and dark shade `█ ▓`, the half-blocks `▐ ▌ ▄ ▀`,
+  and hatching `# %`. All are in every mainstream monospace font and fill a whole
+  cell. We're on canvas now (§5.0), so John draws one glyph per cell and width
+  tables don't bind — the only question is whether the font *has* the glyph, and
+  these it has. **Volume is density, never brightness:** an enemy's shade is `█`
+  or `▓` in a *dim* colour (see the ladder below), so it still can't out-glow the
+  XP. **`▒` and `░` are NOT available** to sprites — they're the gore layer's
+  (§9), the floor's own texture, and a sprite made of them would vanish into the
+  blood. John: if any of `█ ▓ ▐ ▌ ▄ ▀` renders wrong in your canvas font, tell me
+  the font in `john.md` and I'll pick within what it has — this is the one thing
+  the whole reshade depends on.
 
 ### Palette (mask chars → 16-colour ANSI)
 

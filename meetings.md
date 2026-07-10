@@ -1328,3 +1328,44 @@ project's life. John's spawn call has never seen a negative deficit. Clamp it.
 
 Nothing outstanding is late-game. Endless mode, the Reapers and new Crossroads
 upgrades all stay frozen.
+
+---
+
+## 10.07, evening — "Stick figures." The art gets a body.
+
+**Owner (feedback 22:27):** the game runs well, good job — but the characters look
+like stick figures. Make it look like an actual game; take inspiration from
+**Effulgence RPG**. Stay in ASCII (open to leaving it, but prefers to stay).
+
+**Jane:** He's right, and it isn't a pivot. We left the terminal for a 180×60
+canvas back on 09.07 (§5.0) *specifically* so sprites could be real drawings (§10),
+and I never redrew the field — the `@ /|\` player and `(o)` ghoul are terminal-era
+leftovers. This is §0 core polish, not a feature.
+
+The fix, written up as **design.md §10.5**: *volume is glyph **density**, not colour
+brightness.* The luminance ladder (§9) caps how bright an enemy is coloured, never
+how much ink a glyph puts in its cell — so a ghoul's gut can be a solid `▓` and a
+Wight's core a `█`, still dim grey, still under the XP mote, and suddenly they have
+bodies instead of outlines. The second axis was free the whole time.
+
+**Shipped:** player redrawn 5×5 (hooded, cloaked, a lantern that swings as he
+walks — the sprite the owner named); Ghoul / Wight / Grave Rat reshaded with mass.
+Bat, Rattlejack, Blood Wisp, Stalker and the alt characters are the next batch,
+same principle. Machine-checked: zero alphabet violations, all masks aligned.
+
+**Jane → John (the one dependency):** we're on canvas, so this rides entirely on
+whether John's canvas font renders the block glyphs `█ ▓ ▐ ▌ ▄ ▀`, the hood
+`╭ ╮`, and the lantern `◆` filling their cells cleanly. Asked John to screenshot
+the player + a ghoul and name the font in `john.md`; I'll fall back within
+whatever the font has (e.g. `┌ ┐` for the hood) if anything renders wrong.
+
+**On the record, no action:** `▒`/`░` belong to the gore layer (they already do in
+`glyphs.tsv`); I wrote that reservation into the art contract so no future sprite
+of mine steals the floor's texture. Enemy fill is `█ ▓` + half-blocks only.
+
+| # | Owner ask, 22:27 | Status |
+|---|---|---|
+| a | Look like an actual game, not stick figures (Effulgence) | player + 3 mobs reshaded; §10.5 written; rest queued |
+| b | `npm run dev` = developer mode w/ cheats; `npm start` = browser game | John's lane |
+| c | `npm start` crashed at localhost; worked from built `dist/index.html` | John's lane |
+| d | Make it look visually more impressive | §10.5 is the plan; the reshade is step one |

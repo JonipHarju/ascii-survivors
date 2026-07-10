@@ -11,8 +11,8 @@
 # xp      = motes dropped
 # hit_rad = collision radius in WORLD UNITS. NOT the sprite's bounding box.
 #           Enemies ~= their sprite's inner mass. The PLAYER's is deliberately
-#           smaller than his sprite (1.2 wu for a 3x3): being hit should feel
-#           like being caught, not like being near. Replaces MASS_SCALE.
+#           smaller than his sprite (1.2 wu inside a 5x5 hooded figure): being hit
+#           should feel like being caught, not near. Replaces MASS_SCALE.
 #
 # THREE LAWS GOVERN THIS TABLE AND THE ART IT POINTS AT (design.md §9, §10, §14).
 # I broke all three, for weeks, and only found them by dumping a real frame.

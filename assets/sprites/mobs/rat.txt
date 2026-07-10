@@ -1,18 +1,20 @@
 # name: Grave Rat
-# size: 2x1
+# size: 3x1
 # anchor: center
 # fps: 10
 # colour: s
 #
-# Already clean of the Warden's strokes. The head was `w` (0.78 luminance) --
-# brighter than an XP mote, on a thing that arrives twelve at a time. Twelve
-# rat heads used to out-shout every mote on the floor. Head is grey now; the
-# bone-coloured tail is the only warm cell. See design.md §9, the ladder.
+# Vermin: low, quick, horizontal. Clean of the Warden's strokes. It gained a
+# `▄` body between head and tail -- a hunched low back hugging the ground -- so a
+# pack of twelve reads as scurrying vermin, not a scatter of `o`s. Still tiny:
+# size is threat (§10) and a rat is the least threat there is. Still under the XP
+# mote (§9): the head was `w` (0.78) once, twelve of them out-shouting every mote
+# on the floor. Head and back are grey `e`; the bone tail is the one warm cell.
 --- art ---
-o~
+o▄~
 --- mask ---
-es
+ees
 --- art ---
-o,
+o▄,
 --- mask ---
-es
+ees

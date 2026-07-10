@@ -1,21 +1,33 @@
 # name: Ghoul
-# size: 3x2
+# size: 3x3
 # anchor: center
 # fps: 4
 # colour: e
 #
 # Rotting flesh speaks in PARENTHESES: round, sagging, bloated. It owns none of
 # the strokes the Warden owns. See design.md §10, "The Warden's alphabet".
-# The shamble is the arms swinging out and in. It never stands upright.
+#
+# It used to be a hollow wireframe -- `(o)` over `) (`, two lines and air between
+# them. That is the "stick figure" the owner saw. It has a body now: a `▓` gut
+# hugged by the parentheses, in bone-pale `s` so it reads as a distended, pallid
+# belly on a grey `e` carcass. The MASS is glyph density, not brightness -- the
+# ladder still caps it at the XP mote (§9). Contrast the Wight: same grey, but the
+# Wight's `[ ]` and `█` are RIGID and this SAGS. Soft vs armoured is the whole read.
+#
+# The shamble is the legs swinging out and in. It never stands upright.
 --- art ---
 (o)
+(▓)
 ) (
 --- mask ---
 eee
+ese
 e e
 --- art ---
 (o)
-( )
+(▓)
+ )(
 --- mask ---
 eee
-e e
+ese
+ ee

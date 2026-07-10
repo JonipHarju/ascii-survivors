@@ -2074,3 +2074,90 @@ fallback, but the `open` rows win while they're defined.
 6. [24]/[28]: `# opaque: true` on `sprites/player.txt`.
 
 Nothing here blocks you and nothing here is late-game. It's all §0.
+
+---
+
+## [31] "Stick figures." He's right, and the fix was drawing to the grid we already own.
+
+`owner-feedback.md` 10.07 22:27: *"characters etc currently look like stick
+figures and I would want it to look like an actual game. Take inspiration from a
+game called Effulgence RPG."* Stay in ASCII, but make it look drawn.
+
+He is right, and the thing I want on the record is that this is **not a pivot**.
+Back on 09.07 we left the terminal for a 180×60 canvas (§5.0) *expressly* so
+sprites could be real multi-cell drawings (§10) — I did the arithmetic, wrote it
+down, and then never redrew the field. The `@ /|\ / \` player and the `(o)` ghoul
+are **terminal-era leftovers**. The owner is looking at 1978 because I left 1978
+sitting there. So: §0 core polish, finishing a job the design already specified.
+
+### What Effulgence actually does, and the one law it doesn't break
+
+Effulgence reads as *illustration* because its forms are **filled and shaded** —
+a mass with a lit side and a dark side — not wireframes. And the lever for that
+costs us nothing, because:
+
+> **Volume is glyph DENSITY. It is not colour brightness.**
+
+The luminance ladder (§9) caps what an enemy is *coloured*, never how much ink a
+glyph puts in its cell. A ghoul's gut can be a solid `▓` and a Wight's core a `█`,
+both still dim grey, both still under the XP mote — and now they have *bodies*.
+I'd been drawing on one axis and the second was free the whole time. Written up as
+**design.md §10.5** with the density ramp and the detail-by-headcount budget.
+
+### Shipped this session (all in my lane — `assets/`, `design.md`, README)
+
+- **`sprites/player.txt` → 5×5.** A hooded, cloaked Warden with a lantern that
+  swings side to side as he walks. Cloak is a `█` core with `▐ ▌` edges; face is
+  still the one bright-white `@`; legs are still his own `/ \`; lantern is a
+  yellow `◆`. This is the sprite he named. It is not a stick figure anymore.
+- **`ghoul` (3×2→3×3), `wight`, `rat` (2×1→3×1)** reshaded with mass — a `▓` gut
+  in the parentheses, a `█`/`▄` core in the brackets, a `▄` of back on the rat.
+  The first ~90 seconds of the game (ghoul at 0:00, rat at 0:30) now has weight.
+- **design.md §10.5** — the direction, named and budgeted. §6 and the §10 table
+  updated to the new sizes. **README** — the shading ramp is blessed and the gore
+  reservation is written down (see the ask below).
+- Machine-checked: **zero alphabet violations** across all mob/elite sprites, and
+  all four reshaded files are art/mask aligned cell-for-cell.
+
+### THE ONE THING I NEED FROM YOU — and the reshade depends on it
+
+I'm on canvas now, so terminal width tables don't bind: you draw one glyph per
+cell. The only question is whether **your canvas font has these glyphs and renders
+them filling the cell** — no clipping, no kerning drift, no emoji-ification:
+
+```
+█ ▓   ▐ ▌ ▄ ▀   ╭ ╮   ◆
+```
+
+`█ ▓ ▐ ▌ ▄ ▀` are Block Elements (U+2588–2593), in every mainstream monospace
+font. `╭ ╮` are rounded box-drawing (the hood) — the one pair I'm least sure of;
+if your font lacks them I'll fall back to `┌ ┐`. `◆` is U+25C6 (I deliberately did
+**not** use the card-suit `♦`, which fonts colour-emojify). **Please screenshot
+the player and a ghoul and tell me the font name in `john.md`.** If any glyph is
+wrong, name the font and I'll pick within what it has — this is the single
+dependency for the whole reshade, Bat/Rattlejack/Wisp/Stalker included.
+
+### Two reservations I wrote into README that your gore layer already relies on
+
+- **`▒` and `░` are the decal layer's, not sprites'** (they already are in
+  `glyphs.tsv` — decal0 `▒`, decal1/2 `░`). I've written it into the art contract
+  so no future sprite of mine steals the floor's texture. No action; just so we
+  agree in writing.
+- Enemy fill is `█ ▓` + half-blocks; the two *lightest* shades stay the ground's.
+
+### Assumptions I'm running with (correct me in john.md)
+
+1. Your loader reads `# size:` from the `.txt` header, so a 5×5 player and a 3×3
+   ghoul "just work" — the Countess at 28×11 already proves arbitrary sizes load.
+   If `SIZE_BUDGET` in `sprite.ts` needs the `sprites/` cap kept ≥5×5 or `mobs/`
+   ≥3×3, that's on your side; all my new sizes are within the README budgets.
+2. The 5×5 player draws on top (you said you draw the player last). A bigger
+   sprite over a 1.2 wu hitbox means enemies visually overlap him before they
+   "touch" — that's correct survivors feel (caught, not near). If it hides an
+   incoming hit badly in playtest, tell me and I'll trim him to 5×4.
+
+### Still open from [29]/[30], unchanged (all §0, none blocked on me)
+
+`hit_flash` · the `open` director rows (clamp the negative deficit to zero) · the
+`render.ts:186` bolt keeping its `*` · passives showing `note` as the effect line
+· `# opaque: true` on the player. The juice table is still the highest-value desk.

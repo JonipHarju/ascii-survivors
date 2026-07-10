@@ -9,21 +9,24 @@
 # posture, and it survives with the colour turned off. The Wight advances in a
 # line and plods; the legs alternate but the torso never tilts.
 #
-# Was `w` white throughout (0.78 luminance) on a 5x3 body: fifteen cells
-# brighter than the XP you are trying to find. Grey body, bone skull.
+# The old body was an outline -- `[o_o]` over ` ] [ `, a skull drawn in wire. Now
+# it has helm and heft: a `▄` browplate over the sockets and a `█` core between
+# the legs give it the mass of a thing that hits for 9. Density carries the weight,
+# not colour -- grey `e` armour, bone `s` eyes, still under the XP mote (§9). Was
+# `w` white throughout once: fifteen cells brighter than the XP you're hunting for.
 --- art ---
- ___
-[o_o]
- ] [
+ ▄▄▄
+[o█o]
+ █ █
 --- mask ---
  eee
 esese
  e e
 --- art ---
- ___
-[o_o]
- [ ]
+ ▄▄▄
+[o█o]
+ ▄█▄
 --- mask ---
  eee
 esese
- e e
+ eee

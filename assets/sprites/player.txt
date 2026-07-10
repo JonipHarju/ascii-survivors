@@ -1,21 +1,46 @@
 # name: The Warden
-# size: 3x3
+# size: 5x5
 # anchor: center
 # fps: 6
 # colour: w
+#
+# The owner looked at the old `@ /|\ / \` and said "stick figures ... I want it to
+# look like an actual game," and pointed at Effulgence RPG. He is right, and the
+# fix was never a different rule -- it was drawing to the grid we already committed
+# to. §5.0 left the terminal for a 180x60 canvas EXPRESSLY so sprites could be real
+# (§10). The stick figure was a terminal-era leftover I never redrew.
+#
+# So the Warden is a hooded, cloaked figure now, with a lantern that swings as he
+# walks. The VOLUME is glyph density -- a solid `█` core with `▐ ▌` half-block
+# edges reads as a body with weight -- not extra colour: the luminance ladder (§9)
+# still holds, the whole figure is white so the eye lands on the player first, and
+# the `@` at his face stays the one bright-white `W` in the game.
+#
+# Alphabet: `@` and the legs `/ \` are the player's own strokes -- they ARE the
+# Warden (§10). The lantern is `◆` in yellow (`y`, not bright `Y`, so it never
+# out-shouts the `@`); a card-suit `♦` would get emoji-ified by half the fonts on
+# earth, `◆` will not. The hood is `╭ ╮`.
 --- art ---
- @ 
-/|\
-/ \
+ ╭@╮
+◆▐█▌
+ ▐█▌
+ ▐█▌
+ / \
 --- mask ---
- W
-www
-w w
+ wWw
+ywww
+ www
+ www
+ w w
 --- art ---
- @ 
-\|/
- | 
+ ╭@╮
+ ▐█▌◆
+ ▐█▌
+ ▐█▌
+ \ /
 --- mask ---
- W
-www
- w
+ wWw
+ wwwy
+ www
+ www
+ w w

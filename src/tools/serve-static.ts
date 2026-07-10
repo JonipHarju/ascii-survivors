@@ -5,9 +5,21 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawn } from 'node:child_process';
+import { platform } from 'node:os';
 
 const DIST = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'dist');
 const PORT = Number.parseInt(process.env['PORT'] ?? '4173', 10);
+
+/** Best-effort "open the browser for me". Failure is silent — the URL is printed. */
+function openBrowser(url: string): void {
+  const cmd = platform() === 'darwin' ? 'open' : platform() === 'win32' ? 'start' : 'xdg-open';
+  try {
+    spawn(cmd, [url], { stdio: 'ignore', detached: true, shell: platform() === 'win32' }).unref();
+  } catch {
+    // No browser opener on this box; the console line is the fallback.
+  }
+}
 
 const MIME: Readonly<Record<string, string>> = {
   '.html': 'text/html; charset=utf-8',
@@ -33,4 +45,8 @@ createServer((req, res) => {
       res.writeHead(404).end('not found');
     }
   })();
-}).listen(PORT, () => console.log(`\n  dist/ -> http://localhost:${PORT}\n`));
+}).listen(PORT, () => {
+  const url = `http://localhost:${PORT}`;
+  console.log(`\n  THE LONG NIGHT  ->  ${url}\n`);
+  if (process.argv.includes('--open')) openBrowser(url);
+});

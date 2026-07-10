@@ -16,6 +16,7 @@ import { parseEvolutions } from '../data/evolutions.ts';
 import { parseCharacters } from '../data/characters.ts';
 import { parseCrossroads } from '../data/crossroads.ts';
 import { parseCountess } from '../data/countess.ts';
+import { fallbackJuice } from '../data/juice.ts';
 import type { GameData } from '../data/gamedata.ts';
 import { generateCards } from '../game/upgrades.ts';
 import { wrap } from '../game/app.ts';
@@ -50,6 +51,7 @@ const data: GameData = {
   characters: parseCharacters('warden\tThe Warden\tsprites/player\tchain\t100\t1\t1\t1\t1\t0\t'),
   crossroads: parseCrossroads(''),
   countess: parseCountess(''),
+  juice: fallbackJuice(),
   warnings: [],
 };
 

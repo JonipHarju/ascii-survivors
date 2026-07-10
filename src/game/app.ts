@@ -58,6 +58,12 @@ export type AppOptions = ViewOptions & {
   openShop?: boolean | undefined;
   /** Open straight on a level-up hand, so Jane can look at her card art. */
   openCards?: boolean | undefined;
+  /**
+   * Developer mode. `npm run dev` sets this; `npm start` (the customer build)
+   * does not. Unlocks the in-game cheat panel (backtick to open). Owner ask,
+   * 10.07 22:27: "npm run dev ... developer mode with cheats toggleable".
+   */
+  dev?: boolean | undefined;
 };
 
 export class App {
@@ -82,6 +88,10 @@ export class App {
   /** Selected row on the Crossroads screen. */
   private shopIndex = 0;
   private shopMessage = '';
+
+  /** Dev cheat panel visibility, and a transient line echoing the last cheat. */
+  private devPanel = false;
+  private devMessage = '';
 
   fps = 0;
 
@@ -137,8 +147,17 @@ export class App {
   // ---------------------------------------------------------------- update
 
   update(dt: number): void {
+    // The screen keeps settling even when the sim doesn't: a death shake fires on
+    // the frame the world freezes, and the run ends in 'dead' where world.update
+    // never runs again. tickShake lives outside the sim for exactly this.
+    this.world.tickShake(dt);
+
     this.input.update();
     const pressed = this.input.takePressed();
+
+    // Cheats consume their keys before anything else sees them, so opening the
+    // panel from the title screen doesn't also start a run.
+    this.handleCheats(pressed);
 
     switch (this.state) {
       case 'title':
@@ -328,6 +347,56 @@ export class App {
     return { x, y };
   }
 
+  // ------------------------------------------------------------------- dev
+  // The cheat panel only exists in `npm run dev`. Every action keys off the
+  // panel being open, so none of these letters ever collide with movement
+  // (WASD), menus, or a `restart-on-any-key` screen — the backtick and the
+  // action keys are deleted from `pressed` the moment they're consumed.
+
+  private handleCheats(pressed: Set<string>): void {
+    if (this.opts.dev !== true) return;
+
+    if (pressed.has('`')) {
+      this.devPanel = !this.devPanel;
+      pressed.delete('`');
+    }
+    if (!this.devPanel || this.state !== 'playing') return;
+
+    const w = this.world;
+    const take = (key: string): boolean => {
+      if (!pressed.has(key)) return false;
+      pressed.delete(key);
+      return true;
+    };
+
+    if (take('g')) {
+      w.godMode = !w.godMode;
+      this.devMessage = `god mode ${w.godMode ? 'ON' : 'off'}`;
+    }
+    if (take('l')) {
+      w.gainXp(w.xpToNext); // pushes past the threshold -> a card next frame
+      this.devMessage = 'level up';
+    }
+    if (take('k')) {
+      let n = 0;
+      for (const e of w.enemies) {
+        if (!e.boss) {
+          w.damageEnemy(e, e.hp + 1); // real kill: pops, numbers, drops all fire
+          n++;
+        }
+      }
+      this.devMessage = `culled ${n}`;
+    }
+    if (take('m')) {
+      w.gold += 1000;
+      this.devMessage = '+1000 gold';
+    }
+    if (take('t')) {
+      w.fastForward(60);
+      this.devMessage = 'skipped +1:00';
+    }
+  }
+
   // ---------------------------------------------------------------- render
 
   render(r: Surface): void {
@@ -364,6 +433,40 @@ export class App {
         break;
       default:
         break;
+    }
+
+    if (this.opts.dev === true) this.drawDevPanel(r, field);
+  }
+
+  /**
+   * The dev overlay: a hint when closed, the cheat sheet when open. Top-left,
+   * out of the way of the boss bar (top-centre) and the crowd (centre). Drawn
+   * dead last, so it sits above the menus too.
+   */
+  private drawDevPanel(r: Surface, field: Rect): void {
+    if (!this.devPanel) {
+      r.text(field.x + 1, field.y, '` dev', 0x00e0a0, 0x111111);
+      return;
+    }
+
+    const w = this.world;
+    const lines: [string, Color][] = [
+      ['— DEV —', ACCENT],
+      [`g  god mode      ${w.godMode ? 'ON' : 'off'}`, w.godMode ? 0x00e0a0 : TEXT],
+      ['l  level up', TEXT],
+      ['k  kill screen', TEXT],
+      ['m  +1000 gold', TEXT],
+      ['t  skip +1:00', TEXT],
+      ['`  close', DIM],
+    ];
+    if (this.devMessage !== '') lines.push([`» ${this.devMessage}`, 0x00e0a0]);
+
+    const width = Math.max(...lines.map((l) => l[0].length)) + 2;
+    for (let i = 0; i < lines.length; i++) {
+      const [text, color] = lines[i]!;
+      const y = field.y + i;
+      r.fillRect(field.x + 1, y, width, 1, ' ', DIM, 0x111111);
+      r.text(field.x + 2, y, text, color, 0x111111);
     }
   }
 

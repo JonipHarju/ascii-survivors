@@ -31,6 +31,7 @@ import { maxLevel, weaponAt, type WeaponLevel } from '../data/weapons.ts';
 import { defaultCharacter, type CharacterDef } from '../data/characters.ts';
 import { crossroadsParam } from '../data/crossroads.ts';
 import { countessParam, phaseFor, type Phase } from '../data/countess.ts';
+import { juice, shakeDef } from '../data/juice.ts';
 import { emptyProfile, type Profile } from './save.ts';
 
 /** Vertical wu per terminal row. The whole aspect-ratio correction, in one number. */
@@ -57,7 +58,11 @@ export type Enemy = {
   maxHp: number;
   age: number;
   hitCd: number;
+  /** Seconds of hit flash left, and what it started at, so the fade is a ratio. */
   flash: number;
+  flashMax: number;
+  /** This enemy's one live damage number, if it has one. §14: at most one. */
+  num: DamageNumber | null;
   elite: boolean;
   boss: boolean;
   /** Per-enemy phase so a flock of bats doesn't move as one organism. */
@@ -152,6 +157,53 @@ export type Effect =
   | { kind: 'ring'; x: number; y: number; radius: number; age: number; color: Color }
   | { kind: 'flash'; age: number };
 
+// --------------------------------------------------------------------- juice
+// design.md §14. Everything below is measured in seconds and world units, and
+// every constant behind it lives in `assets/juice.tsv`.
+
+/**
+ * One accumulating damage number, owned by exactly one enemy.
+ *
+ * Jane: *"I already made this mistake once, with gore."* One number per damage
+ * **event** stacks the same way decals did — at 14:00 that's ~200 enemies × 4
+ * weapons — so a number is born on an enemy's first damage and later damage is
+ * *added to it*: its life resets and it brightens. A rat hit eleven times gives
+ * you one number that climbs to 34 and glows.
+ */
+export type DamageNumber = {
+  x: number;
+  y: number;
+  amount: number;
+  age: number;
+  life: number;
+  /** Brightness accumulated from repeated hits. This is the crit feel, without a crit system. */
+  lift: number;
+  dead: boolean;
+};
+
+/** A dying enemy's last frame: its own glyphs, in white. The frame that sells the kill. */
+export type Pop = {
+  def: EntityDef;
+  x: number;
+  y: number;
+  age: number;
+  phase: number;
+  elite: boolean;
+};
+
+/**
+ * A spark off the lantern. Damages nothing, collides with nothing, drawn under
+ * everything: if a spark and a rat want the same cell, the rat gets it.
+ */
+export type Spark = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  age: number;
+  life: number;
+};
+
 export type Weapon = {
   id: string;
   level: number;
@@ -238,6 +290,35 @@ export class World {
   columns: Column[] = [];
   hazards: Hazard[] = [];
   orbs: Orb[] = [];
+
+  /** The juice layer (design.md §14). Numbers, death pops, and lantern sparks. */
+  numbers: DamageNumber[] = [];
+  pops: Pop[] = [];
+  sparks: Spark[] = [];
+  private sparkDebt = 0;
+
+  /** Seconds of frozen simulation left. Rendering never stops. */
+  private hitstopT = 0;
+  /**
+   * Refractory: seconds until hitstop may fire again. Without it a player being
+   * swarmed re-freezes every frame the moment the last freeze thaws, and the
+   * game half-freezes into a permanent judder — the exact thing Jane scoped
+   * hitstop *away* from. One freeze, then a gap, then it may punctuate again.
+   */
+  private hitstopCd = 0;
+  /** Seconds the player's `@` burns gold, after a level-up. */
+  playerFlash = 0;
+
+  /**
+   * Screen shake. `amp` is in cells and is always < 1 — a whole-cell shake is an
+   * earthquake, and sub-cell offsets are the first thing we got back for leaving
+   * the terminal. Four events in a twenty-minute run.
+   */
+  private shakeAmp = 0;
+  private shakeLeft = 0;
+  private shakeDur = 0;
+  /** Advanced every frame, even while dead, so a death shake actually settles. */
+  private shakeClock = 0;
 
   /** Enemy ids the player has met, for the first-encounter portrait (design §12). */
   seen = new Set<string>();
@@ -472,6 +553,23 @@ export class World {
   update(dt: number, input: Vec): void {
     if (this.dead || this.won) return;
 
+    this.hitstopCd = Math.max(0, this.hitstopCd - dt);
+
+    // Hit stop. The simulation freezes; rendering does not, so the frame you are
+    // staring at is the frame where you got hit. `tickShake` runs outside this,
+    // in the app loop, so the screen keeps moving while the world holds still.
+    //
+    // `reap()` still runs while frozen: a dead thing is dead, and the win the
+    // Countess just handed you must register even if she touched you on the same
+    // frame. Nothing new *dies* during a freeze — weapons don't fire — so in
+    // ordinary play this is a no-op; it only resolves a kill dealt from outside.
+    if (this.hitstopT > 0) {
+      this.hitstopT = Math.max(0, this.hitstopT - dt);
+      this.reap();
+      return;
+    }
+
+    this.playerFlash = Math.max(0, this.playerFlash - dt);
     this.timeAlive += dt;
     if (this.clockRunning) this.time += dt;
 
@@ -499,6 +597,12 @@ export class World {
     this.reap();
     this.updatePickups(dt);
     this.updateEffects(dt);
+
+    // Juice (design.md §14). Advances with the sim, so a hitstop freezes it too.
+    this.updateNumbers(dt);
+    this.updatePops(dt);
+    this.updateSparks(dt);
+
     this.pruneDecals();
     this.despawnDistant();
   }
@@ -651,6 +755,8 @@ export class World {
       age: 0,
       hitCd: 0,
       flash: 0,
+      flashMax: 0,
+      num: null,
       elite,
       boss,
       phase: this.rng.next() * Math.PI * 2,
@@ -902,9 +1008,166 @@ export class World {
     return { x: sx, y: sy };
   }
 
+  // ------------------------------------------------------------------ juice
+  // design.md §14. Every constant is read from `assets/juice.tsv`, in seconds.
+  // If anything in here ever counts frames, the feel becomes a function of the
+  // frame rate and Jane's table becomes a decoration.
+
+  /** A juice constant, by name. */
+  private j(name: string): number {
+    return juice(this.data.juice, name);
+  }
+
+  /**
+   * Start a screen shake. An event Jane hasn't listed does **not** shake: her
+   * table names exactly four for a whole run, and an unlisted event is her
+   * saying the screen should hold still, not an oversight to default around.
+   */
+  private shake(event: string): void {
+    const def = shakeDef(this.data.juice, event);
+    if (def === null) return;
+
+    // Take the stronger of the two rather than summing: her landing during her
+    // charge's shake must not add up to a whole cell.
+    this.shakeAmp = Math.max(this.shakeAmp, def.amp);
+    this.shakeLeft = Math.max(this.shakeLeft, def.seconds);
+    this.shakeDur = Math.max(this.shakeDur, this.shakeLeft);
+  }
+
+  /**
+   * Decay the shake. Called every frame by the app, *outside* `update`, because
+   * a death shake happens on the frame the simulation stops and the screen still
+   * has to settle.
+   */
+  tickShake(dt: number): void {
+    this.shakeClock += dt;
+    if (this.shakeLeft <= 0) return;
+    this.shakeLeft = Math.max(0, this.shakeLeft - dt);
+    if (this.shakeLeft === 0) {
+      this.shakeAmp = 0;
+      this.shakeDur = 0;
+    }
+  }
+
+  /**
+   * The field's offset this frame, in cells. Fractional: the canvas draws it as
+   * pixels, and the terminal — which can only move by a whole cell — rounds it
+   * to zero, which is the correct thing for a terminal to do.
+   *
+   * Two incommensurable frequencies, so it never settles into a visible wobble.
+   * Driven by a clock rather than the rng, so asking twice in one frame gives
+   * the same answer.
+   */
+  shakeOffset(): Vec {
+    if (this.shakeLeft <= 0 || this.shakeDur <= 0) return { x: 0, y: 0 };
+    const k = this.shakeAmp * (this.shakeLeft / this.shakeDur); // linear decay
+    const t = this.shakeClock;
+    return { x: Math.sin(t * 86.3) * k, y: Math.cos(t * 71.7) * k * 0.5 };
+  }
+
+  /**
+   * Add `amount` to this enemy's damage number, or start one.
+   *
+   * Never called on a killing blow: *the corpse is the number*, and that halves
+   * the count on screen at exactly the moment the field is most crowded.
+   */
+  private addDamageNumber(e: Enemy, amount: number): void {
+    if (amount < this.j('num_min')) return; // a floating `0` is a bug report
+
+    const live = e.num !== null && !e.num.dead;
+    if (live) {
+      const n = e.num!;
+      n.amount += amount;
+      n.age = 0;
+      n.x = e.x;
+      n.y = e.y;
+      n.lift = Math.min(this.j('num_lift_max'), n.lift + this.j('num_lift_per_hit'));
+      return;
+    }
+
+    const n: DamageNumber = { x: e.x, y: e.y, amount, age: 0, life: this.j('num_life'), lift: 0, dead: false };
+    e.num = n;
+    this.numbers.push(n);
+
+    // Over budget, drop the DIMMEST rather than the oldest: the number you have
+    // been feeding for half a second is the one you are actually reading.
+    const max = this.j('num_max');
+    if (this.numbers.length > max) {
+      let dimmest = 0;
+      for (let i = 1; i < this.numbers.length; i++) {
+        if (this.numbers[i]!.lift < this.numbers[dimmest]!.lift) dimmest = i;
+      }
+      this.numbers[dimmest]!.dead = true;
+      this.numbers.splice(dimmest, 1);
+    }
+  }
+
+  private updateNumbers(dt: number): void {
+    const rise = this.j('num_rise');
+    for (const n of this.numbers) {
+      n.age += dt;
+      n.y -= (rise / Math.max(0.0001, n.life)) * dt; // up is -y
+      if (n.age >= n.life) n.dead = true;
+    }
+    if (this.numbers.some((n) => n.dead)) this.numbers = this.numbers.filter((n) => !n.dead);
+  }
+
+  private updatePops(dt: number): void {
+    if (this.pops.length === 0) return;
+    const life = this.j('death_flash');
+    for (const p of this.pops) p.age += dt;
+    this.pops = this.pops.filter((p) => p.age < life);
+  }
+
+  /**
+   * Sparks rise off the lantern, cool, and die. Spawned in the annulus between
+   * `ember_r_in` and the **current** light radius, so Lantern Oil visibly widens
+   * the shower: a passive you can see is worth more than a passive you can read.
+   */
+  private updateSparks(dt: number): void {
+    const life = this.j('ember_life');
+    const drift = this.j('ember_drift');
+
+    for (const s of this.sparks) {
+      s.age += dt;
+      s.x += s.vx * dt;
+      s.y += s.vy * dt;
+      s.vy -= drift * 0.4 * dt; // they keep accelerating upward as they cool
+    }
+    if (this.sparks.some((s) => s.age >= s.life)) this.sparks = this.sparks.filter((s) => s.age < s.life);
+
+    const cap = this.j('ember_max');
+    this.sparkDebt += this.j('ember_rate') * dt;
+    while (this.sparkDebt >= 1) {
+      this.sparkDebt -= 1;
+      if (this.sparks.length >= cap) continue;
+
+      // Uniform over the annulus, not over the radius, or every spark clusters
+      // at the inner edge where the player already is.
+      const rIn = this.j('ember_r_in');
+      const rOut = Math.max(rIn + 1, this.lightRadius);
+      const r = Math.sqrt(this.rng.range(rIn * rIn, rOut * rOut));
+      const a = this.rng.next() * Math.PI * 2;
+
+      this.sparks.push({
+        x: this.x + Math.cos(a) * r,
+        y: this.y + Math.sin(a) * r,
+        vx: this.rng.range(-drift * 0.25, drift * 0.25),
+        vy: -drift,
+        age: 0,
+        life: life * this.rng.range(0.7, 1.15),
+      });
+    }
+  }
+
   damageEnemy(e: Enemy, amount: number, knockback = 0): void {
     e.hp -= amount;
-    e.flash = 0.08;
+    e.flash = this.j('hit_flash');
+    e.flashMax = e.flash;
+
+    // The corpse is the number. Skip the digits on a killing blow.
+    if (e.hp > 0) this.addDamageNumber(e, amount);
+
     if (knockback > 0 && !e.boss) {
       const dx = e.x - this.x;
       const dy = e.y - this.y;
@@ -932,6 +1195,15 @@ export class World {
     this.kills++;
     this.killsThisMinute++;
     this.addDecal(e.x, e.y);
+
+    // The corpse is the number: retire any number this enemy was still carrying.
+    if (e.num !== null) e.num.dead = true;
+
+    // One frame of its own glyphs in white, over the fresh decal. The boss gets
+    // no pop — a 28x11 sprite flashing white is a lightning strike, not a kill.
+    if (!e.boss && this.j('death_flash') > 0) {
+      this.pops.push({ def: e.def, x: e.x, y: e.y, age: 0, phase: e.phase, elite: e.elite });
+    }
 
     if (e.boss) {
       this.boss = null;
@@ -970,10 +1242,23 @@ export class World {
     }
   }
 
-  damagePlayer(amount: number): void {
+  /**
+   * `hitstop` is the punch of a discrete hit landing. Continuous sources — a
+   * burning trail you're standing in — pass `false`: standing in fire is a
+   * *state*, not an event, and freezing 20×/second while you stand there is the
+   * judder, not the juice. The refractory keeps even discrete hits from a swarm
+   * from stacking into the same permanent freeze.
+   */
+  damagePlayer(amount: number, hitstop = true): void {
     if (this.godMode) return;
     const reduced = Math.max(1, amount - this.stats().flat_reduce);
     this.hp -= reduced;
+
+    if (hitstop && this.hitstopCd <= 0) {
+      this.hitstopT = Math.max(this.hitstopT, this.j('hitstop'));
+      this.hitstopCd = this.j('hitstop') + this.j('hitstop_gap');
+    }
+
     if (this.hp > 0) return;
 
     // Revival: spend a charge rather than ending the run.
@@ -982,11 +1267,13 @@ export class World {
       this.revivesUsed++;
       this.hp = this.maxHp * 0.5;
       this.effects.push({ kind: 'flash', age: 0 });
+      this.shake('player_revive');
       return;
     }
 
     this.hp = 0;
     this.dead = true;
+    this.shake('player_death');
     this.bestMinute = Math.max(this.bestMinute, this.killsThisMinute);
   }
 
@@ -1534,7 +1821,7 @@ export class World {
       if (this.trailDebt >= 1) {
         const whole = Math.floor(this.trailDebt);
         this.trailDebt -= whole;
-        this.damagePlayer(whole);
+        this.damagePlayer(whole, false); // DoT is a state, not a hit — no hitstop
       }
     } else {
       this.trailDebt = 0;
@@ -1677,6 +1964,12 @@ export class World {
       this.level++;
       this.xpToNext = xpToNext(this.level);
       this.pendingLevelUps++;
+
+      // No expanding ring: every glyph a ring could use is already owned by the
+      // bolt, the mote or the gore. The `@` burns gold and the world stops.
+      // The pause *is* the reward, and the card is about to fill the screen.
+      this.playerFlash = this.j('levelup_flash');
+      this.hitstopT = Math.max(this.hitstopT, this.j('levelup_hitstop'));
     }
   }
 

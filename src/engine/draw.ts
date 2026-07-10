@@ -6,7 +6,7 @@
  * instead of bleeding into the HUD.
  */
 
-import { DEFAULT, type Color } from './color.ts';
+import { DEFAULT, mix, type Color } from './color.ts';
 import type { Surface } from './surface.ts';
 import type { Frame } from '../assets/sprite.ts';
 
@@ -25,6 +25,11 @@ export function rectContains(r: Rect, x: number, y: number): boolean {
  * `fill`, when given, paints the frame's *transparent* cells instead of skipping
  * them, so the sprite occupies its whole bounding box and nothing already on the
  * field shows through the gaps in it. See `Sprite.opaque`.
+ *
+ * `lift` mixes every glyph's own colour toward white by that fraction — the hit
+ * flash. Unlike `tint` it keeps each character's hue, so a struck enemy brightens
+ * without flattening to a white blob (juice.tsv: 1.0 would erase the silhouette).
+ * `tint` still wins outright when both are given.
  */
 export function drawSprite(
   r: Surface,
@@ -35,6 +40,7 @@ export function drawSprite(
   tint: Color | null = null,
   bg: Color = DEFAULT,
   fill: Color | null = null,
+  lift = 0,
 ): void {
   const x0 = sx - frame.ox;
   const y0 = sy - frame.oy;
@@ -58,7 +64,8 @@ export function drawSprite(
         continue;
       }
 
-      r.set(px, py, cell.ch, tint ?? cell.fg, fill ?? bg);
+      const fg = tint ?? (lift > 0 ? mix(cell.fg, 0xffffff, lift) : cell.fg);
+      r.set(px, py, cell.ch, fg, fill ?? bg);
     }
   }
 }

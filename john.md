@@ -754,3 +754,71 @@ simulation is the reason it changed. The header is stale; the data is fine.
    screen.
 3. Endless mode. **Parked** — the owner explicitly said no more late-game work
    until the core is polished, and he's right.
+
+---
+
+## [31] The juice is on the screen now. And `npm run dev` grew cheats.
+
+Two things landed this session. The first is the one you've been asking for since
+[29]: **`juice.tsv` is no longer just parsed, it's rendered.** The data model was
+sitting in `world.ts` reacting to nothing. It reacts now.
+
+### Everything in your table is alive
+
+- **`hit_flash`.** The 60ms you said was the whole complaint. An enemy that takes
+  damage lifts toward white by `hit_flash_lift` (0.55) over the flash's life. It
+  does **not** flatten to a white blob — I added a `lift` param to `drawSprite`
+  that mixes each glyph toward white while keeping its own hue, exactly your
+  "1.0 would erase the silhouette." The sprite doesn't move and the glyphs don't
+  change. Same treatment on the Countess (but her telegraph still overrides).
+- **Death pops.** One bright frame of the enemy's own sprite where it fell,
+  fading over `death_flash`. The boss is filtered out upstream, per your note.
+- **Damage numbers.** One per enemy, climbs and brightens as damage feeds in,
+  capped below the player's white so it never out-shines what it celebrates.
+  Drawn above the crowd, retired when the corpse (the number) drops.
+- **Sparks.** Rise off the lantern in the annulus out to the *current* light
+  radius, cool yellow→red, capped at `ember_level`. Drawn under the gore so they
+  never steal a cell from anything that matters. Lantern Oil widens the shower.
+- **Screen shake.** `shakeOffset()` feeds the field projection in fractional
+  cells; the canvas draws pixels, the terminal's rounding swallows it. HUD never
+  shakes. Four events, your amps. Death peaks at 0.98 cells and settles to 0.
+- **Hit stop + level-up gold `@`.** The pause on a player hit, and the `@` burns
+  gold (`Y`) for `levelup_flash` before the cards come up. No ring — you were
+  right that every glyph a ring wants is already spoken for.
+
+### One number I added to your table's defaults — `hitstop_gap`
+
+Your rule is "hitstop fires when the player takes damage," and that broke two
+ways I had to fix, both faithful to what you meant:
+
+1. **A burning trail is a *state*, not a *hit*.** Standing in the Countess's fire
+   was re-freezing the sim ~20×/second — the exact judder you scoped hitstop
+   *away* from. So **DoT no longer triggers hitstop at all.** Only discrete hits do.
+2. **A swarm is many hits per frame.** I added `hitstop_gap` (0.2s refractory) so
+   one freeze punctuates, then a gap, then it may fire again — instead of a
+   permanent half-freeze while you're mobbed. It's in my defaults; **if you want
+   a different gap, add `param hitstop_gap <seconds>` to `juice.tsv` and it wins.**
+
+`npm test` 139/139, and a headless 20-second run confirms numbers, pops, sparks
+and the death shake all populate and settle.
+
+### The owner's 22:27 asks (owner-feedback.md), the code half of them
+
+- **`npm run dev` → developer mode with a cheat panel.** Press **`` ` ``** in a run
+  to toggle it: `g` god, `l` level-up, `k` kill screen, `m` +1000 gold, `t` skip
+  +1:00. Dev-only — the customer build never has it.
+- **`npm start` → the normal game, in the browser, no crash.** It now *builds the
+  single-file* and serves that, then opens your browser. The crash he hit was the
+  compile-on-request dev server; the customer path is now the robust inlined
+  build — the same one that "worked from dist" for him. `npm run dev` keeps the
+  live-reload feedback loop for us.
+
+### Your desk — the ask I can't do, because it's yours
+
+Owner, 22:27: *"characters look like stick figures, I want it to look like an
+actual game — take inspiration from **Effulgence RPG**."* That's your call, not
+mine. What I've done is make the engine *react* so your art has somewhere to
+land: a sprite that flinches, pops, throws numbers and sits in a shower of sparks
+reads as a game even before it's redrawn. If Effulgence-density art wants bigger
+sprite bounds, more frames, or a wider palette than the ladder allows, tell me
+the constraint you need loosened and I'll move the techstack to meet it.

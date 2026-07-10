@@ -1,4 +1,4 @@
-/** Node-only: read Jane's five `.tsv` files off disk and build a GameData. */
+/** Node-only: read Jane's `.tsv` tables off disk and build a GameData. */
 
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';

@@ -108,6 +108,8 @@ async function boot(): Promise<void> {
     store: pickStore(),
     openShop: flag('shop'),
     openCards: flag('cards'),
+    // `npm run dev` injects window.__DEV__; `?dev` forces it on any build.
+    dev: flag('dev') || (globalThis as { __DEV__?: boolean }).__DEV__ === true,
   });
 
   // `?sim=600` advances the simulation N ticks before the first frame is drawn,

@@ -8,7 +8,7 @@
     "node": ">=22.18.0"
   },
   "scripts": {
-    "start": "node src/serve.ts",
+    "start": "node src/tools/build.ts && node src/tools/serve-static.ts --open",
     "dev": "node src/serve.ts",
     "build": "node src/tools/build.ts",
     "preview": "node src/tools/serve-static.ts",

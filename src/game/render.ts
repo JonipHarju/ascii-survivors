@@ -16,6 +16,7 @@ import type { SpriteBank } from '../assets/bank.ts';
 import type { DecalDef } from '../data/entities.ts';
 import { param } from '../data/director.ts';
 import { countessParam } from '../data/countess.ts';
+import { juice, juiceGlyph } from '../data/juice.ts';
 import { formatTime, WU_PER_ROW, type Enemy, type World } from './world.ts';
 
 const PLAYER_COLOR: Color = 0xffffff;
@@ -91,11 +92,16 @@ export class GameView {
     const radius = w.dusk ? w.lightRadius * 0.7 : w.lightRadius;
     const soft = r.caps.smoothLight;
 
+    // Screen shake (juice.tsv). The offset is in cells and < 1; the canvas draws
+    // it as pixels and the terminal's Math.round swallows it, which is the right
+    // thing for a terminal. The HUD is drawn separately and never sees it.
+    const sh = w.shakeOffset();
+
     const p: Proj = {
-      col: (x) => field.x + halfW + Math.round(x - w.x),
-      row: (y) => field.y + halfH + Math.round((y - w.y) / WU_PER_ROW),
-      colF: (x) => field.x + halfW + (x - w.x),
-      rowF: (y) => field.y + halfH + (y - w.y) / WU_PER_ROW,
+      col: (x) => field.x + halfW + Math.round(x - w.x + sh.x),
+      row: (y) => field.y + halfH + Math.round((y - w.y) / WU_PER_ROW + sh.y),
+      colF: (x) => field.x + halfW + (x - w.x) + sh.x,
+      rowF: (y) => field.y + halfH + (y - w.y) / WU_PER_ROW + sh.y,
       lit: (x, y) => !dark || Math.hypot(x - w.x, y - w.y) <= radius,
       shadeAt: (x, y, c) => {
         if (!dark || soft) return c;
@@ -108,6 +114,9 @@ export class GameView {
     if (dark && soft) r.setLight(p.colF(w.x), p.rowF(w.y), radius);
 
     this.drawGround(r, w, field, dark && !soft, radius);
+    // Sparks are the bottom of the juice stack: drawn before the gore even, so
+    // nothing that matters ever loses a cell to one (juice.tsv: the rat wins).
+    this.drawSparks(r, w, p);
     this.drawDecals(r, w, p);
     this.drawEmbers(r, w, p);
     this.drawHazards(r, w, p);
@@ -115,20 +124,27 @@ export class GameView {
     this.drawRings(r, w, p);
     this.drawPickups(r, w, p);
     this.drawEnemies(r, w, field, p, dark);
+    // Death pops sit where the enemy stood; damage numbers ride above the crowd.
+    this.drawPops(r, w, field, p);
+    this.drawNumbers(r, w, p);
     this.drawBands(r, w, p);
     this.drawBolts(r, w, p);
     this.drawOrbs(r, w, p);
 
     // The player is drawn last and is the only bright white thing on the field.
     // Her head is still the `@`; the sprite carries the rest of the silhouette.
+    // On a level-up the `@` burns gold for `levelup_flash` seconds — no ring, no
+    // new glyph, just the one you already are, lit. The card is about to fill the
+    // screen anyway (juice.tsv §5).
+    const goldFlash = w.playerFlash > 0 ? ACCENT : null;
     const playerSprite = this.sprites.get(w.character?.sprite ?? 'sprites/player');
     if (!playerSprite.placeholder) {
       // An opaque player carries her own background, so the horde parts around
       // her outline instead of a ghoul's `(` sitting between her boots.
       const fill = playerSprite.opaque ? OPAQUE_BG : null;
-      drawSprite(r, frameAt(playerSprite, w.timeAlive), p.col(w.x), p.row(w.y), field, null, DEFAULT, fill);
+      drawSprite(r, frameAt(playerSprite, w.timeAlive), p.col(w.x), p.row(w.y), field, goldFlash, DEFAULT, fill);
     } else {
-      r.setF(p.colF(w.x), p.rowF(w.y), w.playerDef.glyph, PLAYER_COLOR);
+      r.setF(p.colF(w.x), p.rowF(w.y), w.playerDef.glyph, goldFlash ?? PLAYER_COLOR);
     }
 
     if (this.portraitId !== null) this.drawPortrait(r, field, this.portraitId);
@@ -192,6 +208,74 @@ export class GameView {
       // Embers fade as they burn out.
       const t = Math.min(1, em.life / 3);
       r.setF(p.colF(em.x), p.rowF(em.y), em.life > 1.5 ? '*' : '.', shade(em.color, 0.5 + t * 0.5));
+    }
+  }
+
+  /**
+   * Lantern sparks (juice.tsv §6). They rise, cool from yellow toward a dim
+   * ember, and are capped at `ember_level` so a spark never out-shines an XP
+   * mote — beauty does not outrank information (design §9).
+   */
+  private drawSparks(r: Surface, w: World, p: Proj): void {
+    if (w.sparks.length === 0) return;
+    const g = juiceGlyph(w.data.juice, 'ember', "'", 0xffcc44);
+    const ceil = juice(w.data.juice, 'ember_level');
+
+    for (const s of w.sparks) {
+      const sx = p.col(s.x);
+      const sy = p.row(s.y);
+      if (!p.inside(sx, sy)) continue;
+      const t = Math.min(1, s.age / Math.max(0.0001, s.life));
+      const hue = mix(g.color, 0x6a1a08, t); // yellow -> dim red as it cools
+      r.setF(p.colF(s.x), p.rowF(s.y), g.chars, shade(hue, ceil * (1 - t * 0.6)));
+    }
+  }
+
+  /**
+   * The death pop (juice.tsv §2): one bright frame of the enemy's own glyphs
+   * where it fell, fading over `death_flash`. Costs no art and it is the single
+   * frame that sells a kill. The boss never pops — it is filtered upstream.
+   */
+  private drawPops(r: Surface, w: World, field: Rect, p: Proj): void {
+    if (w.pops.length === 0) return;
+    const life = Math.max(0.0001, juice(w.data.juice, 'death_flash'));
+
+    for (const pop of w.pops) {
+      const sx = p.col(pop.x);
+      const sy = p.row(pop.y);
+      if (!p.inside(sx, sy)) continue;
+
+      const k = Math.max(0, 1 - pop.age / life);
+      const white = shade(FLASH_COLOR, 0.6 + 0.4 * k);
+      const id = pop.elite ? `sprites/elites/${pop.def.id}` : `sprites/mobs/${pop.def.id}`;
+      const sprite = this.sprites.get(id);
+      if (!sprite.placeholder) {
+        drawSprite(r, frameAt(sprite, 0, pop.phase), sx, sy, field, white);
+      } else {
+        r.setF(p.colF(pop.x), p.rowF(pop.y), pop.def.glyph, white);
+      }
+    }
+  }
+
+  /**
+   * Damage numbers (juice.tsv §3). At most one per enemy; it climbs and brightens
+   * as damage is fed into it. White, capped below the player's pure white so it
+   * never out-shines the thing it celebrates, and it fades over its final third.
+   */
+  private drawNumbers(r: Surface, w: World, p: Proj): void {
+    if (w.numbers.length === 0) return;
+    const g = juiceGlyph(w.data.juice, 'number', '0123456789', 0xf0f0f0);
+    const liftMax = Math.max(0.0001, juice(w.data.juice, 'num_lift_max'));
+
+    for (const n of w.numbers) {
+      const sx = p.col(n.x);
+      const sy = p.row(n.y);
+      if (!p.inside(sx, sy)) continue;
+
+      const fade = Math.min(1, (n.life - n.age) / (n.life * 0.33));
+      const bright = (0.55 + 0.35 * (n.lift / liftMax)) * Math.max(0, fade);
+      const text = String(Math.round(n.amount));
+      r.text(sx - Math.floor(text.length / 2), sy, text, shade(g.color, bright));
     }
   }
 
@@ -299,16 +383,21 @@ export class GameView {
         continue;
       }
 
+      // Hit flash: lift toward white by `hit_flash_lift` over the flash's life,
+      // never all the way (that erases the silhouette and reads as a new enemy
+      // arriving, not this one getting hurt). 60ms, from juice.tsv.
+      const lift = e.flash > 0 && e.flashMax > 0 ? juice(w.data.juice, 'hit_flash_lift') * (e.flash / e.flashMax) : 0;
+
       // Elites ignore the dark: they're always fully lit.
       let color = e.elite ? e.def.color : p.shadeAt(e.x, e.y, e.def.color);
       if (!inLight && !e.elite && !r.caps.smoothLight) color = DARK_COLOR;
-      if (e.flash > 0) color = mix(color, FLASH_COLOR, Math.min(1, e.flash / 0.08));
+      if (lift > 0) color = mix(color, FLASH_COLOR, lift);
 
       // Sprite by convention (jane.md), falling back to the `glyph` column in
       // glyphs.tsv. That fallback is how we ship a half-drawn bestiary.
       const sprite = this.sprites.get(spriteIdFor(e));
       if (!sprite.placeholder) {
-        drawSprite(r, frameAt(sprite, e.age, e.phase), sx, sy, field, e.flash > 0 ? FLASH_COLOR : null);
+        drawSprite(r, frameAt(sprite, e.age, e.phase), sx, sy, field, null, DEFAULT, null, lift);
       } else {
         r.setF(p.colF(e.x), p.rowF(e.y), e.def.glyph, color);
       }
@@ -334,13 +423,16 @@ export class GameView {
     const frame = frameAt(sprite, w.timeAlive);
 
     // The telegraph is the player's entire tell before a 52 wu/s charge they
-    // cannot outrun, so it has to be the loudest thing on the field.
-    let tint: Color | null = e.flash > 0 ? FLASH_COLOR : null;
+    // cannot outrun, so it has to be the loudest thing on the field — a real
+    // tint that overrides everything. A plain hit, though, only lifts her.
+    let tint: Color | null = null;
+    let lift = e.flash > 0 && e.flashMax > 0 ? juice(w.data.juice, 'hit_flash_lift') * (e.flash / e.flashMax) : 0;
     if (w.bossTelegraph > 0) {
       const pulse = 0.45 + 0.55 * Math.abs(Math.sin(w.timeAlive * 26));
       tint = mix(0xff3b3b, 0xffffff, pulse * (1 - w.bossTelegraph));
+      lift = 0;
     }
-    drawSprite(r, frame, sx, sy, field, tint);
+    drawSprite(r, frame, sx, sy, field, tint, DEFAULT, null, lift);
   }
 
   private drawEliteBar(r: Surface, e: Enemy, sx: number, sy: number, field: Rect): void {

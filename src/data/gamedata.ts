@@ -17,6 +17,7 @@ import { parseWeapons, type WeaponTable } from './weapons.ts';
 import { parseCharacters, fallbackCharacters, type CharacterTable } from './characters.ts';
 import { parseCrossroads, fallbackCrossroads, type CrossroadsTable } from './crossroads.ts';
 import { parseCountess, fallbackCountess, type CountessTable } from './countess.ts';
+import { parseJuice, fallbackJuice, type JuiceTable } from './juice.ts';
 
 export type GameData = {
   readonly glyphs: GlyphTable;
@@ -27,10 +28,11 @@ export type GameData = {
   readonly characters: CharacterTable;
   readonly crossroads: CrossroadsTable;
   readonly countess: CountessTable;
+  readonly juice: JuiceTable;
   readonly warnings: readonly string[];
 };
 
-/** The five `.tsv` files, as raw text. Missing tables are the empty string. */
+/** Jane's `.tsv` files, as raw text. Missing tables are the empty string. */
 export type TableSources = {
   glyphs: string;
   weapons: string;
@@ -40,6 +42,7 @@ export type TableSources = {
   characters: string;
   crossroads: string;
   countess: string;
+  juice: string;
 };
 
 export const TABLE_FILES = [
@@ -51,6 +54,7 @@ export const TABLE_FILES = [
   'characters',
   'crossroads',
   'countess',
+  'juice',
 ] as const;
 
 export function buildGameData(src: TableSources): GameData {
@@ -62,6 +66,7 @@ export function buildGameData(src: TableSources): GameData {
   const characters = src.characters === '' ? fallbackCharacters() : parseCharacters(src.characters);
   const crossroads = src.crossroads === '' ? fallbackCrossroads() : parseCrossroads(src.crossroads);
   const countess = src.countess === '' ? fallbackCountess() : parseCountess(src.countess);
+  const juice = src.juice === '' ? fallbackJuice() : parseJuice(src.juice);
 
   const warnings = [
     ...glyphs.warnings,
@@ -72,9 +77,10 @@ export function buildGameData(src: TableSources): GameData {
     ...characters.warnings,
     ...crossroads.warnings,
     ...countess.warnings,
+    ...juice.warnings,
   ];
 
   if (weapons.byId.size === 0) warnings.push('weapons.tsv missing or empty — the player will start unarmed');
 
-  return { glyphs, weapons, passives, director, evolutions, characters, crossroads, countess, warnings };
+  return { glyphs, weapons, passives, director, evolutions, characters, crossroads, countess, juice, warnings };
 }

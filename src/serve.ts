@@ -65,6 +65,9 @@ const server = createServer((req, res) => {
     }
 
     // Recompile on every page load, so editing src/web needs only a refresh.
+    // Then serve the page with a dev flag injected: this server is `npm run dev`,
+    // so the game boots into developer mode with the cheat panel available. The
+    // production single-file build (`npm start`) never sees this script.
     if (path === '/index.html') {
       const err = compile();
       if (err !== null) {
@@ -72,6 +75,11 @@ const server = createServer((req, res) => {
         res.end(`<pre style="color:#f66;background:#111;padding:2rem;font:14px monospace">${escapeHtml(err)}</pre>`);
         return;
       }
+      const html = await readFile(join(WEB, 'index.html'), 'utf8');
+      const dev = html.replace('</head>', '    <script>window.__DEV__ = true;</script>\n  </head>');
+      res.writeHead(200, { 'content-type': MIME['.html']!, 'cache-control': 'no-store' });
+      res.end(dev);
+      return;
     }
 
     // `normalize` collapses `..`, and the prefix check keeps us inside web/.
@@ -101,7 +109,9 @@ function escapeHtml(s: string): string {
 }
 
 server.listen(PORT, () => {
-  console.log(`\n  THE LONG NIGHT  ->  http://localhost:${PORT}\n`);
+  console.log(`\n  THE LONG NIGHT — DEV  ->  http://localhost:${PORT}\n`);
+  console.log('  developer mode: press ` in-game for the cheat panel');
+  console.log('  (god / level up / kill screen / gold / skip time)\n');
   console.log('  ?play    skip the title screen');
   console.log('  ?debug   fps + entity counters');
   console.log('  ?god     invulnerable');

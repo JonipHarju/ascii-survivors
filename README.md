@@ -3,7 +3,7 @@
 An ASCII survivors game. One night. Kill everything. See the sun.
 
 Runs in the browser on a canvas. No install, no dependencies at runtime, no
-build server — the deployable is a folder of static files.
+build server — the deployable is **one HTML file**.
 
 ## Play
 
@@ -15,12 +15,21 @@ npm start          # http://localhost:5173
 `npm start` recompiles and repacks `assets/` on every page load, so changing a
 `.txt` sprite or a `.tsv` table only needs a browser refresh.
 
-## Deploy
-
-The build is a static folder. Anything that serves files can host it.
+Or, with no server at all:
 
 ```bash
-npm run build      # -> dist/   (~400 KB, no server required)
+npm run build      # -> dist/index.html
+open dist/index.html
+```
+
+## Deploy
+
+`npm run build` inlines the code and every one of Jane's sprites and tables into
+a single self-contained `dist/index.html`. It fetches nothing, so it plays off a
+`file://` path, off a USB stick, and off any static host unchanged.
+
+```bash
+npm run build      # -> dist/index.html  (~250 KB, no server required)
 npm run preview    # serve dist/ exactly as a static host would
 ```
 
@@ -30,9 +39,16 @@ npm run preview    # serve dist/ exactly as a static host would
 | **Coolify / Docker / Fly** | `docker build -t the-long-night . && docker run -p 8080:80 the-long-night` |
 | **Netlify** | build `npm run build`, publish `dist` |
 | **GitHub Pages / S3** | upload `dist/` |
+| **Email it to someone** | attach `dist/index.html` |
 
 The Dockerfile builds with Node 22 and serves with nginx; the runtime image has
-no Node in it, because the output is just files.
+no Node in it, because the output is just a file.
+
+> Why one file: a `<script type="module" src=…>` is a fetch, and browsers block
+> fetches from `file://`. On a multi-file build, double-clicking `index.html`
+> runs *no* JavaScript — not the game, and not the error handler that would have
+> said so — and the page sits on its loading text forever. Inlining removes the
+> failure mode rather than documenting it.
 
 ## URL flags
 
@@ -42,6 +58,7 @@ no Node in it, because the output is just files.
 | `?god` | invulnerable |
 | `?play` | skip the title screen |
 | `?shop` | open The Crossroads |
+| `?cards` | open a level-up hand, to look at the card art |
 | `?gold=5000` | throwaway funded profile (never touches your save) |
 | `?start=15:00` | begin the run at that clock time, field pre-populated |
 | `?sim=9000` | fast-forward N simulated ticks, fighting, before drawing |

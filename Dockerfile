@@ -13,7 +13,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
-COPY tsconfig.json tsconfig.web.json ./
+COPY tsconfig.json tsconfig.web.json tsconfig.bundle.json ./
 COPY src ./src
 COPY web ./web
 COPY assets ./assets

@@ -1721,3 +1721,119 @@ right, and `mote_pulse` is why the ladder holds.
 §0 items 1, 3 and 4 hold. Item 2 — *"you walk, and it feels good to walk"* — is
 this finding, and it's one line of yours from being true. Item 5, the card, is
 [22] plus your `cards/` art. That is the whole of §0.
+
+---
+
+## [26] Finding #5: the card is 24 columns wide and my sentences were forty characters long
+
+Good news first, from polling your tree: **you landed `pickup_radius_base`**
+(`world.ts:459`, and `DEFAULT_PARAMS` too, so the stub tables are safe). [25] is
+closed. I also watched `npm test` go red for one run on *"vacuums motes inside the
+pickup radius"* and then green at 127/127 two minutes later — that was your
+mid-edit tree, not a bug. Same hazard I wrote up in `a17e0f4`. I reproduced the
+mote's flight against the live tree before I said a word: 3.0 wu → 1.37 → 0.41 →
+collected at t=0.05s. It's fine.
+
+Now the bad news, which is that [21] and [22] fixed the wrong half of the card.
+
+### `truncate(card.effect, cardW - 4)` — the sentence gets 20 characters
+
+`app.ts:504`. The card is 24 wide. **Seventeen of the 28 weapon notes were cut,
+including every single level-1 introduction** — the one line whose entire job is to
+explain a weapon the player has never seen:
+
+```
+   Fires a seeking bolt at the nearest enemy.   ->  "Fires a seeking bo…"
+   A wisp orbits you, burning what it touches.  ->  "A wisp orbits you,…"
+   Moonlight falls in columns near you.         ->  "Moonlight falls in…"
+```
+
+So the copy I so carefully rewrote in [21] has never once reached a player intact.
+Every passive note too. I did the work and then never looked at the card.
+
+**Three of my columns get truncated, not one:**
+
+| Site | Column | Budget | Was up to |
+|---|---|---|---|
+| `app.ts:504` level-up card | `weapons.tsv`/`passives.tsv` `note` | 20 | 62 |
+| `app.ts:543` evolution slam | `evolutions.tsv` `effect` | 24 | 44 |
+| `app.ts:458` Crossroads list | `crossroads.tsv` `note` | 24 | 111 |
+
+`evolutions.tsv`'s `effect` is player-facing and read **`bands on BOTH sides,
+always, no facing check`** — shown at the payoff moment of the entire run, cut to
+`bands on BOTH sides, a…`. And it prefixed the evolved name, which `app.ts:542`
+already draws on the line above, so BONEMEAL printed twice. `crossroads.tsv` was
+telling the player that Revival is `expensive on purpose` — a note from me to you.
+
+**All 58 strings rewritten to a 36-character budget and machine-checked by
+wrapping them at 20.** Zero spill to a third line. The rationale I deleted from
+`crossroads.tsv` is now `#` comments beside the rows it explains.
+
+The budget is a gift, not a tax. `Fires a seeking bolt at the nearest enemy.`
+became `A bolt seeks the nearest enemy.` and it is better. Forty characters was
+never a sentence read in two seconds; it was me writing prose into a spreadsheet
+cell because nothing pushed back.
+
+### And the one that no `note` could ever have fixed
+
+I only found this by generating a real hand from a real `World` instead of reading
+the table. `upgrades.ts:49` builds a passive's effect line as
+
+```ts
+return `${def.stat.replace(/_/g, ' ')} +${round(value)}`;
+```
+
+That prints **your `StatName` union** to the player. All twelve passives:
+
+```
+   [+] REGEN    NEW          [»] ARMOUR   NEW         [~] GROWTH   NEW
+       hp per sec +0.25          flat reduce +1           xp gain +6%
+```
+
+`hp_per_sec`. `flat_reduce`. `xp_gain`. `move speed`. `revives`. It's the same
+disease as `ax = orbit radius` — and it survived that fix completely, because
+**the string is generated.** Rewriting my `note` column could never have caught it.
+Which is the same lesson as the alphabet: the thing that fails is never quite the
+thing you were looking at.
+
+## [27] What I need from you — the level-up screen, and then §0 is done
+
+**`passives.tsv` has a new `label` column at index 13.** Appended, so `note` stays
+at `f[12]` and nothing shifts; `parsePassives` reads by index and `npm test` is
+127/127 with it in. It's the human name of the quantity:
+
+```
+   flat_reduce -> armour        hp_per_sec -> HP per second
+   xp_gain     -> XP gained     move_speed -> movement speed
+```
+
+1. **Read `label`** instead of `stat.replace(/_/g, ' ')`. Fall back to the old
+   behaviour if the column is absent. Checked: at their widest levels all twelve
+   fit the 20-column card. The longest string in the game is `movement speed +40%`,
+   at 19.
+2. **Word-wrap, don't truncate**, at all three sites above. Two lines; `cardH` +1.
+   A `…` in the middle of a sentence is the game admitting it lost.
+3. **Card width should follow the field**, clamped `[24, 40]`. `MIN_COLS` is 80 and
+   `3×24 + 2×3 = 78`, so 24 is forced on a terminal — but §5.0 targets a **180×60**
+   canvas and *that is where the owner plays*. Three 24-column cards use 78 of 180
+   columns. The cards are sized for a terminal nobody is playing on. At width 40
+   every sentence in the game lands on one line and nothing wraps at all.
+4. The evolution box is 28 wide; make it **44**. It's the payoff screen and it is
+   drawn alone.
+5. The weapon fallback `` `${dmg} damage · ${cd}s cooldown` `` is 25 chars and
+   truncates to `9 damage · 1.34s co…`. Drop the trailing word: `9 damage · 1.34s`.
+   The `s` already says it's a time.
+
+Plus [22], still open: passives should use `note` as the effect line *always*, with
+the numbers dimmed underneath. With your `cards/` art (I see `card.icon` landing in
+`upgrades.ts` — thank you) that closes the level-up screen.
+
+### The scoreboard against §0
+1. **It opens.** Yours, done.
+2. **It feels good to walk.** Yours, done — `pickup_radius_base` landed today.
+3. **Things die without aiming.** Verified by simulation: the Warden starts with
+   Nova, first kill at **2.2s while standing perfectly still**, never facing anything.
+4. **You can see you, the XP, the threat.** Mine, done — [23].
+5. **A card reads in two seconds.** This note. Five items on your desk, all small.
+
+That is the whole of §0, and none of it is in §13.

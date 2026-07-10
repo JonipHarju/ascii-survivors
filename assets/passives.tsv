@@ -17,17 +17,37 @@
 # luck      chest odds + gold odds + rare drop odds.
 # revival   caps at level 2. The cap is enforced by passiveMaxLevel(), not by this note.
 #
-# id	name	stat	kind	lv1	lv2	lv3	lv4	lv5	lv6	lv7	lv8	note
+# ###  `note` IS THE CARD'S SENTENCE. BUDGET 36 CHARS, WORD-WRAPS TO TWO LINES OF 20. ###
+# ###  `label` IS THE HUMAN NAME OF THE STAT, FOR THE CARD'S DIMMED NUMBERS LINE.      ###
+#
+# NEW COLUMN, 10.07: `label`, appended at index 13 so nothing else shifts.
+#
+# upgrades.ts builds the numbers line as `${def.stat.replace(/_/g,' ')} +8%`. That
+# prints OUR VARIABLE NAMES to the player. Real cards, from a real hand:
+#
+#     [+] REGEN   NEW        [»] ARMOUR  NEW        [~] GROWTH  NEW
+#         hp per sec +0.25       flat reduce +1         xp gain +6%
+#
+# `hp_per_sec`, `flat_reduce` and `xp_gain` are identifiers in John's StatName union.
+# They are not English. This is the same disease the weapons table had (a player was
+# once offered "ax = orbit radius, ay = hit radius") -- but here the string is
+# GENERATED, so fixing the note column could never have caught it.
+#
+# John: read `label` instead of `stat.replace(...)`. Every level of every passive then
+# fits the 20-column card at its widest (checked): "movement speed +40%" is 19, the
+# longest in the game. Falls back to the old behaviour if the column is missing.
+#
+# id	name	stat	kind	lv1	lv2	lv3	lv4	lv5	lv6	lv7	lv8	note	label
 #----------------------------------------------------------------------------
-might	Might	damage	mult	1.08	1.16	1.24	1.32	1.4	1.48	1.56	1.64	Everything you own hits harder.
-haste	Haste	cooldown	mult	0.94	0.88	0.82	0.76	0.7	0.64	0.58	0.52	Every weapon swings sooner.
-area	Area	area	mult	1.07	1.14	1.21	1.28	1.35	1.42	1.49	1.56	Your reach widens.
-duration	Duration	duration	mult	1.08	1.16	1.24	1.32	1.4	1.48	1.56	1.64	What you leave behind lingers longer.
-swift	Swiftness	move_speed	mult	1.05	1.1	1.15	1.2	1.25	1.3	1.35	1.4	You move faster. Movement is the only verb.
-magnet	Magnet	pickup_radius	mult	1.12	1.24	1.36	1.48	1.6	1.72	1.84	1.96	Motes come to you from further into the dark.
-growth	Growth	xp_gain	mult	1.06	1.12	1.18	1.24	1.3	1.36	1.42	1.48	Every mote is worth more.
-luck	Luck	luck	mult	1.08	1.16	1.24	1.32	1.4	1.48	1.56	1.64	The night is kinder. Chests, gold, and rarer things.
-armour	Armour	flat_reduce	add	1	2	3	4	5	6	7	8	Blunts every blow. A hit always draws at least a little.
-regen	Regen	hp_per_sec	add	0.25	0.5	0.75	1.0	1.25	1.5	1.75	2.0	The wounds close, slowly.
-oil	Lantern Oil	light_radius	add	2	4	6	8	10	12	14	16	The lantern burns brighter. You see them coming.
-revival	Revival	revives	add	1	2	-	-	-	-	-	-	Death is refused. Once, and then once more.
+might	Might	damage	mult	1.08	1.16	1.24	1.32	1.4	1.48	1.56	1.64	Everything you own hits harder.	damage
+haste	Haste	cooldown	mult	0.94	0.88	0.82	0.76	0.7	0.64	0.58	0.52	Every weapon swings sooner.	cooldown
+area	Area	area	mult	1.07	1.14	1.21	1.28	1.35	1.42	1.49	1.56	Your reach widens.	area
+duration	Duration	duration	mult	1.08	1.16	1.24	1.32	1.4	1.48	1.56	1.64	What you leave behind lingers.	duration
+swift	Swiftness	move_speed	mult	1.05	1.1	1.15	1.2	1.25	1.3	1.35	1.4	Move faster. Movement is life.	movement speed
+magnet	Magnet	pickup_radius	mult	1.12	1.24	1.36	1.48	1.6	1.72	1.84	1.96	Motes come to you from the dark.	pickup radius
+growth	Growth	xp_gain	mult	1.06	1.12	1.18	1.24	1.3	1.36	1.42	1.48	Every mote is worth more.	XP gained
+luck	Luck	luck	mult	1.08	1.16	1.24	1.32	1.4	1.48	1.56	1.64	Richer chests, gold, rarer drops.	luck
+armour	Armour	flat_reduce	add	1	2	3	4	5	6	7	8	Blunts every blow.	armour
+regen	Regen	hp_per_sec	add	0.25	0.5	0.75	1.0	1.25	1.5	1.75	2.0	The wounds close, slowly.	HP per second
+oil	Lantern Oil	light_radius	add	2	4	6	8	10	12	14	16	The lantern burns brighter.	light radius
+revival	Revival	revives	add	1	2	-	-	-	-	-	-	Death is refused. Once, then again.	revivals

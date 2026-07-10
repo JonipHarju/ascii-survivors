@@ -1016,3 +1016,95 @@ rather than brightness is why the ladder holds.
 Warden starts with Nova, first kill at 2.2s standing still, never facing anything)
 and 4 (you can see yourself) now hold. Item 2 is this finding, one line of John's
 from being true. Item 5 is the card — `jane.md` [22] plus John's `cards/` art.
+
+---
+
+## 10.07 — Core polish, finding #5: the level-up card is 24 columns wide and Jane's sentences were forty characters long
+
+*Jane. `design.md` §12 rewritten. All 58 player-facing strings rewritten to budget.*
+
+**First, John landed the pickup radius.** `world.ts:459` now reads
+`pickup_radius_base` from `director.tsv`, and `DEFAULT_PARAMS` carries 12 so the
+stub tables in tests are safe. **§0 item 2 closes.** `npm test` went red for one
+run on *"vacuums motes inside the pickup radius"* and green at 127/127 shortly
+after — that was John's mid-edit tree, not a bug, and it is the exact hazard
+recorded in `a17e0f4`. Jane reproduced the mote's flight against the live tree
+before saying anything: 3.0 wu → 1.37 → 0.41 → collected at t=0.05s.
+
+**Now the finding, and it means Jane fixed the wrong half of the card on 10.07.**
+
+`app.ts:504` calls `truncate(card.effect, cardW - 4)`. The card is 24 columns, so
+a sentence gets **20 characters**. Seventeen of the 28 weapon notes were cut —
+**including every level-1 introduction**, the one line whose whole job is to
+explain a weapon the player has never seen:
+
+```
+   Fires a seeking bolt at the nearest enemy.   ->  "Fires a seeking bo…"
+   A wisp orbits you, burning what it touches.  ->  "A wisp orbits you,…"
+```
+
+The copy so carefully rewritten in the last session never once reached a player
+intact. **Three of Jane's columns get truncated, not one:** the level-up card (20
+chars), the evolution slam (24), and the Crossroads shop list (24).
+
+`evolutions.tsv`'s `effect` column was player-facing and read **`bands on BOTH
+sides, always, no facing check`** — displayed at the payoff moment of the entire
+run, cut to `bands on BOTH sides, a…`. It also prefixed the evolved name, which
+`app.ts` already draws on the line above, so `BONEMEAL` printed twice.
+`crossroads.tsv` was telling the player Revival is `expensive on purpose`, which
+is a note from Jane to John.
+
+**Decision (Jane, design.md §12): 36 characters, and it must word-wrap into two
+lines of twenty.** All 58 strings rewritten and machine-checked by wrapping them;
+zero spill to a third line. Deleted rationale survives as `#` comments next to the
+rows it explains. *The budget is a gift, not a tax:* `Fires a seeking bolt at the
+nearest enemy.` became `A bolt seeks the nearest enemy.` and it is better copy.
+
+### The one that no `note` could ever have fixed
+
+Found by generating a real hand from a real `World` instead of reading the table.
+`upgrades.ts:49` builds a passive's effect line as
+`` `${def.stat.replace(/_/g, ' ')} +${value}` `` — which prints **John's
+`StatName` union** to the player. All twelve passives do it:
+
+```
+   [+] REGEN    NEW          [»] ARMOUR   NEW         [~] GROWTH   NEW
+       hp per sec +0.25          flat reduce +1           xp gain +6%
+```
+
+Same disease as `ax = orbit radius, ay = hit radius` — and it survived that fix
+entirely, **because the string is generated.** Rewriting the `note` column could
+never have caught it. Same lesson as the Warden's alphabet earlier today: *the
+thing that fails is never quite the thing you were looking at.*
+
+**Decision:** `passives.tsv` gains a **`label`** column (index 13, appended so
+`note` stays at `f[12]` and nothing shifts). `flat_reduce` → *armour*.
+`hp_per_sec` → *HP per second*. `xp_gain` → *XP gained*. `npm test` 127/127 with
+it in; the column is inert until John reads it.
+
+**Jane → John — five small things, and then §0 is signed off:**
+1. Read `passives.tsv`'s new `label` column instead of `stat.replace(/_/g,' ')`.
+   At their widest levels all twelve fit the 20-column card; the longest string in
+   the game is `movement speed +40%`, at 19.
+2. **Word-wrap, don't truncate**, at all three sites. Two lines, `cardH` +1. *A `…`
+   in the middle of a sentence is the game admitting it lost.*
+3. **Card width should follow the field**, clamped `[24, 40]`. `MIN_COLS` is 80 and
+   `3×24 + 2×3 = 78`, so 24 is forced on a terminal — but §5.0 targets a **180×60**
+   canvas, *and that is where the owner plays.* Three 24-column cards use 78 of 180
+   columns: the cards are sized for a terminal nobody is playing on.
+4. The evolution box is 28 wide; make it **44**. It is the payoff screen, drawn alone.
+5. The weapon fallback `${dmg} damage · ${cd}s cooldown` is 25 chars and truncates
+   to `9 damage · 1.34s co…`. Drop the trailing word — the `s` already says it is a
+   time.
+
+### Scoreboard against §0, the core
+
+| | | |
+|---|---|---|
+| 1 | It opens | **done** (John) |
+| 2 | It feels good to walk | **done** (John landed `pickup_radius_base` today) |
+| 3 | Things die without aiming | **done** — verified: the Warden starts with Nova, first kill at **2.2s standing perfectly still**, never facing anything |
+| 4 | You can see you, the XP, the threat | **done** (Jane, the Warden's alphabet + the luminance ladder) |
+| 5 | A card reads in two seconds | five small items on John's desk, above |
+
+None of it is in §13. The frozen list stays frozen.

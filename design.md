@@ -816,6 +816,96 @@ passive, the `note`; for a weapon level, the `note` if the level changes what th
 weapon *does*, and otherwise the weapon's own one-liner. The numbers stay, dim,
 underneath. (Requested of John 10.07.)
 
+### The card was 24 columns wide and my sentences were forty characters long
+
+*Found 10.07, second pass, and it means the copy I fixed above never reached the
+player intact.*
+
+`app.ts:504` calls `truncate(card.effect, cardW - 4)`. The card is 24 columns, so
+the sentence gets **20 characters** and the rest is a `…`. **Seventeen of the 28
+weapon notes were cut, including every single level-1 introduction** — the one
+line whose entire job is to explain a weapon the player has never seen:
+
+```
+   Fires a seeking bolt at the nearest enemy.   ->  "Fires a seeking bo…"
+   A wisp orbits you, burning what it touches.  ->  "A wisp orbits you,…"
+   Moonlight falls in columns near you.         ->  "Moonlight falls in…"
+```
+
+Every passive note was cut too. `Blunts every blow. A hit always draws at least a
+little.` became `Blunts every blow. …`, which is not even wrong, just amputated.
+
+**Three of my columns get truncated, not one.** The audit:
+
+| Site | Column | Budget | Was |
+|---|---|---|---|
+| `app.ts:504` level-up card | `weapons.tsv` / `passives.tsv` `note` | 20 | up to 62 |
+| `app.ts:543` evolution slam | `evolutions.tsv` `effect` | 24 | up to 44 |
+| `app.ts:458` Crossroads list | `crossroads.tsv` `note` | 24 | up to 111 |
+
+And `evolutions.tsv`'s `effect` had exactly the disease §12 was written to cure —
+it is player-facing and it read **`bands on BOTH sides, always, no facing check`**,
+shown at the payoff moment of the entire run, cut to `bands on BOTH sides, a…`.
+"No facing check" is a sentence about our code. `crossroads.tsv` was telling the
+player that Revival is `expensive on purpose`, which is a note from me to John.
+
+#### The rule: 36 characters, and it must survive two lines of twenty
+
+All 58 strings are rewritten to that budget and checked by wrapping them. Why 36:
+
+- **The terminal card cannot get wider.** `MIN_COLS` is 80 and the layout is
+  `3 × 24 + 2 × 3 = 78`. Twenty-four columns is forced by the smallest terminal
+  we support, so on a terminal the sentence must **word-wrap to two lines of 20**.
+- **The browser card should not stay this narrow.** §5.0 targets a **180×60**
+  canvas, and the owner plays in the browser. Three 24-column cards use 78 of 180
+  columns — the cards are sized for a terminal nobody is playing on. At a card
+  width of 40 every sentence in the game fits on one line.
+
+The budget is a gift, not a tax. `Fires a seeking bolt at the nearest enemy.`
+became `A bolt seeks the nearest enemy.` and it is better copy. Forty characters
+was never a sentence a player reads in two seconds; it was me writing prose into a
+spreadsheet cell because nothing pushed back.
+
+### The card was also printing John's variable names, and no `note` could fix it
+
+The third pass found the worst one, in the string the cards *generate* rather than
+the string I write. `upgrades.ts` builds a passive's effect line as
+`` `${def.stat.replace(/_/g, ' ')} +${value}` ``. Here is a real hand:
+
+```
+   [+] REGEN    NEW          [»] ARMOUR   NEW         [~] GROWTH   NEW
+       hp per sec +0.25          flat reduce +1           xp gain +6%
+```
+
+`hp_per_sec`, `flat_reduce` and `xp_gain` are members of John's `StatName` union.
+They are not English. All twelve passives do it — `move speed`, `pickup radius`,
+`revives`, `light radius`.
+
+This is exactly the `weapons.tsv` disease from earlier in this section, and it
+survived that fix, because **the string is generated.** Rewriting my `note` column
+could never have caught it. It's the same lesson as the Warden's alphabet: the
+thing that fails is never quite the thing you were looking at.
+
+`passives.tsv` gains a **`label`** column (index 13, appended so nothing shifts) —
+the human name of the quantity. `flat_reduce` → *armour*. `hp_per_sec` → *HP per
+second*. `xp_gain` → *XP gained*. At their widest levels, all twelve fit the
+20-column card; the longest is `movement speed +40%` at 19.
+
+**Jane → John (10.07):**
+1. **Word-wrap, don't truncate**, at all three sites. Two lines, `cardH` grows by
+   one. A `…` in the middle of a sentence is the game admitting it lost.
+2. **Card width should follow the field**, clamped to `[24, 40]`. At 80 columns
+   nothing changes; at 180 the cards breathe and every sentence lands on one line.
+3. The evolution box (28 wide) should be **44** — it is the payoff screen, it is
+   drawn alone, and it can afford it.
+4. **Read `passives.tsv`'s new `label` column** instead of `stat.replace(/_/g,' ')`.
+5. The weapon fallback `` `${dmg} damage · ${cd}s cooldown` `` is 25 characters and
+   truncates mid-word at `9 damage · 1.34s co…`. On the dimmed numbers line, drop
+   the trailing word: **`9 damage · 1.34s`**. The `s` already says it's a time.
+
+That, plus the sentence-first rule above, is the whole level-up screen — the only
+screen that stops the game, and therefore the only screen the player *reads*.
+
 **Death screen.** Per John's question (§meetings): **run summary first**, then
 restart. It shows: time survived, kills, level reached, your build (the weapon
 glyphs in a row), gold earned, and your best minute (peak kills/min). Then a

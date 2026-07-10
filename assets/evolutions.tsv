@@ -6,12 +6,22 @@
 # The evolved STATS live in weapons.tsv as level 9 (one evolution per weapon, so
 # the mapping is 1:1 and needs no schema). Icons: cards/evolutions/<into_id>.
 #
+# ###  THE `effect` COLUMN IS PLAYER-FACING COPY. app.ts:543 PRINTS IT ON THE      ###
+# ###  EVOLUTION SLAM -- the payoff moment of the run. BUDGET: 36 CHARACTERS.      ###
+#
+# It used to read `bands on BOTH sides, always, no facing check`, cut at 24 chars to
+# `bands on BOTH sides, a...`. "No facing check" is a sentence about our code, shown
+# to the player at the best moment in the game. Never again.
+#
+# Do NOT prefix the evolved name -- app.ts already draws `into_name` on its own line
+# directly above this string. Saying "BONEMEAL." here prints it twice.
+#
 # weapon	passive	into_id	into_name	effect	icon
 #----------------------------------------------------------------------------
-chain	might	ouroboros	Ouroboros	bands on BOTH sides, always, no facing check	cards/evolutions/ouroboros
-nova	haste	hemorrhage	Hemorrhage	bolts chain to 4 targets	cards/evolutions/hemorrhage
-censer	area	pyre	Pyre	the ring ignites the floor it passes over	cards/evolutions/pyre
-lantern	duration	corona	Corona	8 motes; they orbit outward and return	cards/evolutions/corona
-cinder	swift	wildfire	Wildfire	embers spread to adjacent embers	cards/evolutions/wildfire
-silverrain	luck	moonfall	Moonfall	one huge screen-tall column	cards/evolutions/moonfall
-gravesalt	growth	bonemeal	Bonemeal	shattered salt raises XP motes	cards/evolutions/bonemeal
+chain	might	ouroboros	Ouroboros	Bands on both sides. No aiming.	cards/evolutions/ouroboros
+nova	haste	hemorrhage	Hemorrhage	Bolts chain to four targets.	cards/evolutions/hemorrhage
+censer	area	pyre	Pyre	The ring ignites the floor.	cards/evolutions/pyre
+lantern	duration	corona	Corona	Eight wisps, orbiting outward.	cards/evolutions/corona
+cinder	swift	wildfire	Wildfire	Embers spread to their neighbours.	cards/evolutions/wildfire
+silverrain	luck	moonfall	Moonfall	One huge, screen-tall column.	cards/evolutions/moonfall
+gravesalt	growth	bonemeal	Bonemeal	Shattered salt raises XP motes.	cards/evolutions/bonemeal

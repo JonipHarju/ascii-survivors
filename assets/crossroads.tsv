@@ -32,20 +32,35 @@
 # curve; it only moves the floor, never the ceiling. A player who has bought
 # everything should still lose to the Countess if they build badly.
 #
+# ###  THE `note` COLUMN IS PLAYER-FACING COPY. app.ts:458 PRINTS IT IN THE SHOP   ###
+# ###  LIST, TRUNCATED TO 24 CHARACTERS. KEEP IT UNDER 24.                         ###
+#
+# It used to carry my notes to John. Revival's line read `come back once at 50% HP.
+# expensive on purpose.` -- the player saw `come back once at 50% ...`. Endless had
+# 111 characters of design rationale in it. That rationale is a comment now, below.
+#
 # id	name	icon	stat	kind	per_level	levels	cost_base	cost_growth	note
 #---------------------------------------------------------------------------------------
 might	Might	cards/passives/might	damage	mult	0.05	5	100	1.6	+5% damage per level
-maxhp	Vigour	cards/passives/regen	max_hp	add	10	5	80	1.6	+10 max HP
-armour	Armour	cards/passives/armour	flat_reduce	add	1	3	200	2.0	flat damage reduction
-luck	Luck	cards/passives/luck	luck	mult	0.05	4	150	1.7	chest + gold + rare drop odds
+maxhp	Vigour	cards/passives/regen	max_hp	add	10	5	80	1.6	+10 max HP per level
+armour	Armour	cards/passives/armour	flat_reduce	add	1	3	200	2.0	Flat damage reduction
+luck	Luck	cards/passives/luck	luck	mult	0.05	4	150	1.7	Chests, gold, rare drops
 greed	Greed	cards/passives/magnet	gold_gain	mult	0.10	5	120	1.5	+10% gold per level
-reroll	Reroll	cards/passives/haste	rerolls	add	1	3	250	1.8	reroll a level-up hand
-banish	Banish	cards/passives/duration	banishes	add	1	3	250	1.8	remove a card from the pool for the run
-revival	Revival	cards/passives/revival	revives	add	1	2	1000	2.5	come back once at 50% HP. expensive on purpose.
+reroll	Reroll	cards/passives/haste	rerolls	add	1	3	250	1.8	Reroll a level-up hand
+banish	Banish	cards/passives/duration	banishes	add	1	3	250	1.8	Drop a card for the run
+# Revival is 1000 gold and grows 2.5x. Expensive ON PURPOSE: it is the one upgrade
+# that undoes a mistake, and a cheap undo would flatten the Countess. (That sentence
+# used to live in the `note` column, where the player read it.)
+revival	Revival	cards/passives/revival	revives	add	1	2	1000	2.5	Return once at 50% HP
 
 # --- characters. one-off unlocks; see characters.tsv for their stats ---------
-ashling	The Ashling	sprites/ashling	-	unlock	-	1	400	1.0	fragile, fast, burns the floor
-beggar	The Beggar	sprites/beggar	-	unlock	-	1	900	1.0	weak damage, rich runs
+ashling	The Ashling	sprites/ashling	-	unlock	-	1	400	1.0	Fragile, fast, burns
+beggar	The Beggar	sprites/beggar	-	unlock	-	1	900	1.0	Weak damage, rich runs
 
 # --- endless mode. unlocked by seeing dawn, not by gold ----------------------
-endless	Endless	ui/dawn	-	unlock	-	1	0	1.0	FREE, but locked until you first survive the night. the sun never rises; at 30:00 the Reapers come and cannot be killed.
+# FREE, but locked until you first survive the night. The sun never rises; at 30:00
+# the Reapers come and cannot be killed. Costing gold would imply you could buy your
+# way past the Countess, and you cannot -- you have to beat her. FROZEN per §0 until
+# the core is signed off. (This rationale used to be 111 characters of `note`, shown
+# to the player through a 24-column window.)
+endless	Endless	ui/dawn	-	unlock	-	1	0	1.0	Locked until you win

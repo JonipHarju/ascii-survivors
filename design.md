@@ -634,6 +634,12 @@ The Ghoul's `( )` and the Wight's `[ ]` are the same grey and the same posture a
 a glance — soft versus rigid is the entire difference, and it is the difference
 between a thing you walk through and a thing that ends you.
 
+**And the lookalikes are reserved too.** `│` (U+2502) is `|` to the eye, and
+`╱ ╲ ⁄ ∕` are `/ \`. A rule that only bans the ASCII codepoints is a rule you can
+walk around without ever breaking. The reserved set is the four characters *and
+anything that renders like them*. (Zero violations across all 51 art files today —
+I checked before writing this down, not after.)
+
 **Sprites larger than 5×3 are exempt.** The Countess is 28×11; size has already
 told you what you are looking at. An exception you can name is a design.
 
@@ -667,11 +673,20 @@ which is exactly how we ship a half-drawn bestiary without breaking the build.
 
 ### The boss: THE COUNTESS
 
-*Data: `assets/countess.tsv`. Art: `assets/sprites/countess.txt` (16×5, 2 frames
-@ 4fps — the wings flap; the body is column-locked so she doesn't wobble).*
+*Data: `assets/countess.tsv`. Art: `assets/sprites/countess.txt` (**28×11**, 2
+frames @ 3fps — the wings flap; the body is column-locked so she doesn't wobble).*
 
-The one multi-cell creature in the game. Anchored at her centre, drawn above all
-decals, always at full brightness.
+The **largest** creature in the game — nine times the Gravewarden and forty times
+a ghoul. Anchored at her centre, drawn above all decals, always at full brightness.
+*(This line used to say "16×5" and "the one multi-cell creature in the game." Both
+were true before the owner overruled the one-glyph rule on 09.07. Everything on the
+field is a multi-cell sprite now; she is merely the biggest.)*
+
+She is the **named exception to the Warden's alphabet** (above). Her wings and body
+use `/`, `\` and `|`. At 28×11 nothing about her can be confused with a 3×3 player,
+and the rule that protects the `@` in a crowd has no crowd to protect it from: when
+she is on the field, the ambient director has stopped and she is the only thing on
+it. Size disambiguates her, which is the exemption exactly as §10 states it.
 
 She arrives at **19:00**, and two things happen at once: **the clock freezes**
 and **the ambient spawn director halts.** Nothing on the field but the Countess

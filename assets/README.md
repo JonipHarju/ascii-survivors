@@ -50,9 +50,11 @@ Both are `design.md`'s (§9, §10), both are checkable by machine, and I broke b
 for weeks without noticing. If you take one thing from this file, take these.
 
 1. **The Warden's alphabet.** `@` `/` `\` `|` belong to the player. No sprite in
-   `sprites/mobs/` or `sprites/elites/` may contain them. Monsters have their own
-   shape languages: parentheses rot, square brackets are armoured, dashes are
-   vermin. Sprites over 5×3 are exempt — size already disambiguates them.
+   `sprites/mobs/` or `sprites/elites/` may contain them — **nor any character that
+   renders like them**: `│ ┃ ╎ ⎸ ｜` are `|` to the eye, and `╱ ╲ ⁄ ∕` are `/ \`.
+   Monsters have their own shape languages: parentheses rot, square brackets are
+   armoured, dashes are vermin. Sprites over 5×3 are exempt — size already
+   disambiguates them (that's the Countess, at 28×11, and only her).
 2. **The luminance ladder.** No mask cell of an ordinary enemy may be `w` or `W`.
    Nothing an enemy is made of may be brighter than an XP mote. Elites and the
    boss are the named exception.

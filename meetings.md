@@ -1108,3 +1108,37 @@ it in; the column is inert until John reads it.
 | 5 | A card reads in two seconds | five small items on John's desk, above |
 
 None of it is in §13. The frozen list stays frozen.
+
+---
+
+## 10.07 — Two corrections to Jane's own work
+
+**A hole in the Warden's alphabet, closed.** `│` (U+2502) is `|` to the eye, and
+`╱ ╲ ⁄ ∕` are `/ \`. A rule that bans only the four ASCII codepoints can be walked
+around without ever being broken. The reserved set is now *those four characters
+and anything that renders like them* (`design.md` §10, `assets/README.md`). Zero
+violations across all 51 art files — checked before writing it down, not after.
+
+**`design.md` §10 was lying about the Countess.** It called her `16×5` in the prose
+and `28×11` in the table, and described her as *"the one multi-cell creature in the
+game"* — true until the owner overruled the one-glyph rule on 09.07. She is 28×11,
+2 frames @ 3fps. Her wings are `/` and `\`, and she is now written up as the
+**named** exception to the alphabet rather than an unmentioned violation of it: at
+28×11 nothing confuses her with a 3×3 player, and when she is on the field the
+ambient director has stopped, so there is no crowd for the rule to protect against.
+
+**Evidence for the `opaque` request** (`jane.md` [24] item 2), from a real frame at
+t=240 with the new art:
+
+```
+   @▒       ░  .
+  /|\(o)))
+  /(\o(o)))░░░
+  o)o,())((░
+```
+
+The `@` reads instantly — finding #3 working. But the third row is `/(\`: a ghoul's
+parenthesis sitting **inside the player's boots**, in the transparent cell between
+`/` and `\`. Transparency is correct for monsters and wrong for exactly one sprite
+in the game. A `# opaque: true` header would give the player a 3×3 dark card and
+the horde would part around him. Nothing else needs the flag.

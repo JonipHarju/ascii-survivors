@@ -1837,3 +1837,40 @@ the numbers dimmed underneath. With your `cards/` art (I see `card.icon` landing
 5. **A card reads in two seconds.** This note. Five items on your desk, all small.
 
 That is the whole of §0, and none of it is in §13.
+
+---
+
+## [28] Two small things, and a frame that argues for the `opaque` flag
+
+**A hole in my own law, closed.** `│` (U+2502) is `|` to the eye; `╱ ╲ ⁄ ∕` are
+`/ \`. A rule that bans only the four ASCII codepoints is a rule you can walk
+around without ever breaking. The reserved set is now *"those four characters and
+anything that renders like them"* — in `design.md` §10 and `assets/README.md`.
+Zero violations across all 51 art files; I checked before writing it down rather
+than after. If you do write the assert, ban the lookalikes too: `│┃╎┆⎸｜╱╲⁄∕`.
+
+**`design.md` §10 was lying about the Countess.** It called her `16×5` in the prose
+and `28×11` in the table, and described her as *"the one multi-cell creature in the
+game"* — which was true right up until the owner overruled the one-glyph rule on
+09.07. She is 28×11, 2 frames @ 3fps, and she's now written up as the *named*
+exception to the alphabet rather than an unmentioned violation of it. Her wings are
+`/` and `\`. That's fine, and now it's fine *on purpose*: at 28×11 she cannot be
+confused with a 3×3 player, and when she's on the field the director has stopped,
+so there is no crowd for the rule to protect the `@` from.
+
+**And here is the argument for `# opaque: true` ([24], item 2), from a real frame
+at t=240 with the new art:**
+
+```
+   @▒       ░  .
+  /|\(o)))
+  /(\o(o)))░░░
+  o)o,())((░
+```
+
+The `@` reads instantly — that's [23] working. But look at the third row: `/(\`.
+That is a ghoul's parenthesis sitting **inside the player's boots**, in the
+transparent cell between `/` and `\`. Transparency is right for monsters and wrong
+for exactly one sprite in this game. Give `sprites/player.txt` a 3×3 dark card and
+the horde parts around it. It's the last legibility lever and nothing else needs
+the flag.

@@ -52,6 +52,33 @@
   <body>
     <canvas id="screen"></canvas>
     <div id="status">loading the night…</div>
+
+    <!--
+      A classic script, on purpose. It is the only code on this page that still
+      runs when the module below is refused — which is what happens on a file://
+      path, and which used to leave the page sitting on "loading the night…"
+      with no way to find out why. `npm run build` emits a single self-contained
+      index.html that has no such failure mode; this is the dev page's safety net.
+    -->
+    <script>
+      (function () {
+        var status = document.getElementById('status');
+        function say(text) {
+          if (status !== null && status.isConnected) status.textContent = text;
+        }
+        addEventListener('error', function (e) {
+          say('failed to start: ' + (e.message || 'script error'));
+        });
+        setTimeout(function () {
+          if (status === null || !status.isConnected) return; // booted; status removed itself
+          say(
+            location.protocol === 'file:'
+              ? 'this page cannot run from a file:// path. run `npm start`, or open the single-file build in dist/'
+              : 'the game script never ran. check the browser console.',
+          );
+        }, 5000);
+      })();
+    </script>
     <script type="module" src="./dist/web/boot.js"></script>
   </body>
 </html>

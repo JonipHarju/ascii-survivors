@@ -55,6 +55,7 @@ const PALETTE: Readonly<Record<string, Color>> = {
   c: 0x00a0a0, // cyan
   C: 0x4ff0f0, // bright cyan
   s: 0xc2b280, // "bone" — dim sandy yellow
+  d: 0x5a1616, // "dried blood" — the floor. Jane asked; the ramp jumped r -> k.
 };
 
 /**
@@ -114,8 +115,20 @@ export type ParseResult = {
   warnings: string[];
 };
 
+/**
+ * A palette letter, or `#rrggbb` for a colour the 16-letter ramp hasn't got.
+ *
+ * The letters are the vocabulary — one hue, one meaning, per design.md §9 — and
+ * they should stay the common case. But the ramp jumps straight from `r`
+ * (#b22222) to `k` (#101010) with nothing in between, and the floor wants the
+ * maroons that live in that gap. Escaping to hex beats Jane filing a ticket for
+ * every shade.
+ */
 export function paletteColor(ch: string): Color | undefined {
-  return PALETTE[ch];
+  const p = PALETTE[ch];
+  if (p !== undefined) return p;
+  if (!ch.startsWith('#')) return undefined;
+  return parseColor(ch) ?? undefined;
 }
 
 /** Visible width of a line in terminal columns. */

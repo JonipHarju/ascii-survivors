@@ -18,7 +18,7 @@ import { TICK_DT } from '../engine/loop.ts';
 import { parseGlyphTable } from '../data/entities.ts';
 import { parseWeapons } from '../data/weapons.ts';
 import { parsePassives } from '../data/passives.ts';
-import { parseDirector, targetPopulation, spawnCap, mixWeight } from '../data/director.ts';
+import { param, parseDirector, targetPopulation, spawnCap, mixWeight } from '../data/director.ts';
 import { parseEvolutions } from '../data/evolutions.ts';
 import { parseCharacters } from '../data/characters.ts';
 import { parseCrossroads } from '../data/crossroads.ts';
@@ -317,14 +317,13 @@ describe('The Chain', () => {
     assert.equal(w.effects.filter((e) => e.kind === 'band').length, 2);
   });
 
-  it('kills a ghoul standing in the band, and leaves gore behind', () => {
+  it('kills a ghoul standing in the band, and drops its mote', () => {
     const w = quietWorld();
     w.spawnEnemy(data.glyphs.entities.get('ghoul')!, w.x + 5, w.y);
 
     fireOnce(w);
     assert.equal(w.enemies.length, 0, 'ghoul has 10hp, chain hits for 10');
     assert.equal(w.kills, 1);
-    assert.equal(w.decals.length, 1, 'the floor remembers');
     assert.equal(w.pickups.filter((p) => p.kind === 'mote').length, 1);
   });
 
@@ -781,6 +780,61 @@ describe('the Countess fight', () => {
     step(w, TICK_DT * 2);
     assert.equal(w.bossPhase, 'dusk');
     assert.equal(w.dusk, true, 'the one moment the darkness is the mechanic');
+  });
+});
+
+describe('the gore layer', () => {
+  /**
+   * Kill one ghoul on each of `n` distinct cells around the player.
+   *
+   * `damageEnemy` only takes the hit points off; `reap()` turns a corpse into
+   * gore, and reap runs inside `update`. Kept inside the despawn margin so the
+   * cull can't take the bodies before the floor gets them.
+   */
+  function slaughter(w: World, n: number): void {
+    const ghoul = data.glyphs.entities.get('ghoul')!;
+    const cols = 50;
+    for (let i = 0; i < n; i++) {
+      const cx = (i % cols) - cols / 2;
+      const cy = Math.floor(i / cols) - n / cols / 2;
+      w.damageEnemy(w.spawnEnemy(ghoul, w.x + cx, w.y + cy * WU_PER_ROW), 9999);
+    }
+    w.update(TICK_DT, { x: 0, y: 0 });
+  }
+
+  it('stains about `gore_chance` of the cells it is killed on', () => {
+    const w = quietWorld();
+    slaughter(w, 2000);
+
+    // A binomial with n=2000, p=0.35 has sd ~21 cells; ±5% of n is a 100-cell
+    // band, so this asserts the rule without asserting the seed.
+    const expected = 2000 * param(data.director, 'gore_chance');
+    assert.ok(
+      Math.abs(w.decals.length - expected) < 100,
+      `expected ~${expected} decals from 2000 kills, got ${w.decals.length}`,
+    );
+  });
+
+  it('never stacks two decals on one cell, however many die there', () => {
+    const w = quietWorld();
+    const ghoul = data.glyphs.entities.get('ghoul')!;
+    // 500 kills on one cell: at p=0.35 the odds of never rolling a stain are
+    // 0.65^500, so this really is asserting the cap and not an empty floor.
+    for (let i = 0; i < 500; i++) {
+      w.damageEnemy(w.spawnEnemy(ghoul, w.x + 3, w.y + 3 * WU_PER_ROW), 9999);
+      w.update(TICK_DT, { x: 0, y: 0 });
+    }
+    assert.equal(w.decals.length, 1, `one cell, ${w.decals.length} decals`);
+  });
+
+  it('forgets a decal once it has aged past the last stage in the table', () => {
+    const w = quietWorld();
+    slaughter(w, 400);
+    assert.ok(w.decals.length > 0, 'nothing died?');
+
+    const oldest = Math.max(...data.glyphs.decals.map((d) => d.ageTo));
+    step(w, oldest + 2);
+    assert.equal(w.decals.length, 0, 'invisible decals were still holding their cells');
   });
 });
 

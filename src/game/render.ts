@@ -14,6 +14,7 @@ import { hash2 } from '../engine/rng.ts';
 import { frameAt } from '../assets/sprite.ts';
 import type { SpriteBank } from '../assets/bank.ts';
 import type { DecalDef } from '../data/entities.ts';
+import { param } from '../data/director.ts';
 import { countessParam } from '../data/countess.ts';
 import { formatTime, WU_PER_ROW, type Enemy, type World } from './world.ts';
 
@@ -25,8 +26,9 @@ const DARK_COLOR: Color = 0x585858;
 const FLASH_COLOR: Color = 0xffffff;
 const ACCENT: Color = 0xffe040;
 
-/** How bright the gore layer is allowed to be. It is scenery, not information. */
-const GORE_LEVEL = 0.55;
+// The legibility knobs — gore_level, mote_lift, mote_pulse, mote_pulse_hz — are
+// Jane's, and they live in `director.tsv`. Brightness is balance, and balance is
+// hers. `param()` supplies the fallback when a table doesn't mention them.
 
 export type ViewOptions = {
   /** `--no-dark` kills the light radius. Jane asked for this switch on day one. */
@@ -150,6 +152,7 @@ export class GameView {
   private drawDecals(r: Surface, w: World, p: Proj): void {
     const stages = w.table.decals;
     if (stages.length === 0) return;
+    const goreLevel = param(w.data.director, 'gore_level');
 
     for (const d of w.decals) {
       const age = w.time - d.born;
@@ -168,7 +171,7 @@ export class GameView {
       // you or the XP you need to find. At full brightness a late-game field is
       // an unreadable red sheet — the owner's exact complaint.
       const t = (age - stage.ageFrom) / Math.max(0.001, stage.ageTo - stage.ageFrom);
-      const c = shade(stage.color, GORE_LEVEL * (1 - t * 0.45));
+      const c = shade(stage.color, goreLevel * (1 - t * 0.45));
       r.set(sx, sy, stage.glyph, p.shadeAt(d.cx, d.cy * WU_PER_ROW, c));
     }
   }
@@ -232,30 +235,32 @@ export class GameView {
     // XP is information, not scenery. It is drawn over the gore, never dimmed by
     // the dark, and it breathes — because a static dark-blue `·` on a red carpet
     // is invisible, which is precisely what the owner reported.
-    const pulse = 0.78 + 0.22 * Math.sin(w.timeAlive * 6);
+    //
+    // Jane's fix went further than mine and is better: now that a mote is bright
+    // cyan rather than dark blue, it doesn't need much lift, and lifting it hard
+    // pushes 176 of them up near the player's own bright white. So find the eye
+    // with *motion* instead — a pulse costs no brightness at all.
+    const amp = param(w.data.director, 'mote_pulse');
+    const hz = param(w.data.director, 'mote_pulse_hz');
+    const lift = param(w.data.director, 'mote_lift');
+    const pulse = 1 - amp + amp * (0.5 + 0.5 * Math.sin(w.timeAlive * hz * Math.PI * 2));
 
     for (const pk of w.pickups) {
       const sx = p.col(pk.x);
       const sy = p.row(pk.y);
       if (!p.inside(sx, sy)) continue;
 
-      const id =
-        pk.kind === 'mote'
-          ? pk.value >= 20
-            ? 'mote20'
-            : pk.value >= 5
-              ? 'mote5'
-              : 'mote1'
-          : pk.kind;
+      const mote = pk.kind === 'mote';
+      const id = mote ? (pk.value >= 20 ? 'mote20' : pk.value >= 5 ? 'mote5' : 'mote1') : pk.kind;
 
       const def = w.table.entities.get(id);
       const glyph = def?.glyph ?? '·';
       const base = def?.color ?? 0x6f8dff;
 
-      // Lift the palette colour toward white so it separates from the floor,
-      // then pulse. Pickups are never shaded by distance from the lantern.
-      const color = pk.kind === 'mote' ? mix(base, 0xffffff, 0.35) : base;
-      r.setF(p.colF(pk.x), p.rowF(pk.y), glyph, shade(color, pulse));
+      // Only the motes breathe. A chest is already the brightest yellow on the
+      // field and does not need to wave. Pickups are never dimmed by the lantern.
+      const color = mote ? shade(mix(base, 0xffffff, lift), pulse) : base;
+      r.setF(p.colF(pk.x), p.rowF(pk.y), glyph, color);
     }
   }
 

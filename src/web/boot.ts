@@ -26,6 +26,15 @@ type AssetBundle = {
   sprites: Record<string, string>;
 };
 
+/**
+ * The single-file build inlines the bundle here instead of shipping it beside
+ * the page. A `file://` page cannot fetch its own neighbours, so when the game
+ * is opened by double-clicking, this is the only way the assets arrive.
+ */
+function inlinedAssets(): AssetBundle | undefined {
+  return (globalThis as { __ASSETS__?: AssetBundle }).__ASSETS__;
+}
+
 function flag(name: string): boolean {
   return new URLSearchParams(location.search).has(name);
 }
@@ -53,14 +62,22 @@ function pickStore(): SaveStore {
   return flag('nosave') ? memoryStore() : localStore();
 }
 
+/** The dev server's path: `assets.json` sits next to the page and is re-packed per request. */
+async function fetchAssets(): Promise<AssetBundle> {
+  if (location.protocol === 'file:') {
+    throw new Error('opened from a file:// path without inlined assets — run `npm run build` and open dist/index.html');
+  }
+  const res = await fetch('assets.json', { cache: 'no-cache' });
+  if (!res.ok) throw new Error(`could not load assets.json (${res.status})`);
+  return (await res.json()) as AssetBundle;
+}
+
 async function boot(): Promise<void> {
   const canvas = document.getElementById('screen') as HTMLCanvasElement | null;
   const status = document.getElementById('status');
   if (canvas === null) throw new Error('missing <canvas id="screen">');
 
-  const res = await fetch('assets.json', { cache: 'no-cache' });
-  if (!res.ok) throw new Error(`could not load assets.json (${res.status})`);
-  const bundle = (await res.json()) as AssetBundle;
+  const bundle = inlinedAssets() ?? (await fetchAssets());
 
   const data = buildGameData(bundle.tables);
   const sprites = new SpriteBank();
@@ -208,10 +225,13 @@ function benchSync(frames: number): void {
   const canvas = document.getElementById('screen') as HTMLCanvasElement;
   const status = document.getElementById('status');
 
-  const xhr = new XMLHttpRequest();
-  xhr.open('GET', 'assets.json', false); // sync on purpose; see above
-  xhr.send();
-  const bundle = JSON.parse(xhr.responseText) as AssetBundle;
+  let bundle = inlinedAssets();
+  if (bundle === undefined) {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', 'assets.json', false); // sync on purpose; see above
+    xhr.send();
+    bundle = JSON.parse(xhr.responseText) as AssetBundle;
+  }
 
   const data = buildGameData(bundle.tables);
   const sprites = new SpriteBank();

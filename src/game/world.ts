@@ -732,17 +732,18 @@ export class World {
 
       case 'ring': {
         if (def === undefined) return;
-        // A circle in wu is an ellipse on screen, and the viewport is far wider
-        // in wu than it is tall (a cell is 1x2). A wu-circle of radius 85 put
-        // half the ring outside the field: the player saw a band closing from
-        // the left and right, not a ring closing around them. Spawn on an
-        // ellipse matching the viewport, which *is* a circle once drawn.
+        // **Inscribed** in the viewport, not circumscribed around it. A cell is
+        // one wu wide and two wu tall, so a wu is the same number of pixels in
+        // both axes: a circle in world units draws as a circle. The old
+        // `max(half.x, 40) * 0.95` sized it to the *wide* axis, and the top and
+        // bottom of the ring spawned off-screen — the player saw a band closing
+        // from the left and right instead of a ring closing around them.
+        // Jane's formula, `director.tsv` and design.md §11.
         const half = this.viewHalf();
-        const rx = half.x * 0.92;
-        const ry = half.y * 0.92;
+        const radius = Math.min(half.x, half.y) * param(this.data.director, 'ring_radius_frac');
         for (let i = 0; i < beat.count; i++) {
           const a = (i / beat.count) * Math.PI * 2;
-          this.spawnEnemy(def, this.x + Math.cos(a) * rx, this.y + Math.sin(a) * ry);
+          this.spawnEnemy(def, this.x + Math.cos(a) * radius, this.y + Math.sin(a) * radius);
         }
         return;
       }
@@ -1690,6 +1691,11 @@ export class World {
       return;
     }
 
+    // `gore_chance` thins the carpet by *cells stained*, which is what floor
+    // coverage means — so the roll belongs here, on a cell's first kill, and not
+    // above where it would also skip refreshing ground you are still fighting on.
+    if (!this.rng.chance(param(this.data.director, 'gore_chance'))) return;
+
     const decal: Decal = { cx, cy, born: this.time };
     this.decalIndex.set(key, decal);
     this.decals.push(decal);
@@ -1702,6 +1708,18 @@ export class World {
 
   private decalIndex = new Map<number, Decal>();
 
+  /**
+   * A decal outlives its last stage as an invisible entry, holding its cell
+   * against a fresh kill and paying for a map slot. Jane shortened the chain from
+   * 90s to 60s and the constant didn't follow her, so read the answer off her
+   * table instead of copying the number into the code a second time.
+   */
+  private decalLifetime(): number {
+    const stages = this.table.decals;
+    const last = stages[stages.length - 1];
+    return last?.ageTo ?? DECAL_LIFETIME;
+  }
+
   private pruneDecals(): void {
     // Refreshing a cell's `born` breaks the time ordering, so the expired ones
     // are no longer a clean prefix. Sweep, but only about once a second.
@@ -1709,11 +1727,12 @@ export class World {
     if (this.decalSweep > 0) return;
     this.decalSweep = 60;
 
-    if (!this.decals.some((d) => this.time - d.born > DECAL_LIFETIME)) return;
+    const lifetime = this.decalLifetime();
+    if (!this.decals.some((d) => this.time - d.born > lifetime)) return;
 
     const alive: Decal[] = [];
     for (const d of this.decals) {
-      if (this.time - d.born > DECAL_LIFETIME) this.decalIndex.delete((d.cx + 32768) * 65536 + (d.cy + 32768));
+      if (this.time - d.born > lifetime) this.decalIndex.delete((d.cx + 32768) * 65536 + (d.cy + 32768));
       else alive.push(d);
     }
     this.decals = alive;

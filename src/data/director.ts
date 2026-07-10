@@ -54,6 +54,15 @@ const DEFAULT_PARAMS: Readonly<Record<string, number>> = {
   cap_end: 60,
   spawn_margin: 4,
   despawn_margin: 40,
+
+  // Legibility. Jane's, and she reasons about them in `director.tsv` — these are
+  // only the values a table that forgot to mention them falls back to.
+  ring_radius_frac: 0.95,
+  gore_chance: 0.35,
+  gore_level: 0.55,
+  mote_lift: 0.1,
+  mote_pulse: 0.25,
+  mote_pulse_hz: 1.5,
 };
 
 export function parseDirector(source: string): DirectorTable {

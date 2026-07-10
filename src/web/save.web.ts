@@ -14,7 +14,13 @@ export function localStore(): SaveStore {
       }
     },
     write(data: string): void {
-      localStorage.setItem(KEY, data);
+      // Throws in private mode, over `file://` in Safari, and when the quota is
+      // full. Losing the gold from one run must never take the run down with it.
+      try {
+        localStorage.setItem(KEY, data);
+      } catch {
+        /* unsaved; the run still finishes */
+      }
     },
   };
 }

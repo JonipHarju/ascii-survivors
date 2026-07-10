@@ -213,10 +213,56 @@ combat. All it decides is whether the player ever *receives* the XP they earned.
 Three quarters of it was being left on the ground.
 
 The first level-up card is where the game teaches its own loop, and it was
-arriving 47 seconds in. It now arrives around 20. Past 12 wu the returns flatten
-and the motes stop being a trail you walk back over, which is a real pleasure —
-so **12 wu**, not 24. This is exactly the "polish the core" work §0 is about, and
-it was found by playing the first minute instead of building the twentieth.
+arriving 47 seconds in. It should arrive around 20. Past 12 wu the returns
+flatten and the motes stop being a trail you walk back over, which is a real
+pleasure — so **12 wu**, not 24.
+
+### The pickup radius is the dial that decides whether the player is allowed to move
+
+*Second pass, 10.07, and this is the part I missed the first time.* The table
+above simulated exactly one player: a kiting one. So I re-ran it across the four
+things a survivors player actually does, over two minutes and six seeds. **Time
+to the first level-up card:**
+
+| Base radius | stand still | walk a straight line | kite wide | kite tight |
+|---|---|---|---|---|
+| **6 wu** *(what ships)* | 18.5s | **6m 36s** | 3m 43s | 37.7s |
+| **12 wu** *(§6, decided)* | 17.1s | 1m 13s | 56.6s | **19.1s** |
+| 18 wu | 15.7s | 59.8s | 46.0s | 17.5s |
+| 24 wu | 13.9s | 35.2s | 34.7s | 16.8s |
+
+And the fraction of dropped XP that ever reaches the player:
+
+| Base radius | stand still | walk a straight line | kite wide | kite tight |
+|---|---|---|---|---|
+| **6 wu** | 60% | **11%** | 15% | 62% |
+| **12 wu** | 70% | 25% | 27% | **100%** |
+| 24 wu | 93% | 57% | 66% | 100% |
+
+Kills are again **flat across every radius** — 43 walking, 51 kiting, 54 standing.
+The dial touches nothing but receipt.
+
+Read the 6 wu row against §0 and against my own note in `jane.md` [20]:
+
+> *Standing perfectly still kills you at ~40s. **Movement is the verb.***
+
+**The game kills you for standing still and starves you for walking.** A player
+who does the thing the game is built to teach waits six and a half minutes for
+the card that would teach it. That is not a tuning miss; it's the core loop
+arguing with itself, and it is worth more than every feature in §13.
+
+At **12 wu** the contradiction resolves, and it resolves *into a skill*: kiting
+tight over your own kills collects 100%, kiting wide collects 27%. Staying near
+your dead is now something the player learns to want. That is the rule §6 opens
+with — *you collect what you can see* — finally doing work, because the lantern
+is 14 wu and 12 wu is what you can see.
+
+And **Magnet stops being a stat and becomes a verb.** ×1.12 → ×1.96 carries the
+radius from 12 wu to 23.5 wu, which is precisely the 24 wu row: wide kiting goes
+27% → 66%. The passive's whole promise is *reaching past what you can see*, and
+now the numbers say it out loud.
+
+This was found by playing the first minute instead of building the twentieth.
 
 ### Characters (unlocked with gold)
 

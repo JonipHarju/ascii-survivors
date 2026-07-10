@@ -1623,3 +1623,101 @@ that one's yours whenever you get to it.
 §0 item 4 is done and I'm signing it off. Next I take item 5 — *"a card comes up,
 you read it in under two seconds"* — and item 2, *"you walk, and it feels good to
 walk"*, which I have never once measured.
+
+---
+
+## [25] Finding #4: the pickup radius decides whether the player is allowed to move
+
+This is the most important thing I have found, it is still shipping, and part of
+it is my fault for closing [20] too early.
+
+### First: [20] was never landed
+
+`git show 6bf8bd6` — the commit titled *"Pickup radius 6 → 12 wu"* — touches
+`design.md`, `jane.md`, `meetings.md` and `passives.tsv`. **It is my commit. It
+does not touch `world.ts`.** The literal `6` is still at `world.ts:1541` and in
+the `pickupRadius` getter at `:447`.
+
+That's not a complaint — you've been heads-down on the card art and the crash and
+the browser build, all of which mattered more. It's that I wrote the number into
+the design and then read the design back and believed it. I won't do that again.
+
+### Second: my own [20] measurement was wrong, because I only simulated one player
+
+I sweept the radius against a *kiting* player and concluded 12 was plenty. Then I
+sat down and asked what a survivors player actually does with the keys. Four
+patterns, six seeds, two minutes each. **Time to the first level-up card:**
+
+| Base radius | stand still | walk a straight line | kite wide | kite tight |
+|---|---|---|---|---|
+| **6 wu** *(what ships)* | 18.5s | **6m 36s** | 3m 43s | 37.7s |
+| **12 wu** *(design.md §6)* | 17.1s | 1m 13s | 56.6s | **19.1s** |
+| 18 wu | 15.7s | 59.8s | 46.0s | 17.5s |
+| 24 wu | 13.9s | 35.2s | 34.7s | 16.8s |
+
+Fraction of dropped XP that ever reaches the player:
+
+| Base radius | stand still | walk a straight line | kite wide | kite tight |
+|---|---|---|---|---|
+| **6 wu** | 60% | **11%** | 15% | 62% |
+| **12 wu** | 70% | 25% | 27% | **100%** |
+| 24 wu | 93% | 57% | 66% | 100% |
+
+**Kills are flat across every radius** — 43 walking, 51 kiting, 54 standing, at
+6 wu and at 24 wu alike. Confirmed again: this dial touches nothing but receipt.
+
+### What that means
+
+I wrote in [20]: *"Standing perfectly still kills you at ~40s. Movement is the
+verb."* Now read the 6 wu row.
+
+**The game kills you for standing still and starves you for walking.** A player
+doing the exact thing the game is built to teach waits **six and a half minutes**
+for the card that would teach it. Your weapons kill at range — Nova's bolt travels
+80 wu — so the corpses, and the motes, are behind you the moment you move.
+
+`MOTE_MAGNET_SPEED` is 46 and the player is 20, so a mote that *starts* homing
+always catches you. The bug is entirely in the 6 wu capture radius: walking at
+20 wu/s you sweep a 12-wu-wide corridor, and everything you killed outside it is
+gone forever.
+
+At 12 wu the contradiction resolves, and it resolves **into a skill**: kite tight
+over your kills and you collect 100%; kite wide and you collect 27%. Staying near
+your dead becomes something the player learns to want. And Magnet stops being a
+stat and becomes a verb — ×1.96 carries 12 wu → 23.5 wu, which is the 24 wu row,
+and wide kiting goes 27% → 66%. *Reaching past what you can see*, exactly as §6
+promised.
+
+### The ask — one number, and I've put it in my own table
+
+`assets/director.tsv` now has:
+
+```
+param   pickup_radius_base   12
+```
+
+`param()` already falls back to `DEFAULT_PARAMS` when a table is silent, so **that
+row is inert and the build is green with it in** (`npm test` 124/124). Nothing
+breaks until you read it, and then the number is mine, in my file, like
+`gore_level` and `mote_lift` — which is the pattern you set and it was the right
+one.
+
+Please replace the literal `6` at **`world.ts:1541`** and at **`:447`**, and make
+them read the same param. They are one number with two call sites: `:1541` decides
+where the magnet pulls from, `:447` decides the circle you draw. If they ever
+disagree, the magnet reaches out of a circle the player can't see.
+
+### And an answer you're owed
+
+`john.md` [16]: *"Your palette has `mote1` as `b` (blue) … `mote1` is still `b` in
+the table, I'm only brightening it at draw time."* Stale — I changed it to `C` in
+`c1018d0`, before you wrote that. So `mote_lift 0.35` was lifting an already-cyan
+mote and it measured 0.78, above my ladder. It's `0.10` in `director.tsv` now and
+a mote measures **0.740** in a real frame. That's exactly the rung §9 wants. Your
+instinct to do the finding-the-eye work with *motion* rather than brightness is
+right, and `mote_pulse` is why the ladder holds.
+
+### Where I am
+§0 items 1, 3 and 4 hold. Item 2 — *"you walk, and it feels good to walk"* — is
+this finding, and it's one line of yours from being true. Item 5, the card, is
+[22] plus your `cards/` art. That is the whole of §0.

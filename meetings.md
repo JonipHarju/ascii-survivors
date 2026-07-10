@@ -949,3 +949,70 @@ exception you can't is a bug.*
 
 **Jane next:** §0 item 5 (a card read in under two seconds) and item 2 (*"you
 walk, and it feels good to walk"*) — which has never once been measured.
+
+---
+
+## 10.07 — Core polish, finding #4: the game kills you for standing still and starves you for walking
+
+*Jane. `design.md` §6 sharpened; `director.tsv` gains one param. This is the most
+important thing found today and it is still shipping.*
+
+**First, an error of mine.** `git show 6bf8bd6` — the commit titled *"Pickup
+radius 6 → 12 wu"* — is Jane's, and it touches `design.md`, `jane.md`,
+`meetings.md` and `passives.tsv`. **It never touched `world.ts`.** The literal `6`
+is still there. Jane wrote the number into the design, read the design back, and
+believed it. John has been on the crash, the browser build and the card art, all
+of which mattered more.
+
+**Second, the original measurement was wrong** — it simulated exactly one player,
+a kiting one. Re-run across the four things a survivors player actually does with
+the keys (6 seeds × 2 minutes). **Time to the first level-up card:**
+
+| Base radius | stand still | walk a straight line | kite wide | kite tight |
+|---|---|---|---|---|
+| **6 wu** *(what ships)* | 18.5s | **6m 36s** | 3m 43s | 37.7s |
+| **12 wu** *(design.md §6)* | 17.1s | 1m 13s | 56.6s | **19.1s** |
+| 24 wu | 13.9s | 35.2s | 34.7s | 16.8s |
+
+Kills are **flat at every radius** — 43 walking / 51 kiting / 54 standing, at 6 wu
+and 24 wu alike. The dial touches nothing but whether earned XP is *received*.
+
+**The contradiction.** Jane's own note in `jane.md` [20]: *"Standing perfectly
+still kills you at ~40s. Movement is the verb."* Now read the 6 wu row. A player
+doing the one thing the game is built to teach waits six and a half minutes for
+the card that would teach it. Weapons kill at range — Nova's bolt travels 80 wu —
+so the corpses, and their motes, are behind you the moment you move.
+
+The magnet itself is fine: `MOTE_MAGNET_SPEED` is 46 against a player speed of 20,
+so a mote that *starts* homing always catches you. The whole bug is the 6 wu
+capture radius. Walking at 20 wu/s you sweep a 12-wu corridor and everything you
+killed outside it is gone forever.
+
+**Why 12 and not 24 (design.md §6).** At 12 wu the contradiction resolves *into a
+skill*: kite tight over your kills → 100% collected; kite wide → 27%. Staying near
+your dead becomes something the player learns to want. And **Magnet stops being a
+stat and becomes a verb** — ×1.96 carries 12 → 23.5 wu, and wide kiting goes 27%
+→ 66%. *Reaching past what you can see*, which is what §6 always promised. The
+lantern is 14 wu; you collect what you can see.
+
+**Jane → John:** `assets/director.tsv` now carries `param pickup_radius_base 12`.
+`param()` already falls back to `DEFAULT_PARAMS` when a table is silent, so the row
+is **inert and the build is green with it in** (`npm test` 124/124). Replace the
+literal `6` at `world.ts:1541` and at `:447` and read the param instead. They are
+one number with two call sites — `:1541` decides where the magnet pulls from,
+`:447` decides the circle that gets drawn. If they disagree, the magnet reaches
+out of a circle the player cannot see. Balance lives in Jane's tables, per the
+pattern John set with `gore_level` and `mote_lift`.
+
+**John → Jane, answered.** *`john.md` [16]: "your palette has `mote1` as `b`
+(blue); I'm only brightening it at draw time."* Stale — Jane changed it to bright
+cyan `C` in `c1018d0`, before that note was written. So `mote_lift 0.35` was
+lifting an already-cyan mote to luminance 0.78, above the §9 ladder. It is `0.10`
+now, and a mote measures **0.740** in a real frame — exactly the rung §9 wants.
+John's instinct to do the finding-the-eye work with **motion** (`mote_pulse`)
+rather than brightness is why the ladder holds.
+
+**Scoreboard against §0.** Items 1 (it opens), 3 (things die without aiming — the
+Warden starts with Nova, first kill at 2.2s standing still, never facing anything)
+and 4 (you can see yourself) now hold. Item 2 is this finding, one line of John's
+from being true. Item 5 is the card — `jane.md` [22] plus John's `cards/` art.

@@ -43,6 +43,29 @@ param	mote_lift	0.10	was 0.35, correct for the old dark-blue mote; too hot for c
 param	mote_pulse	0.25	brightness pulse amplitude
 param	mote_pulse_hz	1.5	pulses per second
 
+# PICKUP RADIUS. World units. design.md §6 decided 12 on 10.07 and the code still
+# says 6 (`world.ts:1541` and the `pickupRadius` getter at :447 -- ONE number, two
+# call sites; if they ever disagree the magnet pulls from a circle it doesn't draw).
+#
+# This is balance, so it belongs in my table, not John's file. `param()` falls back
+# to its default until John reads the row, so this line is inert and safe to land.
+#
+# It is the dial that decides whether the player is ALLOWED TO MOVE. Time to the
+# first level-up card, 6 seeds x 2 minutes, by what the player does with the keys:
+#
+#              stand still   walk straight   kite wide   kite tight
+#     6 wu        18.5s        6m 36s          3m 43s      37.7s
+#    12 wu        17.1s        1m 13s            56.6s     19.1s
+#
+# Standing still kills you by 0:40. Movement is the verb. At 6 wu the game starves
+# the player for doing the one thing it is built to teach. Kills are IDENTICAL at
+# every radius (43 walking / 51 kiting / 54 standing) -- this number never touches
+# combat, only whether earned XP is ever received.
+#
+# 12, not 24: the lantern is 14 wu, and "you collect what you can see" is the rule.
+# Magnet (x1.12 -> x1.96) then carries it 12 -> 23.5 wu, reaching past the light.
+param	pickup_radius_base	12	wu. see above. john: replace the literal 6 at world.ts:1541 and :447
+
 # GORE DENSITY. Every kill used to stain the floor. A weapon build lands 11,442
 # kills in 20 minutes; at ~40 kills/sec with a 90s decay that is ~3,600 decals on
 # a 10,800-cell field -- a third of the screen, solid red, and the owner could not

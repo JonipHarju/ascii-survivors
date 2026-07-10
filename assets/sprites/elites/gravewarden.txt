@@ -3,12 +3,21 @@
 # anchor: center
 # fps: 3
 # colour: y
+#
+# The Wight's square-bracket language, scaled up and armoured. Same posture,
+# four times the mass -- size is threat (design.md §10), and the silhouette says
+# "the slow tank, but the big one" before you have read a single colour.
+#
+# Elites are the licensed exception to the luminance ladder: the bright-yellow
+# eyes (`Y`, 0.93) outshine an XP mote on purpose. There is exactly one of these
+# on the field, it has a health bar over its head, and it is the thing you are
+# supposed to be looking at. See design.md §9.
 --- art ---
-  _____  
- /o   o\ 
-#|  ^  |#
- \_____/ 
-  /   \  
+  _____
+ [o   o]
+#[  ^  ]#
+ [=====]
+  ]   [
 --- mask ---
   yyyyy
  yY   Yy
@@ -16,11 +25,11 @@ ey  y  ye
  yyyyyyy
   y   y
 --- art ---
-  _____  
- /o   o\ 
-#|  ^  |#
- \_____/ 
-  \   /  
+  _____
+ [o   o]
+#[  ^  ]#
+ [=====]
+  [   ]
 --- mask ---
   yyyyy
  yY   Yy

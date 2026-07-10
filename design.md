@@ -434,7 +434,7 @@ flag (`--no-dark`) from day one** so we can A/B it. If it's ugly, it dies.
 it goes under the blood" and "so many red things on the ground it's hard to make
 out." Both were true, and both were my fault.*
 
-Two rules, not negotiable, because breaking them makes the game unreadable no
+Three rules, not negotiable, because breaking them makes the game unreadable no
 matter how good the art is:
 
 1. **The floor may never be brighter than the things standing on it.** Fresh gore
@@ -445,6 +445,37 @@ matter how good the art is:
 2. **A glyph means one thing, and a hue means one thing.** `*` was the Blood
    Wisp, *and* gore aged 20–40s, *and* the bolt from your starting weapon. `%`
    was gore *and* the Beggar. `.` was gore *and* Cinder Trail's embers.
+3. **Nothing an enemy is made of may be brighter than an XP mote.** *Added
+   2026-07-10, from a frame dump.* Rule 1 only ever policed the floor. It never
+   policed the horde, and the horde is where the brightness actually was.
+
+### The luminance ladder
+
+Relative luminance, `0.2126R + 0.7152G + 0.0722B`. This is the whole of rule 3
+and it is checkable by machine, which is the point.
+
+| Layer | Luminance | Owns |
+|---|---|---|
+| **The player** | **1.00** | `@`, bright white `W`. Sole occupant. |
+| XP | 0.74 | bright cyan `C`. Must be findable in blood. |
+| Enemies | **≤ 0.55** | grey `e`, bone `s`, and the hues below |
+| Ground scatter | 0.26 | |
+| Gore | ≤ 0.15 | |
+
+**What I found when I measured it.** Every mob's head was masked `w` — plain
+white, `#c7c7c7`, luminance **0.78**. That is *above the XP* and a hair under the
+player. The Wight was `w` across all fifteen cells of its body. So at 0:30, when
+twelve Grave Rats arrive, twelve rat heads were the brightest objects on the
+field after the `@` — brighter than every mote they were standing on. The owner
+said *"XP is hard to see"* and we both looked at the floor. Half of it was the
+horde.
+
+Mob heads are grey now. Nothing in `sprites/mobs/` masks `w` or `W`.
+
+**Elites and the boss are the licensed exception.** The Gravewarden's eyes are
+bright yellow `Y` (0.93) on purpose. There is exactly one of it, it has a health
+bar over its head, and it is the thing you are supposed to be looking at. An
+exception you can name is a design; an exception you can't is a bug.
 
 **The palette, by owner:**
 
@@ -455,7 +486,8 @@ matter how good the art is:
 | bright yellow `Y` | reward — gold, chests, and the Gravewarden who drops them |
 | bright red `R` | the Blood Wisp, and the Countess |
 | bright green `G` | healing |
-| grey · bone · white · yellow · magenta · red | ghoul · rat · wight · rattlejack · stalker · bat |
+| bright magenta `M` | the Stalker's eye, and nothing else — you should feel the hue before you read the shape |
+| grey · bone · grey · yellow · grey · red | ghoul · rat · wight · rattlejack · stalker · bat |
 | dark red → black | **the floor.** Never anything else. |
 
 ### The Gore — the floor remembers
@@ -512,6 +544,56 @@ Enemies are **multi-cell animated ASCII sprites**, sized by tier.
 | `9×5` | **Gravewarden** *(elite)* | ×20 | 7 | 16 | scripted | Bold, bright, HP bar above. Drops a chest. 5:00, 10:00, 15:00 (×2). |
 | `28×11` | **The Countess** *(boss)* | 9000 | — | 25 | 19:00 | See below. |
 
+### The Warden's alphabet
+
+*Added 2026-07-10. §0 item 4 — "you can see **you**" — was failing, and this is why.*
+
+**The characters `@` `/` `\` `|` belong to the player. Nothing else in the game
+may be drawn with them.**
+
+I wrote "the player must never be lost" in this section weeks ago and then drew
+seven of the nine mobs out of the player's own strokes. The Ghoul was `\o/` over
+`/ \`; its bottom row was *character-for-character identical* to the player's.
+The Bat was `\v/` — and a Bat moves at 26 wu/s, so the thing crossing the
+player's sprite most often in the whole game was made of the player's limbs.
+
+Here is a real frame, three ghouls closing on the `@`, before and after:
+
+```
+   ░▒░   \o/ ░              ░▒░   (o) ░
+         /o/o\"                   (o(o)"
+   ▒ @//o\|| ░              ▒ @((o))) ░
+      /|\|||                   /|\())
+      ./"\                     ./"\
+```
+
+John already draws the player last, on top of everything. It bought us nothing:
+**drawing on top does not separate you from a crowd that is made of you.** In the
+left-hand frame the `@` has ghoul limbs welded to both shoulders and you cannot
+find yourself. In the right-hand frame `/ \ |` occur five times and all five are
+the player.
+
+Each family of monster gets its own shape language instead, and the language
+survives with the colour switched off — which is the actual test:
+
+| Family | Alphabet | Reads as |
+|---|---|---|
+| **The Warden** (and Ashling, Beggar) | `@ / \ \|` | upright, straight strokes, symmetric |
+| **Rotting flesh** — Ghoul, Blood Wisp | `( ) o *` | round, sagging, bloated |
+| **Bone constructs** — Wight, Gravewarden | `[ ] _ = o` | rigid, armoured, does not sag |
+| **Vermin** — Rat, Bat, Rattlejack | `- = ~ ^ v x , o` | low, quick, horizontal |
+| **Spirits** — Stalker | `^ ~ ( ) 0` | long-limbed, reaching |
+
+The Ghoul's `( )` and the Wight's `[ ]` are the same grey and the same posture at
+a glance — soft versus rigid is the entire difference, and it is the difference
+between a thing you walk through and a thing that ends you.
+
+**Sprites larger than 5×3 are exempt.** The Countess is 28×11; size has already
+told you what you are looking at. An exception you can name is a design.
+
+*John: this is two `assert`s in a test, and I'd rather the build caught me than
+the owner did. See `john.md`.*
+
 Rules that keep this readable at 220 enemies:
 
 - **Size is threat.** A player must be able to read danger from silhouette alone,
@@ -528,7 +610,9 @@ Rules that keep this readable at 220 enemies:
 - **Draw order is by world y**, so the horde overlaps like a crowd rather than a
   spreadsheet.
 - **The player must never be lost.** The `@` at the player's heart stays the only
-  bright-white glyph in the game.
+  bright-white glyph in the game — *and* the only `@`, and the only thing built
+  from `/ \ |`. Colour alone was never enough: at 220 enemies the `@` is one cell
+  in nine, and the eye finds the *shape* first.
 
 Machine-readable stats: `assets/glyphs.tsv`. Art: `assets/sprites/mobs/*.txt`,
 `assets/sprites/elites/*.txt`, `assets/sprites/countess.txt`. The `glyph` column in

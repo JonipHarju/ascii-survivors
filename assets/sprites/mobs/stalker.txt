@@ -3,19 +3,28 @@
 # anchor: center
 # fps: 5
 # colour: e
+#
+# The only thing that kills you unseen, so the frame you DO see it has to land
+# in one glance. Claws up (`^`), a hollow head, legs trailing (`~`): a long
+# reaching thing that is never mistaken for the upright Warden. It gathers
+# itself on the second frame -- limbs pulled in, about to spring.
+#
+# Bright magenta head is deliberate and is the one warm cell on it. Magenta
+# appears nowhere else in the bestiary; when it enters your lantern you should
+# feel the colour before you read the shape.
 --- art ---
-\   /
-  o  
- / \ 
+^   ^
+ (0)
+~   ~
 --- mask ---
 e   e
-  M
- e e
+ eMe
+e   e
 --- art ---
- \ / 
-  o  
-/   \
+ ^ ^
+ (0)
+ ~ ~
 --- mask ---
  e e
-  M
-e   e
+ eMe
+ e e

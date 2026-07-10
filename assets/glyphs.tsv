@@ -14,6 +14,29 @@
 #           smaller than his sprite (1.2 wu for a 3x3): being hit should feel
 #           like being caught, not like being near. Replaces MASS_SCALE.
 #
+# TWO LAWS GOVERN THIS TABLE AND THE ART IT POINTS AT (design.md §9, §10).
+# I broke both, for weeks, and only found it by dumping a real frame.
+#
+# 1. THE WARDEN'S ALPHABET. The characters `@ / \ |` belong to the player and to
+#    no one else. Seven of nine mobs used to draw their limbs with `/ \ |` -- so
+#    in a crowd the `@` sat inside a hedge of its own strokes and vanished, even
+#    though John draws the player last and on top. Drawing on top buys nothing
+#    when the neighbours are made of you. Sprites over 5x3 (the Countess) are
+#    exempt: size already tells you what you are looking at.
+#
+# 2. THE LUMINANCE LADDER. Nothing an enemy is made of may be brighter than an
+#    XP mote. The player is the only thing above the XP.
+#
+#      player @  1.00   (bright white `W`, sole occupant)
+#      XP        0.74   (`C` bright cyan -- must be findable in blood)
+#      enemies  <=0.55  (`e` grey, `s` bone, `r`/`y`/`m` hues)
+#      ground    0.26
+#      gore     <=0.15
+#
+#    Mob heads were `w` white = 0.78. Twelve rats out-shouted every mote on the
+#    floor. Elites and the boss are the licensed exception -- there is one of
+#    them, it has a health bar, and it is what you should be looking at.
+#
 # id	glyph	name	colour	hp	speed	power	cost	from	xp	hit_rad	notes
 #--------------------------------------------------------------------------------------
 player	@	The Warden	W	100	20	0	-	-	0	1.2	bright white, bold; nothing else may be bright white
@@ -23,7 +46,7 @@ beggar	%	The Beggar	W	100	20	0	-	-	0	1.2	unlockable character
 ghoul	g	Ghoul	e	10	9	4	1	0:00	1	1.4	walks straight at player
 rat	r	Grave Rat	s	2	14	2	1	0:30	1	0.8	spawns in packs of 12+
 bat	w	Bat	r	5	26	3	2	2:00	1	0.9	sine-wave drift, amplitude 6wu period 1.2s
-wight	W	Wight	w	40	6	9	5	4:00	2	2.2	advances in a line
+wight	W	Wight	e	40	6	9	5	4:00	2	2.2	advances in a line
 rattlejack	x	Rattlejack	y	16	11	6	4	8:00	2	1.4	on death spawns 2 rats
 wisp	*	Blood Wisp	R	12	16	5	4	12:00	2	1.3	ignores enemy-enemy collision
 stalker	S	Stalker	m	30	18	12	9	14:00	5	2.0	INVISIBLE outside light radius; show ? at light edge 1.0s before entry

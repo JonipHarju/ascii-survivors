@@ -3,15 +3,19 @@
 # anchor: center
 # fps: 4
 # colour: e
+#
+# Rotting flesh speaks in PARENTHESES: round, sagging, bloated. It owns none of
+# the strokes the Warden owns. See design.md §10, "The Warden's alphabet".
+# The shamble is the arms swinging out and in. It never stands upright.
 --- art ---
-\o/
-/ \
+(o)
+) (
 --- mask ---
-ewe
+eee
 e e
 --- art ---
-/o\
-| |
+(o)
+( )
 --- mask ---
-ewe
+eee
 e e

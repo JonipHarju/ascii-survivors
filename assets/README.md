@@ -41,9 +41,21 @@ numbers, and neither of us needs the other to change a value:
 | `evolutions.tsv` | weapon + passive → evolved weapon. |
 | `director.tsv` | Spawn director: `param` / `mix` / `beat` rows. |
 
-Everything on the *field* except the Countess is a single glyph from
-`glyphs.tsv`. That's a deliberate rendering decision, not a shortcut — see
-`design.md` §10.
+*(An earlier draft of this file said "everything on the field except the Countess
+is a single glyph." That was the rule the owner overruled on 09.07. It's gone.)*
+
+## The two laws
+
+Both are `design.md`'s (§9, §10), both are checkable by machine, and I broke both
+for weeks without noticing. If you take one thing from this file, take these.
+
+1. **The Warden's alphabet.** `@` `/` `\` `|` belong to the player. No sprite in
+   `sprites/mobs/` or `sprites/elites/` may contain them. Monsters have their own
+   shape languages: parentheses rot, square brackets are armoured, dashes are
+   vermin. Sprites over 5×3 are exempt — size already disambiguates them.
+2. **The luminance ladder.** No mask cell of an ordinary enemy may be `w` or `W`.
+   Nothing an enemy is made of may be brighter than an XP mote. Elites and the
+   boss are the named exception.
 
 ## File format
 
@@ -113,7 +125,9 @@ support. Lowercase = normal, uppercase = bright/bold.
 | `s` "bone" — maps to yellow-dim; use for skeletons, rats, sand |
 
 **Reserved:** bright white `W` belongs to the player and nothing else. If a
-portrait needs a highlight, use `C` or `Y`.
+portrait needs a highlight, use `C` or `Y`. **Plain white `w` is reserved too, in
+`sprites/mobs/` and `sprites/elites/`** — at `#c7c7c7` it is luminance 0.78,
+above an XP mote and a hair under the player. Mob flesh is `e`; mob bone is `s`.
 
 ## The one thing that will bite us
 

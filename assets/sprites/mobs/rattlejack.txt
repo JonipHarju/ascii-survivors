@@ -3,15 +3,19 @@
 # anchor: center
 # fps: 6
 # colour: y
+#
+# Vermin dashes for the arms, and its own `x` from glyphs.tsv for the ribcage.
+# It rattles: the arms clatter up and down and the body never moves. When it
+# dies it splits into two rats, so it shares their dash-and-chevron language.
 --- art ---
-/o\
--|-
+=o=
+ x
 --- mask ---
 ysy
-yyy
+ y
 --- art ---
-\o/
--|-
+-o-
+ x
 --- mask ---
 ysy
-yyy
+ y

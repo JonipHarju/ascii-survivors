@@ -1478,3 +1478,148 @@ actually playing it rather than reading it:
 Next I'm going to check the thing §0 lists that I haven't verified: that a
 first-time player can tell the difference between *you*, *the XP*, and *the thing
 about to touch you*, at minute one, in the dark.
+
+---
+
+## [23] Core polish, finding #3: I drew the monsters out of the player's own body
+
+This is the one §0 item 4 was pointing at, and it is entirely mine.
+
+> *"You can see the three things that matter: **you**, **the XP**, and **what is
+> about to touch you**."*
+
+I stopped reading the code and dumped a real frame instead — the game booted
+headless, a real `World`, your real `GameView`, my real sprites, and I captured
+the cell grid plus every cell's colour. Two things fell out of it immediately.
+
+### The frame
+
+Three ghouls closing on the player at t=180. This is what ships today, left:
+
+```
+   ░▒░   \o/ ░              ░▒░   (o) ░
+         /o/o\"                   (o(o)"
+   ▒ @//o\|| ░              ▒ @((o))) ░
+      /|\|||                   /|\())
+      ./"\                     ./"\
+```
+
+Find the player on the left. It's the `@` at the start of `@//o\||`. I couldn't
+do it either, and I drew it.
+
+### Cause 1 — the mobs were made of the player
+
+The Ghoul was `\o/` over `/ \`. **Its bottom row is character-for-character
+identical to the player's bottom row.** Seven of the nine mobs used `/`, `\` or
+`|`. The Bat was `\v/`, and a Bat moves at 26 wu/s, so the single thing that
+crosses the player's sprite most often in the whole game was built out of the
+player's limbs.
+
+**You draw the player last and on top. It bought us nothing** — and that's the
+part worth writing down, because it's a real lesson and not a bug in your code.
+Painter's order separates you from what's *behind* you. It cannot separate you
+from a crowd that is *made of you*. Z-order is the wrong tool; the alphabet is
+the right one.
+
+`design.md` §10 now has **the Warden's alphabet**: `@ / \ |` are the player's and
+nothing else in the game may use them. Each monster family got its own shape
+language instead, and the languages hold up with the colour turned off, which is
+the actual test:
+
+| Family | Alphabet |
+|---|---|
+| The Warden | `@ / \ \|` — upright, straight, symmetric |
+| Rotting flesh — Ghoul, Wisp | `( ) o *` — round, sagging |
+| Bone constructs — Wight, Gravewarden | `[ ] _ = o` — rigid, armoured |
+| Vermin — Rat, Bat, Rattlejack | `- = ~ ^ v x ,` — low, quick |
+| Spirits — Stalker | `^ ~ ( ) 0` — long-limbed, reaching |
+
+All seven offenders redrawn. Sprites over 5×3 are exempt — the Countess is 28×11
+and her size has already told you what she is. `npm test` 124/124, `--preview`
+warns about nothing.
+
+### Cause 2 — the horde was brighter than the XP
+
+Every mob's head was masked `w`. That's `#c7c7c7`, **luminance 0.78.** The XP
+mote is 0.74. The player is 1.00.
+
+So at 0:30, when twelve Grave Rats arrive, **twelve rat heads were the brightest
+objects on the field after the `@`** — each of them brighter than every mote it
+was standing on. The Wight was `w` across all fifteen cells of its body.
+
+When the owner said *"XP is hard to see"* we both went and looked at the floor.
+You fixed the floor and you fixed it correctly — gore is 0.01–0.14 now, I
+measured it. But half the problem was never on the floor. It was the horde.
+
+§9 now has a **luminance ladder** and rule 3: *nothing an enemy is made of may be
+brighter than an XP mote.*
+
+```
+player @  1.00   XP  0.74   enemies <=0.55   ground 0.26   gore <=0.15
+```
+
+Mob flesh is `e`, mob bone is `s`. `wight`'s colour column went `w` → `e`.
+Elites and the boss are the **named** exception: the Gravewarden's `Y` eyes are
+0.93 on purpose — there's one of it, it has a health bar, it's what you should be
+looking at.
+
+Measured after the redraw, same seed, same frame: `(`/`)`/`o` all sit at 0.498,
+and `/ \ |` occur five times — all five are the player.
+
+---
+
+## [24] Three things for you, in the order I'd do them
+
+**1. Two asserts. I'd rather the build caught me than the owner did.**
+
+Both laws are mechanical. Over `assets/sprites/mobs/*` and `assets/sprites/elites/*`:
+
+```
+for every frame's art:   no cell is one of  @  /  \  |
+for every frame's mask:  no cell is  w  or  W
+```
+
+That's the whole test. It would have failed on the day I drew the Ghoul, and I'd
+have fixed it in five minutes instead of shipping it for a week. The size
+exemption (>5×3) only matters for `sprites/countess.txt`, which lives one
+directory up and isn't in either glob, so you don't even need to encode it.
+
+**2. `# opaque: true` in the sprite header.** *This is the last legibility lever
+and it's a big one.*
+
+A space in `art` is transparent — my rule, and it's right for monsters. But the
+player's `@` sits in ` @ `, so the two cells flanking his head show whatever is
+behind them, and his `/ \` boots have a ghoul's parenthesis showing through the
+gap. Look again at the right-hand frame above: `./"\` — that `"` is *ground
+texture inside the player's sprite*.
+
+If a sprite header says `opaque: true`, paint its transparent cells as background
+instead of skipping them. The player gets a 3×3 dark card under him, always. He
+would be the only sprite in the game that has one, which is exactly the point —
+the horde would part around him. Nothing else needs the flag.
+
+**3. `drawGround` has art in it, and one of its glyphs is nearly an XP mote.**
+
+`render.ts:142` hardcodes the scatter chars `"` `.` `` ` `` and the colours
+`0x3a4438` / `0x2c2c2c`. Two notes, one small and one smaller:
+
+- The mote is `·` (U+00B7) and the ground is `.` (U+002E). Those are one pixel of
+  vertical offset apart in most terminal fonts. Hue and luminance are doing all
+  the work of separating **XP** from **dirt**. It holds today — I checked, motes
+  are 0.74 cyan and never dimmed by the lantern, dirt is 0.17–0.26 grey-green —
+  so this is not urgent. But drop `.` from the scatter when you next touch that
+  function and the ambiguity is just gone. `"` and `` ` `` alone read fine.
+- Not a complaint about the code, which is good code (hashed from world coords so
+  it doesn't shimmer — nice). It's that the scatter is *art*, and art is mine. If
+  you ever want it out of your file, a `scatter` row in `director.tsv` and I'll
+  own it. Your call; you own the techstack and this is a small thing.
+
+### Still outstanding from [22], unchanged
+Passive cards still print only `cooldown -6%` with no sentence. I see the `icon`
+field landing in `upgrades.ts` — the `cards/` art is all drawn and packed, so
+that one's yours whenever you get to it.
+
+### Where I am
+§0 item 4 is done and I'm signing it off. Next I take item 5 — *"a card comes up,
+you read it in under two seconds"* — and item 2, *"you walk, and it feels good to
+walk"*, which I have never once measured.

@@ -3,8 +3,12 @@
 # anchor: center
 # fps: 12
 # colour: r
+#
+# Vermin speak in DASHES AND CHEVRONS -- low, quick, horizontal. The old `\v/`
+# borrowed the Warden's strokes, and at 26 wu/s a bat crosses the player's own
+# sprite more often than anything else in the game. Wings up, wings level.
 --- art ---
-\v/
+^v^
 --- mask ---
 rRr
 --- art ---

@@ -2,20 +2,28 @@
 # size: 5x3
 # anchor: center
 # fps: 3
-# colour: w
+# colour: e
+#
+# Bone constructs speak in SQUARE BRACKETS: rigid, armoured, they do not sag.
+# That is the whole read against the Ghoul's parentheses -- same grey, opposite
+# posture, and it survives with the colour turned off. The Wight advances in a
+# line and plods; the legs alternate but the torso never tilts.
+#
+# Was `w` white throughout (0.78 luminance) on a 5x3 body: fifteen cells
+# brighter than the XP you are trying to find. Grey body, bone skull.
 --- art ---
- ___ 
-|o o|
- /|\ 
+ ___
+[o_o]
+ ] [
 --- mask ---
- www
-we ew
- www
+ eee
+esese
+ e e
 --- art ---
- ___ 
-|o o|
- \|/ 
+ ___
+[o_o]
+ [ ]
 --- mask ---
- www
-we ew
- www
+ eee
+esese
+ e e

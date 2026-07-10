@@ -3,11 +3,16 @@
 # anchor: center
 # fps: 10
 # colour: s
+#
+# Already clean of the Warden's strokes. The head was `w` (0.78 luminance) --
+# brighter than an XP mote, on a thing that arrives twelve at a time. Twelve
+# rat heads used to out-shout every mote on the floor. Head is grey now; the
+# bone-coloured tail is the only warm cell. See design.md §9, the ladder.
 --- art ---
 o~
 --- mask ---
-ws
+es
 --- art ---
 o,
 --- mask ---
-ws
+es

@@ -865,3 +865,87 @@ should still show that weapon's sentence above its numbers. With your open item
 level-up screen.
 
 **Rule, now in §12:** *any field the player can see is copy, and copy is Jane's.*
+
+---
+
+## 10.07 — Core polish, finding #3: the player was drawn out of the same characters as the monsters
+
+*Jane, from a headless frame dump of a real run. `design.md` §9 and §10 updated.*
+
+**The acceptance criterion under test** (§0, item 4): *"You can see the three
+things that matter: you, the XP, and what is about to touch you."*
+
+**It was failing.** Three ghouls closing on the player at t=180 — shipping build
+on the left, after the fix on the right:
+
+```
+   ░▒░   \o/ ░              ░▒░   (o) ░
+         /o/o\"                   (o(o)"
+   ▒ @//o\|| ░              ▒ @((o))) ░
+      /|\|||                   /|\())
+      ./"\                     ./"\
+```
+
+**Cause 1 — the mobs were made of the player.** The Ghoul was `\o/` over `/ \`;
+its bottom row was character-for-character identical to the player's. Seven of
+the nine mobs used `/`, `\` or `|`. The Bat was `\v/`, and a Bat moves at 26 wu/s
+— the thing that crosses the player's sprite most often in the whole game was
+built from the player's limbs.
+
+> **John's code was already correct here, and it's worth saying why it didn't
+> help.** He draws the player last, on top of everything. Painter's order
+> separates you from what's *behind* you. It cannot separate you from a crowd
+> that is *made of you*. Z-order was the wrong tool.
+
+**Decision (Jane, design.md §10) — the Warden's alphabet.** `@ / \ |` belong to
+the player; nothing else in the game may use them. Every monster family gets its
+own shape language, and each one survives with the colour switched off, which is
+the real test: parentheses `( )` rot, square brackets `[ ]` are armoured, dashes
+`- ~ ^ v` are vermin. All seven offending sprites redrawn. Sprites over 5×3 are
+exempt — the Countess is 28×11 and her size already tells you what she is.
+
+**Cause 2 — the horde was brighter than the XP.** Every mob's head was masked `w`
+(`#c7c7c7`, luminance **0.78**). An XP mote is **0.74**. The player is 1.00. So
+when twelve Grave Rats arrive at 0:30, twelve rat heads were the brightest things
+on the field after the `@` — each brighter than every mote it stood on. The Wight
+was `w` across all fifteen cells of its body.
+
+> When the owner said *"XP is hard to see"* (09.07, 23:03) we both looked at the
+> floor. John fixed the floor, and fixed it correctly — gore now measures
+> 0.01–0.14. **Half the problem was never on the floor.** It was the horde.
+
+**Decision (Jane, design.md §9) — the luminance ladder**, and a third readability
+rule: *nothing an enemy is made of may be brighter than an XP mote.*
+
+| player `@` | XP | enemies | ground | gore |
+|---|---|---|---|---|
+| 1.00 | 0.74 | ≤ 0.55 | 0.26 | ≤ 0.15 |
+
+Elites and the boss are the **named** exception — the Gravewarden's bright-yellow
+eyes are 0.93 on purpose. There is one of it, it has a health bar, and it is what
+you are supposed to be looking at. *An exception you can name is a design; an
+exception you can't is a bug.*
+
+`npm test` 124/124. §0 item 4 signed off.
+
+**Jane → John, three asks (`jane.md` [24]):**
+1. **Two asserts**, over `sprites/mobs/*` and `sprites/elites/*`: no art cell is
+   `@ / \ |`; no mask cell is `w` or `W`. Both laws are mechanical. *"I'd rather
+   the build caught me than the owner did."* This would have failed the day the
+   Ghoul was drawn.
+2. **`# opaque: true` sprite header** — paint a sprite's transparent cells as
+   background rather than skipping them. Only the player gets it: a 3×3 dark card
+   under him so the horde parts around him. Today ground texture shows *through*
+   his boots (`./"\` above — that `"` is dirt inside the player).
+3. **`drawGround` (`render.ts:142`) has art hardcoded in it**, and its `.`
+   scatter is one codepoint from the XP mote `·`. Not urgent — hue and luminance
+   currently separate them — but drop `.` and the ambiguity is gone. Offered:
+   move the scatter into `director.tsv` and Jane owns it. John's call, he owns
+   the techstack.
+
+**Still open from 10.07 earlier:** passive level-up cards still print only
+`cooldown -6%` with no sentence (`jane.md` [22]). John's `icon` field for the
+`cards/` art is in flight.
+
+**Jane next:** §0 item 5 (a card read in under two seconds) and item 2 (*"you
+walk, and it feels good to walk"*) — which has never once been measured.

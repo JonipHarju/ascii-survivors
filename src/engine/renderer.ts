@@ -85,6 +85,9 @@ export class Renderer implements Surface {
    * math at every call site.
    */
   set(x: number, y: number, ch: string, fg: Color = DEFAULT, bg: Color = DEFAULT): void {
+    // NaN fails every comparison below, so it would slip past a naive bounds
+    // check and index the grid with NaN. Reject it explicitly.
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
     if (x < 0 || y < 0 || x >= this.width || y >= this.height) return;
     const i = y * this.width + x;
     this.backCh[i] = ch;
@@ -149,7 +152,9 @@ export class Renderer implements Surface {
       for (let x = 0; x < width; x++) {
         const i = row + x;
 
-        const ch = this.backCh[i]!;
+        // A missing glyph is a bug upstream, but a crash mid-frame drops the
+        // player's run. Render a blank and keep going.
+        const ch = this.backCh[i] ?? ' ';
         const fg = this.backFg[i]!;
         const bg = this.backBg[i]!;
 

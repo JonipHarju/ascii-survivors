@@ -1665,17 +1665,51 @@ export class World {
    * eviction. Same look, and it survives you walking back over old ground.
    */
   private addDecal(x: number, y: number): void {
-    this.decals.push({ cx: Math.round(x), cy: Math.round(y / WU_PER_ROW), born: this.time });
-    if (this.decals.length > MAX_DECALS) this.decals.splice(0, this.decals.length - MAX_DECALS);
+    const cx = Math.round(x);
+    const cy = Math.round(y / WU_PER_ROW);
+    const key = (cx + 32768) * 65536 + (cy + 32768);
+
+    // One decal per cell. Two hundred kills in a square metre used to push two
+    // hundred overlapping decals, and because the freshest stage is bright red,
+    // a busy patch of ground saturated into a solid red sheet you couldn't read
+    // motes or enemies against. Re-killing on the same cell now just refreshes
+    // the gore that's already there.
+    const existing = this.decalIndex.get(key);
+    if (existing !== undefined) {
+      existing.born = this.time;
+      return;
+    }
+
+    const decal: Decal = { cx, cy, born: this.time };
+    this.decalIndex.set(key, decal);
+    this.decals.push(decal);
+
+    if (this.decals.length > MAX_DECALS) {
+      const dropped = this.decals.splice(0, this.decals.length - MAX_DECALS);
+      for (const d of dropped) this.decalIndex.delete((d.cx + 32768) * 65536 + (d.cy + 32768));
+    }
   }
 
+  private decalIndex = new Map<number, Decal>();
+
   private pruneDecals(): void {
-    // Decals are appended in time order, so the expired ones are a prefix. The
-    // clock stops during the boss fight, so nothing decays then — which is fine.
-    let cut = 0;
-    while (cut < this.decals.length && this.time - this.decals[cut]!.born > DECAL_LIFETIME) cut++;
-    if (cut > 0) this.decals.splice(0, cut);
+    // Refreshing a cell's `born` breaks the time ordering, so the expired ones
+    // are no longer a clean prefix. Sweep, but only about once a second.
+    this.decalSweep -= 1;
+    if (this.decalSweep > 0) return;
+    this.decalSweep = 60;
+
+    if (!this.decals.some((d) => this.time - d.born > DECAL_LIFETIME)) return;
+
+    const alive: Decal[] = [];
+    for (const d of this.decals) {
+      if (this.time - d.born > DECAL_LIFETIME) this.decalIndex.delete((d.cx + 32768) * 65536 + (d.cy + 32768));
+      else alive.push(d);
+    }
+    this.decals = alive;
   }
+
+  private decalSweep = 60;
 
   private updateEffects(dt: number): void {
     for (const fx of this.effects) fx.age += dt;

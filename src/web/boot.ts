@@ -92,6 +92,22 @@ async function boot(): Promise<void> {
     openShop: flag('shop'),
   });
 
+  // `?sim=600` advances the simulation N ticks before the first frame is drawn,
+  // with weapons firing and enemies dying. `?start=` alone only moves the clock;
+  // this is how you get a field that has actually been fought over — gore on the
+  // ground, motes to collect — which is what a screenshot needs to be honest.
+  const simTicks = numberParam('sim');
+  if (simTicks !== undefined) {
+    for (let i = 0; i < Math.min(20000, simTicks); i++) {
+      // A level-up freezes the sim and waits for a card. Take the first one and
+      // keep fighting, or the fast-forward stops dead at the player's first
+      // level and the field never gets fought over.
+      if (i % 4 === 0) input.press('1');
+      app.update(TICK_DT);
+    }
+    input.takePressed();
+  }
+
   addEventListener('resize', () => {
     if (surface.resize()) surface.invalidate();
   });
@@ -131,9 +147,98 @@ async function boot(): Promise<void> {
   requestAnimationFrame(frame);
 }
 
-boot().catch((err: unknown) => {
+function runBench(
+  app: App,
+  surface: CanvasSurface,
+  frames: number,
+  status: HTMLElement | null,
+): void {
+  // Warm up first: the glyph cache rasterizes every (character, colour) pair on
+  // its first sighting, so the opening frames measure the cache, not the game.
+  const WARMUP = 40;
+  for (let i = 0; i < WARMUP; i++) {
+    app.update(TICK_DT);
+    app.render(surface);
+    surface.flush();
+  }
+
+  const samples: number[] = [];
+  const updateMs: number[] = [];
+  let drawn = 0;
+  for (let i = 0; i < frames; i++) {
+    const t = performance.now();
+    app.update(TICK_DT);
+    const u = performance.now();
+    app.render(surface);
+    drawn = surface.flush();
+    samples.push(performance.now() - t);
+    updateMs.push(u - t);
+  }
+
+  samples.sort((a, b) => a - b);
+  const avg = samples.reduce((a, b) => a + b, 0) / samples.length;
+  const p99 = samples[Math.min(samples.length - 1, Math.floor(samples.length * 0.99))]!;
+  const avgUpdate = updateMs.reduce((a, b) => a + b, 0) / updateMs.length;
+  const report =
+    `grid ${surface.width}x${surface.height} | glyphs ${drawn} | frames ${frames} | ` +
+    `sim ${avgUpdate.toFixed(2)}ms | draw ${(avg - avgUpdate).toFixed(2)}ms | ` +
+    `avg ${avg.toFixed(2)}ms | p99 ${p99.toFixed(2)}ms | ` +
+    `ceiling ${(1000 / avg).toFixed(0)}fps`;
+
+  console.log(report);
+  if (status !== null) {
+    status.textContent = report;
+    status.setAttribute('data-bench', report);
+  }
+  document.title = report;
+}
+
+/**
+ * `?bench=300` measures update+render cost for N frames as fast as the CPU
+ * allows, ignoring the display's refresh rate. It's the only honest way to
+ * answer "can it hold 120fps": requestAnimationFrame reports 60 on a 60Hz panel
+ * no matter how much headroom there is.
+ *
+ * Deliberately **synchronous, start to finish** — a blocking fetch, no font
+ * wait, no await anywhere. An automated harness reads the result out of the DOM,
+ * and the DOM is only dumped once `load` has fired. Any `await` in here would
+ * push the numbers past that moment and report nothing.
+ */
+function benchSync(frames: number): void {
+  const canvas = document.getElementById('screen') as HTMLCanvasElement;
   const status = document.getElementById('status');
-  const message = err instanceof Error ? err.message : String(err);
-  if (status !== null) status.textContent = `failed to start: ${message}`;
-  console.error(err);
-});
+
+  const xhr = new XMLHttpRequest();
+  xhr.open('GET', 'assets.json', false); // sync on purpose; see above
+  xhr.send();
+  const bundle = JSON.parse(xhr.responseText) as AssetBundle;
+
+  const data = buildGameData(bundle.tables);
+  const sprites = new SpriteBank();
+  sprites.loadFromSources(Object.entries(bundle.sprites));
+
+  const surface = new CanvasSurface(canvas, flag('noglow') ? { glow: 0 } : {});
+  const app = new App(data, sprites, new WebInput(), {
+    dark: !flag('nodark'),
+    debug: flag('debug'),
+    seed: numberParam('seed'),
+    startTime: numberParam('start'),
+    god: flag('god'),
+    skipTitle: true,
+    store: memoryStore(),
+  });
+
+  runBench(app, surface, Math.max(30, frames), status);
+}
+
+const benchFrames = numberParam('bench');
+if (benchFrames !== undefined) {
+  benchSync(benchFrames);
+} else {
+  boot().catch((err: unknown) => {
+    const status = document.getElementById('status');
+    const message = err instanceof Error ? err.message : String(err);
+    if (status !== null) status.textContent = `failed to start: ${message}`;
+    console.error(err);
+  });
+}

@@ -8,12 +8,15 @@
     "node": ">=22.18.0"
   },
   "scripts": {
-    "start": "node src/main.ts",
-    "dev": "node src/main.ts --watch",
+    "start": "node src/serve.ts",
+    "dev": "node src/serve.ts",
+    "build": "node src/tools/build.ts",
+    "preview": "node src/tools/serve-static.ts",
+    "tui": "node src/main.ts",
+    "tui:watch": "node src/main.ts --watch",
+    "art": "node src/main.ts --preview",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.web.json --noEmit",
     "test": "node --test src/tests/*.test.ts",
-    "web": "node src/serve.ts",
-    "build:web": "tsc -p tsconfig.web.json && node src/tools/pack.ts",
     "bench": "node src/bench.ts"
   },
   "devDependencies": {

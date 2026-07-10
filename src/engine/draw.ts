@@ -54,7 +54,12 @@ export function drawSprite(
   }
 }
 
-/** Horizontal progress bar built from eighth-blocks, so it moves smoothly. */
+/**
+ * Horizontal progress bar built from eighth-blocks, so it moves smoothly.
+ *
+ * `EIGHTHS[0]` is deliberately absent: a zero-eighths partial cell is not a
+ * glyph, it's the track showing through.
+ */
 const EIGHTHS = ['', '▏', '▎', '▍', '▌', '▋', '▊', '▉'] as const;
 
 export function drawBar(
@@ -69,8 +74,18 @@ export function drawBar(
 ): void {
   const f = Math.max(0, Math.min(1, fraction));
   const exact = f * w;
-  const full = Math.floor(exact);
-  const rem = Math.round((exact - full) * 8);
+
+  let full = Math.floor(exact);
+  let rem = Math.round((exact - full) * 8);
+
+  // Rounding eight eighths up is a whole block, not a ninth eighth. Without this
+  // carry, any fraction whose remainder lands at or above 0.9375 indexed one
+  // past the end of EIGHTHS, wrote `undefined` into the cell grid, and crashed
+  // the renderer on the next flush. The XP bar hit it eventually in every run.
+  if (rem >= 8) {
+    full += 1;
+    rem = 0;
+  }
 
   for (let i = 0; i < w; i++) {
     if (i < full) r.set(x + i, y, '█', fg);

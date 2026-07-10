@@ -186,6 +186,8 @@ export class CanvasSurface implements Surface {
   }
 
   set(x: number, y: number, ch: string, fg: Color = DEFAULT, bg: Color = DEFAULT): void {
+    // NaN fails every comparison below; reject it before it indexes the grid.
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
     if (x < 0 || y < 0 || x >= this.width || y >= this.height) return;
     const i = y * this.width + x;
     this.ch[i] = ch;
@@ -197,6 +199,7 @@ export class CanvasSurface implements Surface {
 
   /** Keep the fractional remainder so the glyph can be nudged inside its cell. */
   setF(x: number, y: number, ch: string, fg: Color = DEFAULT): void {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
     const cx = Math.round(x);
     const cy = Math.round(y);
     if (cx < 0 || cy < 0 || cx >= this.width || cy >= this.height) return;
@@ -301,7 +304,7 @@ export class CanvasSurface implements Surface {
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const i = y * width + x;
-        const ch = this.ch[i]!;
+        const ch = this.ch[i] ?? ' ';
         if (ch === ' ') continue;
 
         const fg = this.fg[i]!;

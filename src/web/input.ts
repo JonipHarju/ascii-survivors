@@ -73,6 +73,11 @@ export class WebInput implements InputSource {
     return null;
   }
 
+  /** Inject a keypress. Used by `?sim` to answer level-up cards while fast-forwarding. */
+  press(key: string): void {
+    this.pressed.add(key);
+  }
+
   /** Real key-up events mean there is nothing to expire. */
   update(): void {}
 

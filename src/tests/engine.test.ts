@@ -8,6 +8,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
+import { drawBar } from '../engine/draw.ts';
 import { detectDepth, parseColor, rgb } from '../engine/color.ts';
 import { Renderer } from '../engine/renderer.ts';
 import { parseGlyphTable } from '../data/entities.ts';
@@ -222,6 +223,62 @@ describe('renderer', () => {
       r.set(1, 1, 'o');
     });
     assert.equal(r.getChar(1, 1), 'o');
+  });
+});
+
+describe('drawBar', () => {
+  // Reported by the owner as a hard crash mid-run:
+  //   TypeError: Cannot read properties of undefined (reading 'codePointAt')
+  //     at Renderer.flush
+  // `rem = Math.round(frac * 8)` returns 8 once the fractional part reaches
+  // 0.9375, and EIGHTHS only has indices 0..7.
+  function bar(fraction: number, w = 10): Renderer {
+    const r = new Renderer(w + 2, 1, 'mono', stream(new Capture()));
+    r.clear();
+    drawBar(r, 0, 0, w, fraction, 0xffffff, 0x333333);
+    return r;
+  }
+
+  it('never writes an undefined glyph, at any fraction', () => {
+    for (let i = 0; i <= 2000; i++) {
+      const r = bar(i / 2000);
+      for (let x = 0; x < 10; x++) {
+        assert.equal(typeof r.getChar(x, 0), 'string', `fraction ${i / 2000} produced a hole at x=${x}`);
+      }
+    }
+  });
+
+  it('survives a flush at the fraction that used to crash', () => {
+    assert.doesNotThrow(() => bar(0.994).flush());
+  });
+
+  it('carries eight eighths into a whole block', () => {
+    // 0.994 * 10 = 9.94 -> floor 9, rem round(0.94*8) = 8. That is ten blocks.
+    const r = bar(0.994);
+    assert.equal(r.getChar(9, 0), '█', 'the last cell is full, not a ninth eighth');
+  });
+
+  it('still draws partial blocks in between', () => {
+    const r = bar(0.55); // 5.5 cells -> five full, then a half block
+    assert.equal(r.getChar(4, 0), '█');
+    assert.equal(r.getChar(5, 0), '▌');
+  });
+
+  it('clamps fractions outside 0..1', () => {
+    assert.doesNotThrow(() => bar(-5).flush());
+    assert.doesNotThrow(() => bar(99).flush());
+    assert.equal(bar(2).getChar(9, 0), '█', 'a full bar is full');
+  });
+
+  it('ignores NaN coordinates rather than indexing the grid with them', () => {
+    const r = new Renderer(4, 2, 'mono', stream(new Capture()));
+    r.clear();
+    assert.doesNotThrow(() => {
+      r.set(NaN, 0, 'x');
+      r.set(0, NaN, 'x');
+      r.set(Infinity, Infinity, 'x');
+    });
+    assert.doesNotThrow(() => r.flush());
   });
 });
 

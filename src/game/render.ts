@@ -25,6 +25,9 @@ const DARK_COLOR: Color = 0x585858;
 const FLASH_COLOR: Color = 0xffffff;
 const ACCENT: Color = 0xffe040;
 
+/** How bright the gore layer is allowed to be. It is scenery, not information. */
+const GORE_LEVEL = 0.55;
+
 export type ViewOptions = {
   /** `--no-dark` kills the light radius. Jane asked for this switch on day one. */
   dark: boolean;
@@ -159,8 +162,13 @@ export class GameView {
 
       // Fade within the stage as well as between stages, so the carpet thins
       // continuously instead of stepping through five discrete looks.
+      //
+      // GORE_LEVEL sits on top of that. The floor is scenery: it must read as a
+      // record of the slaughter without competing with the things that can kill
+      // you or the XP you need to find. At full brightness a late-game field is
+      // an unreadable red sheet — the owner's exact complaint.
       const t = (age - stage.ageFrom) / Math.max(0.001, stage.ageTo - stage.ageFrom);
-      const c = shade(stage.color, 1 - t * 0.45);
+      const c = shade(stage.color, GORE_LEVEL * (1 - t * 0.45));
       r.set(sx, sy, stage.glyph, p.shadeAt(d.cx, d.cy * WU_PER_ROW, c));
     }
   }
@@ -221,6 +229,11 @@ export class GameView {
   }
 
   private drawPickups(r: Surface, w: World, p: Proj): void {
+    // XP is information, not scenery. It is drawn over the gore, never dimmed by
+    // the dark, and it breathes — because a static dark-blue `·` on a red carpet
+    // is invisible, which is precisely what the owner reported.
+    const pulse = 0.78 + 0.22 * Math.sin(w.timeAlive * 6);
+
     for (const pk of w.pickups) {
       const sx = p.col(pk.x);
       const sy = p.row(pk.y);
@@ -237,10 +250,12 @@ export class GameView {
 
       const def = w.table.entities.get(id);
       const glyph = def?.glyph ?? '·';
-      const color = def?.color ?? 0x6f8dff;
-      // Chests are always visible: you need to be able to find your reward.
-      const c = pk.kind === 'chest' ? color : p.shadeAt(pk.x, pk.y, color);
-      r.setF(p.colF(pk.x), p.rowF(pk.y), glyph, c);
+      const base = def?.color ?? 0x6f8dff;
+
+      // Lift the palette colour toward white so it separates from the floor,
+      // then pulse. Pickups are never shaded by distance from the lantern.
+      const color = pk.kind === 'mote' ? mix(base, 0xffffff, 0.35) : base;
+      r.setF(p.colF(pk.x), p.rowF(pk.y), glyph, shade(color, pulse));
     }
   }
 

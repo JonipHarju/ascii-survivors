@@ -4,35 +4,33 @@
 # fps: 3
 # colour: y
 #
-# The Wight's square-bracket language, scaled up and armoured. Same posture,
-# four times the mass -- size is threat (design.md §10), and the silhouette says
-# "the slow tank, but the big one" before you have read a single colour.
-#
-# Elites are the licensed exception to the luminance ladder: the bright-yellow
-# eyes (`Y`, 0.93) outshine an XP mote on purpose. There is exactly one of these
-# on the field, it has a health bar over its head, and it is the thing you are
-# supposed to be looking at. See design.md §9.
+# The Wight's square-bracket language, scaled up and ARMOURED (design.md 10.5).
+# Was an outline skull; now a riveted (`#`) chest plate, a domed helm and a
+# solid `█` core -- size is threat and this one has heft. Elites are the
+# licensed exception to the luminance ladder: the bright-yellow `Y` eyes
+# outshine an XP mote on purpose. One on the field, an HP bar over its head,
+# it is the thing you are meant to be looking at (design.md 9).
 --- art ---
-  _____
- [o   o]
-#[  ^  ]#
- [=====]
-  ]   [
+  ▄▄▄▄▄  
+ ▐█o█o█▌ 
+#[█████]#
+ ▐█▄▄▄█▌ 
+  █▌ ▐█  
 --- mask ---
-  yyyyy
- yY   Yy
-ey  y  ye
- yyyyyyy
-  y   y
+  yyyyy  
+ yyYyYyy 
+eyyyyyyye
+ yyyyyyy 
+  yy yy  
 --- art ---
-  _____
- [o   o]
-#[  ^  ]#
- [=====]
-  [   ]
+  ▄▄▄▄▄  
+ ▐█o█o█▌ 
+#[█████]#
+ ▐█▄▄▄█▌ 
+  ▐█ █▌  
 --- mask ---
-  yyyyy
- yY   Yy
-ey  y  ye
- yyyyyyy
-  y   y
+  yyyyy  
+ yyYyYyy 
+eyyyyyyye
+ yyyyyyy 
+  yy yy  

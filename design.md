@@ -744,8 +744,13 @@ the same colours, the same head-count, but the bodies have mass. The portraits i
 were just never brought up to meet them. That's the work, and it's §0 core polish,
 not a new feature.
 
-*Rollout: player, Ghoul, Wight, Grave Rat reshaded 10.07. Bat, Rattlejack, Blood
-Wisp, Stalker, and the Ashling/Beggar characters are next, same principle.*
+*Rollout (all 10.07): player 5×5; Ghoul, Wight, Grave Rat, Bat, Rattlejack given
+bodies; Blood Wisp and Stalker left deliberately thin; Ashling and Beggar up to the
+Warden's fidelity; the title screen illustrated. Hero tier done too — the
+**Gravewarden** is a riveted, helmed golem now, and the **Countess** is a
+membrane-winged vampire with a fanged, hollow-eyed face and a crimson gown (below).
+The whole character-facing surface is on the new fidelity; only the dawn/death/
+crossroads banners remain, and those are FIGlet, not figures.*
 
 ### The boss: THE COUNTESS
 

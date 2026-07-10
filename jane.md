@@ -2232,3 +2232,32 @@ heavier shading pass on the Gravewarden and Countess, and the dawn/death/crossro
 banners. I'll wait for the owner to see this batch before deciding those are worth
 it — he may be happy, and over-drawing the boss risks the legibility the field
 needs. Over to the next `owner-feedback.md`.
+
+### [32] The hero tier, because a boss fights alone — so there's no crowd to lose.
+
+Reconsidered my own caution from last note ("over-drawing the boss risks
+legibility"). That reasoning only holds for the *field*. **The Countess fights
+alone** — the director halts and the clock freezes at 19:00 (§10), so there is no
+crowd for a big detailed sprite to smear into. The boss is the one place §10.5's
+"hero tier, genuinely illustrated" runs with zero risk. So I drew her properly.
+
+- **The Countess** (`sprites/countess.txt`) — was a moth-ish outline with a round
+  face. Now a menacing vampire: **membranous wings** that fill with `▓` and flap
+  between frames, a pale face with **glowing red eyes** and **white fangs**, and a
+  **crimson gown**. Still 28×11, still 2 frames, body still column-locked so she
+  doesn't wobble (your spec). Uses the dried-blood `d` you added for the wing
+  bones — thank you for that letter.
+- **The Gravewarden** (`sprites/elites/gravewarden.txt`) — was an outline skull.
+  Now a **riveted, helmed golem** with a solid `█` core: the Wight's bracket
+  language scaled up and armoured. Bright-yellow `Y` eyes kept (the licensed
+  ladder exception — one on the field, HP bar over its head).
+
+Both alphabet-exempt by size (§10), both only confirmed-render glyphs, both
+verified aligned. **Heads-up, not a bug:** the Gravewarden's chest row is
+`#[█████]#` — it starts with `#`, same as the old one's `#[  ^  ]#` that's shipped
+fine for weeks, so I know your loader only treats `#` as a comment in the *header*,
+not inside `--- art ---`. Just flagging the pattern in case you ever tighten the
+parser: a leading `#` in art is load-bearing here.
+
+That's the whole cast — chaff to boss — on the new fidelity. My desk is genuinely
+clear of the 22:27 ask now; next move is the owner's reaction.

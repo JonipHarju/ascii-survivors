@@ -2,52 +2,52 @@
 # size: 28x11
 # anchor: center
 # fps: 3
-# colour: e
+# colour: R
 --- art ---
-  \                      /  
-   \        ^^^^        /   
-    \    ,--------.    /    
-     \  /  o    o  \  /     
-      \ |    VV    | /      
-       \   \____/   /       
-        '.        .'        
-         |        |         
-        /|  ####  |\        
-       / |________| \       
-         '--'  '--'         
+\▓▓▓▓▓▓▓▓▓ ▄▄▄▄   ▓▓▓▓▓▓▓▓▓/
+ \▓▓▓▓▓▓▓▓▐████▌  ▓▓▓▓▓▓▓▓/
+  \▓▓▓▓▓▓▓▐o██o▌  ▓▓▓▓▓▓▓/
+   \▓▓▓▓▓▓▐█vv█▌  ▓▓▓▓▓▓/
+    \▓▓▓▓▓ ▀██▀   ▓▓▓▓▓/
+     \▓▓▓▓ ▐██▌   ▓▓▓▓/
+          ▐████▌
+          ▐████▌
+           ████
+           ▓▓▓▓
+
 --- mask ---
-  e                      e
-   e        YYYY        e
-    e    eeeeeeeeee    e
-     e  e  R    R  e  e
-      e e    ww    e e
-       e   eeeeee   e
-        ee        ee
-         e        e
-        ee  rrrr  ee
-       e eeeeeeeeee e
-         eeee  eeee
+drrrrrrrrr eeee   rrrrrrrrrd
+ drrrrrrrreeeeee  rrrrrrrrd
+  drrrrrrrwRwwRw  rrrrrrrd
+   drrrrrrwwWWww  rrrrrrd
+    drrrrr wwww   rrrrrd
+     drrrr rRRr   rrrrd
+          rRRRRr
+          rrRRrr
+           rrrr
+           rrrr
+
 --- art ---
-\                          /
- \          ^^^^          / 
-  \      ,--------.      /  
-   \    /  o    o  \    /   
-     \  |    VV    |  /     
-       \   \____/   /       
-        '.        .'        
-         |        |         
-        /|  ####  |\        
-       / |________| \       
-         '--'  '--'         
+  \▓▓▓▓▓▓▓ ▄▄▄▄   ▓▓▓▓▓▓▓/
+ \▓▓▓▓▓▓▓▓▐████▌  ▓▓▓▓▓▓▓▓/
+\▓▓▓▓▓▓▓▓▓▐o██o▌  ▓▓▓▓▓▓▓▓▓/
+ \▓▓▓▓▓▓▓▓▐█vv█▌  ▓▓▓▓▓▓▓▓/
+   \▓▓▓▓▓▓ ▀██▀   ▓▓▓▓▓▓/
+     \▓▓▓▓ ▐██▌   ▓▓▓▓/
+          ▐████▌
+          ▐████▌
+           ████
+           ▓▓▓▓
+
 --- mask ---
-e                          e
- e          YYYY          e
-  e      eeeeeeeeee      e
-   e    e  R    R  e    e
-     e  e    ww    e  e
-       e   eeeeee   e
-        ee        ee
-         e        e
-        ee  rrrr  ee
-       e eeeeeeeeee e
-         eeee  eeee
+  drrrrrrr eeee   rrrrrrrd
+ drrrrrrrreeeeee  rrrrrrrrd
+drrrrrrrrrwRwwRw  rrrrrrrrrd
+ drrrrrrrrwwWWww  rrrrrrrrd
+   drrrrrr wwww   rrrrrrd
+     drrrr rRRr   rrrrd
+          rRRRRr
+          rrRRrr
+           rrrr
+           rrrr
+

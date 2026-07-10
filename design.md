@@ -56,6 +56,10 @@ each one by hand.
   player must feel the tide breathe before it drowns them. (§11)
 - **Every enemy that can appear has drawn art.** A single character standing in
   for an unfinished sprite is how we get told this looks like 1960. (§10)
+- **Hitting a thing looks like hitting it.** The owner's "is this the 1960s"
+  complaint was never about the sprites; it was that nothing in the game reacts.
+  A ghoul that flinches beats a ghoul drawn in three colours. This is core, not
+  polish-after-the-fact, and it is the last core item outstanding. (§14)
 
 ### The rule this section exists to enforce
 
@@ -997,6 +1001,154 @@ This is why Might caps at +25% and Revival costs 1000g for one extra life.
 **Endless mode** unlocks when you first see dawn — with achievement, not gold.
 The sun never rises, the head-count target never stops climbing, and at 30:00 the
 Reapers come and they cannot be killed. Nobody survives Endless. That's the point.
+
+---
+
+## 14. Juice
+
+*Added 2026-07-10. This is §0 work — the core, not content — and it is the direct
+answer to the owner's oldest complaint, which we have not actually answered yet.*
+
+> *"I get that we ordered an ASCII game, but c'mon, singular characters walking
+> around… is this the 1960s still? ASCII art can be made much more impressive
+> nowadays… so that Jane can unleash her inner creativity and have smoother
+> animations."*
+
+We read that as "draw better sprites," and we did, and he was right anyway. The
+sprites were never the problem. **Nothing in this game reacts.** You hit a ghoul
+and the ghoul does not notice. It dies and it simply stops being there. A `g`
+that flinches when you hit it and pops when it dies is more impressive than a `g`
+drawn in three colours, and it costs no art at all.
+
+Juice is the difference between reading a battle and being in one.
+
+### The Juice Law
+
+Juice is the **fourth** thing on the screen. The first three — you, the XP, the
+thing about to touch you — already have a law (§9's luminance ladder), and juice
+does not get to break it just because it's pretty.
+
+> **Juice may never take a cell that would otherwise show the player, an XP mote,
+> or an enemy; and it may never be brighter than the thing it is celebrating.**
+
+One licensed exception, bounded to 60 ms: the hit flash. Sixty milliseconds
+cannot be hunted through. A permanent brightness can.
+
+### Everything is in seconds. Nothing is in frames.
+
+The owner asked for 120fps. A flash written as *"two frames"* runs twice as fast
+at 120 as at 60 — that is exactly why old ports feel wrong on new hardware. Every
+constant lives in `assets/juice.tsv` in **seconds**. If the code ever says
+`framesLeft--`, the feel is now a function of the frame rate and the table is a
+decoration.
+
+### The eight effects
+
+Numbers are in `assets/juice.tsv`; this is the reasoning behind them.
+
+1. **Hit flash** — the enemy lifts toward white for 60 ms. Glyphs don't change,
+   the sprite doesn't move. *A flash that changes shape reads as a different
+   enemy arriving, not as this one being hurt.* This is the single highest-value
+   item in the section.
+2. **Damage numbers — at most one per enemy, and it accumulates.** See below.
+3. **Death pop** — one frame of the enemy's own glyphs in white, then the decal.
+   Costs nothing; it is the frame that sells the kill.
+4. **Hit stop** — 50 ms of frozen simulation when *the player* takes damage.
+   Rendering continues. Never on enemy hits: at 40 kills/sec the game would
+   judder permanently and nobody would be able to say why it felt bad.
+5. **Screen shake, in pixels** — see below.
+6. **Embers** — the lantern throws sparks that rise, cool, and die. They damage
+   nothing and are drawn *under* everything. Spawned out to the **current** light
+   radius, so Lantern Oil visibly widens the shower. *A passive you can see is
+   worth more than a passive you can read.*
+7. **Mote absorption trail** — a two-cell trail, not more brightness. §9's
+   doctrine: motion is free contrast.
+8. **Level-up** — the `@` burns gold for 120 ms and the world stops for 80. No
+   expanding ring: every glyph a ring could use is already owned by the bolt, the
+   mote, or the gore. The card is about to fill the screen anyway.
+
+### Why one number per enemy
+
+**I have already made this mistake once, with gore.** We pushed one decal per
+kill; two hundred kills on one patch stacked two hundred decals and the floor
+saturated into a solid red sheet. The owner reported it as *"so many red things
+on the ground it's hard to make out."* One number per damage **event** is that
+same bug, in digits — at 14:00 it's ~200 enemies × 4 weapons × their cooldowns,
+and the field disappears under its own applause.
+
+So a number is born on an enemy's first damage and rises. Damage taken while it
+lives is **added to it**, its life resets, and it gets **brighter**. Two hundred
+rats give you two hundred numbers. A rat hit eleven times gives you *one* number
+that climbs to 34 and glows.
+
+That brightness-by-accumulation is also why this game gets a crit *feel* without a
+crit *system*. It doesn't have one. **Don't build one** — §0, feel before content.
+
+Two more rules: **a kill prints no number — the corpse is the number** (which
+halves the count on screen exactly when it's most crowded), and numbers never
+draw over the player's own 3×3.
+
+### Why shake is measured in pixels
+
+A character grid can only shake by a whole cell, and a cell is 1 wu — that's an
+earthquake. **This is the first thing we get back for leaving the terminal:** the
+canvas can offset the field by a fraction of a cell. So amplitudes in `juice.tsv`
+are in cells and they're all less than one.
+
+The **field** shakes. **The HUD does not.** A health bar that jitters is a health
+bar you can't read at the exact moment you need to read it.
+
+And note what is *not* on the trigger list: ordinary hits. Four shakes in a
+twenty-minute run — Countess charge, Countess landing, your revival, your death.
+A screen that shakes constantly is a screen you stop reading.
+
+### The alphabet, extended: everything the player emits is the player
+
+§10's Warden's alphabet reserved `@ / \ |`. It was incomplete, and a frame dump
+found the hole:
+
+> The Blood Wisp was drawn `(*)` over `'.'`. The starting bolt renders as a `*`
+> that fades to a `.`. So from **12:00** — the exact minute the field is fullest —
+> the one enemy that ignores enemy collision, and is therefore the one thing that
+> reaches you *through* the pile, was drawn out of the projectile you fire at it.
+
+Mistaking your own bolt for an incoming enemy is a failure of §0 item 4. **A bolt,
+an ember, a band, a ring — the things you fire are as much "you" as the `@` is,
+and no enemy may be drawn with them.** The wisp moved, not the bolt: the bolt is
+there from second zero of every run and the wisp arrives at 12:00 in some of them.
+Blood spirits speak in **braces** now, and the shell flickers.
+
+The full reservation:
+
+| Reserved to | Characters |
+|---|---|
+| The Warden | `@ / \ |` + lookalikes `│┃╎┆⎸｜╱╲⁄∕` |
+| The Warden's weapons | `*` bolt · `°` Cinder ember · `═ ─` band |
+| The numbers layer | the digits `0`–`9` |
+| XP | `·` the mote |
+| **Retired** | `.` — **nothing in the game draws a baseline dot** |
+
+`.` is retired because at a glance it *is* `·`, and `·` is XP, and the owner has
+already told us once that he cannot find his XP. The bolt used to shrink to `.`
+as it died; it now fades in colour and keeps its shape. **Fading is what the
+canvas is for.** Two sprites paid for this: the wisp, and the Stalker, whose eye
+was the digit `0`.
+
+Sprites larger than 5×3 are exempt, as always — the Countess keeps her `.` and her
+`'`. At 28×11 nobody has ever mistaken her for an ember.
+
+### Acceptance — how I'll check it
+
+- Hit a ghoul with Nova at 0:05. **It flinches.** Take a screenshot mid-flash and
+  the ghoul is still a ghoul, same shape, same place.
+- At 14:00 with four weapons, **count the numbers on screen.** If it's over 40,
+  or if any enemy carries two, it's wrong.
+- Stand still at 0:00. **Sparks rise off the lantern** and not one of them is
+  brighter than a mote, and not one is inside the player's cells.
+- Walk over a mote. **It streaks to you.**
+- Take a hit. **The game stops for a twentieth of a second** and the screen does
+  not move.
+- Play a whole run without meeting the Countess. **The screen never shakes.**
 
 ---
 

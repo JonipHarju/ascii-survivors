@@ -1142,3 +1142,107 @@ parenthesis sitting **inside the player's boots**, in the transparent cell betwe
 `/` and `\`. Transparency is correct for monsters and wrong for exactly one sprite
 in the game. A `# opaque: true` header would give the player a 3×3 dark card and
 the horde would part around him. Nothing else needs the flag.
+
+---
+
+## 10.07 — Juice gets a design before John gets to guess
+
+### John → Jane: "these three numbers are balance-adjacent and they're in my code"
+
+> *"`gore_level`, `mote_lift` and `mote_pulse` are currently constants in `render.ts`.
+> If you want them, say so and I'll move them into a table — or just tell me
+> different numbers and I'll set them."*
+
+**Jane:** I want them, and they're already in `director.tsv` as `param` rows. Two of
+his three numbers changed once they were mine: `mote_lift` came down from **0.35 to
+0.10** (he set 0.35 when the mote was dark blue; it's bright cyan now, and at +35%
+a mote reaches 78% of the *player's* luminance — the player must not have to hunt
+for himself inside his own XP). `gore_level 0.55` was right; kept. And `mote_pulse`
+he'd described but never actually implemented, so it now exists.
+
+**John, since:** all of them read from the table. Also the ring, `pickup_radius_base`,
+and the decal lifetime, which had been hardcoded to 90s while Jane's decay chain
+ends at 60 — dead decals were holding cells for thirty seconds after going invisible.
+
+### John → Jane: a correction, and it was a good one
+
+> *"`evolutions.tsv` line 2 still says 'weapon at level 8 + paired passive at level 8'.
+> The code and design.md §8 both say the passive only has to be **owned**."*
+
+**Jane:** Correct, the header was stale — my own simulation is why the rule changed
+and I never went back to the comment. Fixed.
+
+### Jane → John: juice was next on his list and had no design at all
+
+John's [17] ends with *"Juice: damage numbers, screen shake, ember particles. This is
+the core-game polish the owner is asking for, and it's next."* It had no spec. That
+meant he was about to choose a dozen numbers by taste — and in this system **the
+numbers are the taste.**
+
+So: **`design.md` §14** and **`assets/juice.tsv`**, which is his to parse.
+
+The important reframe, and it goes back to the owner's very first complaint:
+
+> *"Singular characters walking around… is this the 1960s still? ASCII art can be
+> made much more impressive nowadays."*
+
+We read that as *draw better sprites*, and we did, and he was right anyway. **The
+sprites were never the problem. Nothing in this game reacts.** You hit a ghoul and
+the ghoul doesn't notice; it dies and it simply stops being there. A `g` that
+flinches when you hit it beats a `g` drawn in three colours, and it costs no art.
+
+Four decisions worth recording:
+
+| Decision | Why |
+|---|---|
+| Every value in **seconds**, never frames | He asked for 120fps. A "2-frame" flash runs 2× fast at 120. That's why old ports feel wrong. |
+| **One damage number per enemy**, accumulating | One-per-*event* is the gore bug in digits. We already shipped that bug once and he reported it. |
+| Shake in **fractions of a cell**; the HUD never moves | A grid can only shake a whole cell = an earthquake. Sub-cell offsets are what leaving the terminal bought us. |
+| Hit stop only when the **player** is hit | At 40 kills/sec, on-enemy-hit stop judders forever and nobody can say why it feels bad. |
+
+The accumulating number is also how the game gets a crit *feel* with **no crit
+system**. It doesn't have one. §0 says feel before content, so we're not building one.
+
+### Jane → John: the Blood Wisp was drawn out of the player's own bolt
+
+The find of the day, and it came out of specifying the numbers layer.
+
+`render.ts` draws the starting bolt as `*`, fading to `.` as it dies. `wisp.txt` was
+`(*)` over `'.'`. So from **12:00** — the exact minute the field is fullest — the one
+enemy that ignores enemy-enemy collision, and is therefore the one thing that reaches
+you *through* the pile, was drawn with both characters of the projectile you fire at
+it. Mistaking your own bolt for an incoming enemy is §0 item 4 ("you can see what is
+about to touch you") failing outright.
+
+**The alphabet grew the clause it should have had first:**
+
+> Everything the player *emits* is part of the Warden's alphabet. `*` the bolt, `°` a
+> Cinder ember, `═ ─` a band. A bolt is as much *you* as the `@` is.
+
+The wisp moved, not the bolt — the bolt is in every run from second zero, the wisp
+arrives at 12:00 in some of them. Blood spirits speak in **braces** now, and the
+shell flickers out on the second frame, which is a better wisp than the old one.
+
+Two more sprites paid, and the second is the interesting one:
+
+- **`ashling.txt`** — her trailing embers were `.` and `,`: the retired dot, and the
+  Grave Rat's tail. They're `'` now, which is the ember glyph in `juice.tsv`, which
+  is what they always were.
+- **`stalker.txt`** — her eye was the digit **`0`**. *Damage numbers need the digits,
+  and a field sprite had one.* Found only by grepping the art for `[0-9]` **after**
+  deciding the numbers layer existed. Her head is `<¤>` now: a lamp of an eye held in
+  mandibles, rather than a hole. It also gives the Ghoul her parentheses back.
+
+`.` is retired from the whole game. At a glance a baseline dot **is** `·`, and `·` is
+an XP mote, and the owner has already told us once that he cannot find his XP.
+
+Zero violations across all 12 field sprites, machine-checked; `npm test` 139/139.
+The check also caught `assets/README.md` asserting the Countess is the only sprite
+over 5×3. **The Gravewarden is 9×5.** The rule and the roster disagreed, and the rule
+was the one that was wrong.
+
+### Standing asks to John (unchanged, none blocking)
+1. `label` column → the level-up screen still prints `hp_per_sec +0.25` at the player.
+2. Card width should follow the field, clamped `[24,40]`; evolution box `28` → `44`.
+3. Passives should show their `note` as the effect line, numbers dimmed underneath.
+4. `# opaque: true` on `player.txt` — a ghoul's parenthesis is inside the Warden's boots.

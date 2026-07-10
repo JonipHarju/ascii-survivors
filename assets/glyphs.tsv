@@ -14,8 +14,8 @@
 #           smaller than his sprite (1.2 wu for a 3x3): being hit should feel
 #           like being caught, not like being near. Replaces MASS_SCALE.
 #
-# TWO LAWS GOVERN THIS TABLE AND THE ART IT POINTS AT (design.md §9, §10).
-# I broke both, for weeks, and only found it by dumping a real frame.
+# THREE LAWS GOVERN THIS TABLE AND THE ART IT POINTS AT (design.md §9, §10, §14).
+# I broke all three, for weeks, and only found them by dumping a real frame.
 #
 # 1. THE WARDEN'S ALPHABET. The characters `@ / \ |` belong to the player and to
 #    no one else. Seven of nine mobs used to draw their limbs with `/ \ |` -- so
@@ -23,6 +23,21 @@
 #    though John draws the player last and on top. Drawing on top buys nothing
 #    when the neighbours are made of you. Sprites over 5x3 (the Countess) are
 #    exempt: size already tells you what you are looking at.
+#
+# 1b. AND EVERYTHING THE PLAYER EMITS IS PART OF THAT ALPHABET. A bolt, an ember,
+#    a band, a ring -- the things you fire are as much "you" as the `@` is. The
+#    Blood Wisp was drawn `(*)` over `'.'` while the starting bolt renders as `*`
+#    fading to `.`. The one enemy that ignores enemy collision, and so is the one
+#    that reaches you through the pile, was drawn out of your own projectile.
+#    The wisp moved. The bolt did not: the bolt is there from second zero of
+#    every run, and the wisp arrives at 12:00 in some of them. Seniority, and
+#    ownership, both point the same way.
+#
+#    Reserved to the player: `@ / \ |` (and lookalikes `│┃╎┆⎸｜╱╲⁄∕`),
+#    `*` the bolt, `°` a Cinder ember, `═ ─` a band.
+#    Reserved to the numbers layer: the digits `0`-`9` (design.md §14).
+#    Reserved to XP: `·` the mote. `.` IS RETIRED -- nothing in the game draws a
+#    baseline dot, because at a glance it is the mote, and the mote is XP.
 #
 # 2. THE LUMINANCE LADDER. Nothing an enemy is made of may be brighter than an
 #    XP mote. The player is the only thing above the XP.
@@ -48,7 +63,7 @@ rat	r	Grave Rat	s	2	14	2	1	0:30	1	0.8	spawns in packs of 12+
 bat	w	Bat	r	5	26	3	2	2:00	1	0.9	sine-wave drift, amplitude 6wu period 1.2s
 wight	W	Wight	e	40	6	9	5	4:00	2	2.2	advances in a line
 rattlejack	x	Rattlejack	y	16	11	6	4	8:00	2	1.4	on death spawns 2 rats
-wisp	*	Blood Wisp	R	12	16	5	4	12:00	2	1.3	ignores enemy-enemy collision
+wisp	o	Blood Wisp	R	12	16	5	4	12:00	2	1.3	ignores enemy-enemy collision. was `*` -- that is the Warden's bolt (law 3)
 stalker	S	Stalker	m	30	18	12	9	14:00	5	2.0	INVISIBLE outside light radius; show ? at light edge 1.0s before entry
 
 gravewarden	G	Gravewarden	Y	600	7	16	0	-	40	3.4	ELITE. bold+bright, hp bar above, drops chest. scripted only.

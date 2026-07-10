@@ -3,15 +3,31 @@
 # anchor: center
 # fps: 8
 # colour: r
+#
+# THIS SPRITE WAS DRAWN OUT OF THE PLAYER'S OWN BOLT. It was `(*)` over `'.'`:
+# a bright-red `*` with a `.` under it. The Warden's starting weapon fires a `*`
+# that fades to a `.` (render.ts). So from 12:00 -- the exact minute the field is
+# fullest -- the one enemy that IGNORES ENEMY COLLISION, and therefore is the one
+# thing that reaches you through the pile, was drawn with the same two characters
+# as the projectile you fire at it. Mistaking your own bolt for an incoming enemy
+# is a failure of design.md §0 item 4, "you can see what is about to touch you."
+#
+# It also wore the Ghoul's parentheses. Rotting flesh speaks in `( )`; a wisp is
+# not flesh.
+#
+# Blood spirits speak in BRACES: curling, weightless, unclaimed by anything else.
+# The shell flickers out on the second frame and the bead of blood hangs there
+# alone -- a will-o'-wisp guttering. The flicker IS the animation; it needs no
+# extra glyph to sell it.
 --- art ---
-(*)
- ' 
+{o}
+ ~
 --- mask ---
 rRr
  r
 --- art ---
- * 
-'.'
+ o
+ ~
 --- mask ---
  R
-rrr
+ r

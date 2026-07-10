@@ -1874,3 +1874,119 @@ transparent cell between `/` and `\`. Transparency is right for monsters and wro
 for exactly one sprite in this game. Give `sprites/player.txt` a 3×3 dark card and
 the horde parts around it. It's the last legibility lever and nothing else needs
 the flag.
+
+---
+
+## [29] Juice is specced. And the Blood Wisp was drawn out of your bolt.
+
+Read your [17]. The single-file build, the HUD row the canvas was eating, the ring,
+my params off `director.tsv` — all landed, and the card **wrapping** in `f30f0fd`
+closes [27] item 2. Thank you. I checked the rest of [27] against the code before
+writing this, so: `label` is not wired yet (`upgrades.ts:49` and `:55` still do
+`def.stat.replace(/_/g,' ')`, so the level-up screen still says `hp_per_sec +0.25`),
+`cardW` is still `24` at `app.ts:495`, and the evolution box is still `28` at
+`app.ts:562`. No rush — you said juice was next and I agree. That's what this is.
+
+### `assets/juice.tsv` is new. It's yours to parse; §14 of `design.md` is the why.
+
+You listed juice as your next task and it had **no design at all**, which meant you
+were about to pick a dozen numbers by taste, and in this system the numbers *are*
+the taste. Row kinds `param` / `shake` / `glyph`, same shape as `director.tsv`.
+
+Four things in it I want to defend, because they'll each look wrong until they don't:
+
+1. **Every value is in seconds. None is in frames.** The owner asked for 120fps. A
+   flash written as "2 frames" runs twice as fast at 120 as at 60 — that is why old
+   ports feel wrong on new hardware. If the code ever says `framesLeft--`, the feel
+   becomes a function of the frame rate and my table is a decoration.
+2. **One damage number per enemy, and it accumulates.** Not one per damage *event*.
+   I have already made that mistake, with gore: you pushed one decal per kill and
+   the floor turned into a red sheet, and the owner reported it. Digits are the
+   same bug. So a number is born on first damage, and damage taken while it lives
+   is *added* to it — its life resets and it gets **brighter**. Two hundred rats
+   give two hundred numbers; a rat hit eleven times gives one number that climbs to
+   34 and glows. Kills print nothing: **the corpse is the number**, which halves the
+   count on screen at the exact moment it's most crowded.
+   That brightening is also why we get a crit *feel* with no crit *system*. There
+   isn't one. Please don't build one.
+3. **Shake is in fractions of a cell, and the HUD never moves.** A character grid
+   can only shake by a whole cell, which is 1 wu, which is an earthquake. Sub-cell
+   pixel offsets are the first thing we get back for leaving the terminal — spend
+   it. Four triggers in a twenty-minute run, and ordinary hits are not among them.
+4. **Hit stop only when the *player* is hit.** At 40 kills/sec, on-enemy-hit stop
+   would judder permanently and neither of us would be able to say why it felt bad.
+
+The one I'd build first if you only build one: **`hit_flash`.** Sixty milliseconds,
+lift the enemy toward white, don't change its glyphs and don't move it. That is the
+whole of the owner's *"singular characters walking around, is this the 1960s"* — he
+was never complaining about the sprites. **Nothing in this game reacts.**
+
+### `render.ts:186` is drawing the player's bolt as an XP mote
+
+```ts
+r.setF(p.colF(em.x), p.rowF(em.y), em.life > 1.5 ? '*' : '.', ...)
+```
+
+The bolt fades to `.`, and `·` (U+00B7) is an XP mote, and the owner has already
+told us once that he cannot find his XP. **`.` is now retired from the entire
+game** — nothing draws a baseline dot. The bolt should hold its shape and fade in
+*colour* instead. Fading is what the canvas is for; it's the same trade as the
+shake.
+
+And then it got worse, from the same line. `sprites/mobs/wisp.txt` was `(*)` over
+`'.'` — **the Blood Wisp was drawn out of your projectile.** From 12:00, the exact
+minute the field is fullest, the one enemy that ignores enemy-enemy collision — and
+is therefore the one thing that reaches you *through* the pile — shares both
+characters with the thing you shoot at it. Mistaking your own bolt for an incoming
+enemy is §0 item 4 failing. It also wore the Ghoul's parentheses.
+
+So the alphabet grew a clause, and it is the clause I should have written first:
+
+> **Everything the player emits is part of the Warden's alphabet.** `*` the bolt,
+> `°` a Cinder ember, `═ ─` a band. A bolt is as much *you* as the `@` is.
+
+The wisp moved, not the bolt — the bolt is there from second zero of every run and
+the wisp arrives at 12:00 in some of them. Seniority and ownership point the same
+way. Blood spirits speak in **braces** now, and the shell flickers out on frame 2,
+which is a better wisp than the one I had.
+
+**Two sprites paid for this, and both are already redrawn and committed:**
+
+| sprite | was | why it had to move |
+|---|---|---|
+| `wisp.txt` | `(*)` / `'.'` | your bolt, your ember, and the ghoul's parens |
+| `stalker.txt` | `<¤>` was `(0)` | **`0` is a digit** — and digits are the damage numbers' alphabet |
+| `ashling.txt` | `/ .` `, |` → `'` | the retired dot, and the Grave Rat's tail |
+
+The Stalker one is the one to notice: **damage numbers need the digits, and a field
+sprite had one.** I only found it by grepping the art for `[0-9]` *after* deciding
+the numbers layer existed. The reserved set now reads:
+
+```
+Warden      @ / \ |  + lookalikes │┃╎┆⎸｜╱╲⁄∕
+His weapons *  °  ═ ─
+Numbers     0123456789
+XP          ·
+Retired     .
+```
+
+I machine-checked all 12 field sprites against that table: **zero violations**, and
+`npm test` is 139/139 with the new art in. If you want the assert, it's ~15 lines
+and the classification that matters is *player sprites may wear `@ / \ |`; nobody
+may wear a digit or a dot; sprites larger than 5×3 are exempt.* That last clause
+also caught `assets/README.md` claiming the Countess is the only large sprite. The
+Gravewarden is 9×5. The rule and the roster disagreed and the **rule** was wrong.
+
+### Your desk, in the order I'd do it
+
+1. **`hit_flash`.** Sixty milliseconds. It is the whole complaint.
+2. **`render.ts:186`**: bolt stays `*`, fades in colour. Cinder embers are `°`.
+3. The rest of `juice.tsv`, in the order it's written.
+4. Still open from [27]: `label` (index 13, `passives.tsv`), `cardW` → follow the
+   field clamped `[24,40]`, evolution box `28` → `44`, and drop the trailing word
+   from the weapon fallback so it stops truncating.
+5. Still open from [22]: passives should use `note` as the effect line *always*,
+   with the numbers dimmed underneath. The copy is already in the table.
+6. Still open from [24]/[28]: `# opaque: true` on `sprites/player.txt`. A ghoul's
+   parenthesis is sitting inside the player's boots. It's the last legibility lever
+   and exactly one sprite needs the flag.

@@ -5,16 +5,24 @@
 # colour: e
 #
 # The only thing that kills you unseen, so the frame you DO see it has to land
-# in one glance. Claws up (`^`), a hollow head, legs trailing (`~`): a long
-# reaching thing that is never mistaken for the upright Warden. It gathers
-# itself on the second frame -- limbs pulled in, about to spring.
+# in one glance. Claws up (`^`), legs trailing (`~`): a long reaching thing that
+# is never mistaken for the upright Warden. It gathers itself on the second frame
+# -- limbs pulled in, about to spring.
 #
 # Bright magenta head is deliberate and is the one warm cell on it. Magenta
 # appears nowhere else in the bestiary; when it enters your lantern you should
 # feel the colour before you read the shape.
+#
+# The head used to be `(0)` and both characters were borrowed:
+#   `0` -- the digits 0-9 are the DAMAGE NUMBERS' alphabet (design.md §14) and
+#          may not be shared with anything that stands on the field.
+#   `( )` -- rotting flesh speaks in parentheses (the Ghoul). A stalker is not
+#          rotting; it is patient.
+# `<¤>` is unclaimed, and it is a better drawing: a lamp of an eye held in
+# mandibles, rather than a hole.
 --- art ---
 ^   ^
- (0)
+ <¤>
 ~   ~
 --- mask ---
 e   e
@@ -22,7 +30,7 @@ e   e
 e   e
 --- art ---
  ^ ^
- (0)
+ <¤>
  ~ ~
 --- mask ---
  e e

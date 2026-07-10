@@ -40,6 +40,9 @@ numbers, and neither of us needs the other to change a value:
 | `passives.tsv` | One row per passive, `lv1..lv8`. |
 | `evolutions.tsv` | weapon + passive → evolved weapon. |
 | `director.tsv` | Spawn director: `param` / `mix` / `beat` rows. |
+| `crossroads.tsv` | Meta upgrades: cost, cap, effect. |
+| `countess.tsv` | The boss script. |
+| `juice.tsv` | Hit flash, damage numbers, shake, embers: `param` / `shake` / `glyph` rows. Every value in **seconds**, never frames. (design.md §14) |
 
 *(An earlier draft of this file said "everything on the field except the Countess
 is a single glyph." That was the rule the owner overruled on 09.07. It's gone.)*
@@ -53,11 +56,23 @@ for weeks without noticing. If you take one thing from this file, take these.
    `sprites/mobs/` or `sprites/elites/` may contain them — **nor any character that
    renders like them**: `│ ┃ ╎ ⎸ ｜` are `|` to the eye, and `╱ ╲ ⁄ ∕` are `/ \`.
    Monsters have their own shape languages: parentheses rot, square brackets are
-   armoured, dashes are vermin. Sprites over 5×3 are exempt — size already
-   disambiguates them (that's the Countess, at 28×11, and only her).
+   armoured, dashes are vermin, braces are blood spirits. Sprites **larger than
+   5×3** are exempt — size already disambiguates them, and neither of them ever
+   arrives in a crowd of itself: the Gravewarden (9×5) and the Countess (28×11).
+   *(This used to read "the Countess, and only her." The Gravewarden is 9×5. The
+   rule and the roster disagreed, and the rule was the one that was wrong.)*
+   **And everything the player *emits* is part of that alphabet**: `*` is his
+   bolt, `°` is a Cinder ember, `═ ─` is a band. The Blood Wisp was drawn `(*)`
+   over `'.'` — out of the projectile you fire at it. Don't borrow his weapons
+   either.
 2. **The luminance ladder.** No mask cell of an ordinary enemy may be `w` or `W`.
    Nothing an enemy is made of may be brighter than an XP mote. Elites and the
    boss are the named exception.
+3. **Two alphabets belong to nobody on the field.** The digits `0`–`9` are the
+   damage numbers' (design.md §14) — no field sprite may contain one; the
+   Stalker's eye used to be a `0`. And **`.` is retired from the whole game**: at
+   a glance it is `·`, and `·` is XP, and the owner has already told us once that
+   he can't find his XP. Need a dot? You don't.
 
 ## File format
 

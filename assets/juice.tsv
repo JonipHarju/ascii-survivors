@@ -1,0 +1,133 @@
+# THE LONG NIGHT — juice
+# Owner: Jane. Machine-readable. John: parse this, don't hardcode the feel.
+# Tab-separated. '#' comments and blank lines ignored. Row kinds: param, shake, glyph.
+#
+# See design.md §14. This table exists because "juice" is the last system where a
+# programmer is expected to pick numbers by taste, and the numbers ARE the taste.
+#
+# ---- THE OWNER'S ACTUAL COMPLAINT --------------------------------------------
+# "Singular characters walking around... is this the 1960s? ASCII art can be made
+# much more impressive nowadays." He is not asking for more glyphs. He is asking
+# for the glyphs to be ALIVE. A `g` that flinches when you hit it and pops when it
+# dies is more impressive than a `g` drawn in three colours, and it costs no art.
+#
+# ---- EVERY NUMBER HERE IS IN SECONDS, NEVER IN FRAMES ------------------------
+# He also asked for 120fps. A flash written as "2 frames" is twice as fast at 120
+# as at 60, and that is why old ports feel wrong on new hardware. Nothing in this
+# table is a frame count. If you find yourself writing `--framesLeft`, stop.
+#
+# ---- THE JUICE LAW -----------------------------------------------------------
+# Juice is the FOURTH thing on the screen. The first three -- you, the XP, the
+# thing about to touch you -- already have a law (§9, the luminance ladder), and
+# juice does not get to break it just because it is pretty:
+#
+#   Juice may never take a cell that would otherwise show the player, an XP mote,
+#   or an enemy; and it may never be brighter than the thing it is celebrating.
+#
+# The one licensed exception is `hit_flash_lift`, below, and it is bounded to 60ms.
+#
+#
+# ---- param rows: param <name> <value> ----------------------------------------
+
+# 1. HIT FLASH. The most important 60 milliseconds in the game. An enemy that
+#    takes damage lifts toward white for `hit_flash` seconds. The GLYPHS DO NOT
+#    CHANGE and the sprite DOES NOT MOVE -- a flash that changes shape reads as a
+#    different enemy arriving, not as the one you have as being hurt.
+#    This is the ladder's only licensed violation: an enemy may pass the mote's
+#    0.74 luminance for 60ms. Sixty milliseconds cannot be hunted through; a
+#    permanent brightness can.
+param	hit_flash	0.06	seconds an enemy stays lifted after taking damage
+param	hit_flash_lift	0.55	fraction lifted toward white. 1.0 would erase the silhouette
+
+# 2. DEATH POP. One frame of the enemy's own glyphs in bright white, then the
+#    gore decal takes the cell. Costs no art and it is the single frame that
+#    sells a kill. At 40 kills/sec these overlap constantly and that is the point:
+#    the field crackles.
+param	death_flash	0.05	seconds
+
+# 3. DAMAGE NUMBERS. See design.md §14 for why there is AT MOST ONE PER ENEMY.
+#    Short version: I already made this mistake with gore. One decal per kill
+#    stacked two hundred decals on a busy cell and the floor turned into a red
+#    sheet; the owner reported it. One number per damage EVENT is the same bug
+#    with digits. At 14:00 that is ~200 enemies x 4 weapons x their cooldowns.
+#
+#    So: a number is born on an enemy's first damage and rises. Damage taken
+#    while it is alive is ADDED to it, its life resets, and it gets brighter.
+#    Two hundred rats give you two hundred numbers. A rat hit eleven times gives
+#    you ONE number that climbs to 34 and glows.
+#
+#    Brightness-by-accumulation is also why this game does not need a crit system
+#    to have a crit FEEL. It doesn't have one. Don't build one.
+param	num_life	0.55	seconds a number lives if it takes no further damage
+param	num_rise	3	world units it rises over its life (~1.5 rows; a cell is 2 wu tall)
+param	num_lift_per_hit	0.12	brightness added each time damage is added to a live number
+param	num_lift_max	0.60	cap. a number may never out-shine the player
+param	num_max	40	most numbers alive at once. over budget, drop the DIMMEST, not the oldest
+param	num_min	1	damage below this prints nothing. a `0` floating up is a bug report
+
+# 4. HIT STOP. The simulation freezes; rendering does not. Fires ONLY when the
+#    PLAYER takes damage. Not on enemy hits -- at 40 kills/sec the game would
+#    judder permanently and you would never find out why it felt bad.
+param	hitstop	0.05	seconds of frozen simulation when the player is hit
+param	levelup_hitstop	0.08	and when you level up. the pause IS the reward
+
+# 5. LEVEL-UP. No expanding ring. A ring would need a glyph, and every glyph I
+#    could give it is already owned by the bolt, the mote or the gore. The `@`
+#    flashes gold and the world stops for 80ms. Restraint is a choice here, not
+#    a shortage: the card is about to fill the screen anyway.
+param	levelup_flash	0.12	seconds the player's @ burns gold (`Y`) before the cards come up
+
+# 6. EMBERS -- the ambient one, and the direct answer to "unleash her creativity".
+#    The lantern throws sparks. They rise, cool, and die. They damage nothing,
+#    collide with nothing, and are drawn UNDER everything: if a spark and a rat
+#    want the same cell, the rat gets it.
+#    Spawned in the annulus between `ember_r_in` and the CURRENT light radius, so
+#    Lantern Oil visibly widens the shower of sparks. That is a passive you can
+#    see, which is worth more than a passive you can read.
+param	ember_rate	6	sparks per second
+param	ember_r_in	3	world units; no sparks inside this, the player's own cells stay clean
+param	ember_life	1.2	seconds
+param	ember_drift	4	world units per second, upward, with a slight horizontal wander
+param	ember_max	60	hard cap
+param	ember_level	0.45	brightness ceiling. ALWAYS dimmer than a mote. beauty does not outrank information
+
+# 7. MOTE ABSORPTION. Inside the pickup radius a mote streaks to you. Give it a
+#    short motion trail rather than more brightness -- §9's doctrine, and the
+#    reason `mote_lift` came down from 0.35 to 0.10. Motion is free contrast.
+param	mote_trail	2	cells of trail behind an absorbing mote
+param	mote_trail_level	0.40	trail brightness, relative to the mote
+
+
+# ---- shake rows: shake <event> <amp_cells> <seconds> -------------------------
+#
+# A character grid can only shake by a WHOLE CELL, which is 1 wu, which is an
+# earthquake. This is the first thing we get back for leaving the terminal: the
+# canvas can offset the field by a FRACTION of a cell, in pixels. So `amp` is in
+# cells and it is meant to be less than one.
+#
+# The field viewport shakes. THE HUD DOES NOT. A health bar that moves is a
+# health bar you cannot read at the exact moment you need to read it.
+#
+# Decay to zero over `seconds`, linear is fine. And note what is NOT in this list:
+# ordinary hits. A screen that shakes constantly is a screen you stop reading.
+# Four events in a twenty-minute run. Each one should make you sit up.
+shake	countess_charge	0.5	0.25	she winds up. you have time to move
+shake	countess_land	0.8	0.40	she doesn't
+shake	player_revive	0.6	0.50	you were dead and you are not
+shake	player_death	1.0	0.80	the only 1.0 in the table
+
+
+# ---- glyph rows: glyph <name> <char> <colour> --------------------------------
+#
+# Read glyphs.tsv's header first: three laws, and law 1b says everything the
+# player EMITS is part of the Warden's alphabet. These are the juice layer's
+# characters and nothing else in the game may use them.
+#
+# `.` is retired from the entire game. At a glance a baseline dot IS `·`, and
+# `·` is an XP mote, and the owner has already told us once that he cannot find
+# his XP. The bolt used to shrink to `.` as it died; it now fades in colour and
+# keeps its shape. Fading is what the canvas is FOR.
+glyph	number	0123456789	w	the numbers layer's alphabet. no field sprite may contain a digit
+glyph	ember	'	y	rising spark. cools `y`->`r`->`e` over its life
+glyph	bolt	*	W	the Warden's seeking bolt, at every age. never `.`
+glyph	cinder	°	Y	a Cinder Trail ember. a WEAPON: it burns things. never `.`

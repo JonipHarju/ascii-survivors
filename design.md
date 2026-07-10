@@ -736,6 +736,9 @@ cap(t)    = 15 + 45  × (t/1200)         max spawns/sec: 15 → 60
 each tick: spawn min(target(t) − alive, cap(t)) enemies just outside the viewport
 ```
 
+…**for everything after 1:30.** The first ninety seconds are hand-authored, and
+they have to be. See "The first minute" below.
+
 *(300 → 220 because enemies are no longer one cell each. At the §10 tiers, 220
 enemies average 8 cells apiece = ~16% of a 180×60 field, before they clump on the
 player. Perf is not the constraint here — John measured 10× headroom — legibility
@@ -752,6 +755,60 @@ The closed loop holds within ~7 enemies of target across every build I
 simulated, from a deliberately awful one to a 4× overtuned one. Its failure mode
 is graceful: a build so strong it out-kills 60 spawns/sec thins the field, and
 that's a signal I've mis-tuned a weapon, not a crash.
+
+### The first minute — `open` rows
+
+*Added 2026-07-10, after checking §0's last unverified acceptance criterion.*
+
+§0 promised: *"The first minute has a shape. One ghoul. Then three. Then a lull.
+The player must feel the tide breathe before it drowns them."* I said I'd verify
+each criterion by hand. This one had **never been true**, and it could not have
+been:
+
+| t | target |
+|---|---|
+| 0:00 | **3.00** |
+| 0:30 | 3.86 |
+| 1:00 | 5.43 |
+
+You don't meet one ghoul. You're dropped in front of three, and over a minute
+they become five. And there is no lull *anywhere in the run*, because
+`(t/1200)^1.5` is **monotone increasing by construction**.
+
+> **A closed loop chasing a monotone target cannot exhale.**
+
+I specced breathing, then specced a curve that forbids it, and the two lived four
+hundred lines apart in the same file for a week. This is the same shape of mistake
+as the alphabet (§10) and the ladder (§9): the rule was fine, the *thing the rule
+was about* was somewhere else, and only a dump of the real numbers found it.
+
+The closed loop is right for minute six. It is the **wrong instrument for minute
+zero**, where every enemy on screen is a sentence in a tutorial nobody is reading.
+So the opening is authored by hand, in `open <mm:ss> <headcount>` rows, linearly
+interpolated, handing off to the formula at 1:30 (`formula(90s) = 7.46`, and the
+last row is 7 — the player never feels the author let go of the wheel):
+
+```
+0:00   ONE ghoul. It walks at you. You do not aim, and it dies.
+       That is the entire game, taught in eight seconds, with
+       nothing else on the screen.
+0:14   Three. Now you learn that killing was never the constraint.
+       Position is.
+0:28   One. THE LULL.
+0:30   Twelve rats — the `beat` swarm lands inside that silence.
+0:38   And the tide comes back, and never really leaves.
+```
+
+The lull is the most important row in the table. **Silence is what makes the next
+noise loud**, and it is the only moment before 17:00 where the player is given
+room to notice that he is enjoying himself.
+
+One rule this depends on absolutely:
+
+> **The target is a spawn gate, never a despawn order.** Above target, the
+> director spawns *nothing*. It never kills to get there. The lull is not "eight
+> enemies vanish." The lull is *"you kill the three in front of you, and for six
+> seconds the dark does not send more."*
 
 **Composition** is its own axis, in the `mix` rows. Weights lerp from *early* to
 *late* over the run and are gated by a first-appearance time. I originally

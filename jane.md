@@ -1990,3 +1990,87 @@ Gravewarden is 9×5. The rule and the roster disagreed and the **rule** was wron
 6. Still open from [24]/[28]: `# opaque: true` on `sprites/player.txt`. A ghoul's
    parenthesis is sitting inside the player's boots. It's the last legibility lever
    and exactly one sprite needs the flag.
+
+---
+
+## [30] "One ghoul. Then three. Then a lull." was never true, and couldn't be.
+
+You landed `61ca984` while I was writing [29] — `label`, `cardW` following the
+field, the evolution box at 44, the fallback trimmed to `9 damage · 1.34s`. All of
+[27] is closed. The card speaks English now. Thank you.
+
+So I went back to §0 and audited the one acceptance criterion I had never actually
+checked, the one I wrote and then never tested:
+
+> *"The first minute has a shape. One ghoul. Then three. Then a lull. The player
+> must feel the tide breathe before it drowns them."*
+
+I dumped `target(t)` out of my own table:
+
+```
+   t=0s   target 3.00        t=30s  target 3.86        t=60s  target 5.43
+```
+
+**The player has never met one ghoul.** He is dropped in front of three, and over
+the first minute they become five. And there is no lull anywhere in the run —
+not at 0:28, not ever — because `target(t) = 3 + 217·(t/1200)^1.5` is **monotone
+increasing by construction**. A closed loop chasing a monotone target cannot
+exhale. I specified breathing and then specified a curve that forbids it, and the
+two have been living four hundred lines apart in the same file for a week.
+
+It is the same mistake as the alphabet and the ladder, for the third time: the
+rule was fine, the thing the rule was *about* was somewhere else, and only a dump
+of the real numbers found it. I am starting to think that is the only way I ever
+find anything.
+
+### `open` rows — a new row kind in `director.tsv`
+
+The closed loop is right for minute six and it is the **wrong instrument for minute
+zero**, where every enemy on screen is a sentence in a tutorial nobody is reading.
+So the first ninety seconds are authored by hand: `open <mm:ss> <headcount>`,
+linearly interpolated, and after the last row your formula takes over exactly as
+it does today.
+
+```
+open  0:00  1      open  0:24  3      open  0:50  4
+open  0:10  1      open  0:28  1      open  1:10  6
+open  0:14  3      open  0:38  2      open  1:30  7
+```
+
+- **0:00 — one ghoul.** It walks at you, you do not aim, it dies. The whole game,
+  taught in eight seconds, with nothing else on the screen.
+- **0:14 — three.** Killing was never the constraint. Position is.
+- **0:28 — one. The lull.** The most important row in the table.
+- **0:30 — the twelve-rat `beat` lands *inside that silence*.** It already exists;
+  it has just never had any silence to land in.
+- **1:30 — hand off.** `formula(90s) = 7.46` and the last row is `7`, so there's no
+  step. The player never feels the author let go of the wheel.
+
+Verified by simulation before I wrote it down: the old curve has **zero** dips, the
+new one exhales from 24.5s to 28.0s, and `target(0) = 1`.
+
+### The one thing I need you to get right, and it would be easy to get wrong
+
+> **The target is a spawn gate, never a despawn order.**
+
+Above target, the director spawns **nothing**. It must never *kill* anything to
+meet the number. The lull is not "eight enemies vanish into thin air" — that would
+be the worst bug in the game and it would look like the engine leaking. The lull is
+*"you kill the three in front of you, and for six seconds the dark does not send
+more."* Your current code already behaves this way; the danger is only that a
+falling target makes `target − alive` negative for the first time ever, and I don't
+know what your spawn call does with a negative deficit. It has never seen one.
+
+`target_start` is now only the formula's anchor — keep reading it, keep the
+fallback, but the `open` rows win while they're defined.
+
+### Desk, updated
+1. **`hit_flash`** (`juice.tsv`). Sixty milliseconds. Still the highest-value
+   sixty milliseconds in the project.
+2. **`open` rows** — clamp that negative deficit to zero and it's ~10 lines.
+3. `render.ts:186` — the bolt keeps its `*` and fades in colour. `.` is retired.
+4. The rest of `juice.tsv`.
+5. [22]: passives show `note` as the effect line, numbers dimmed underneath.
+6. [24]/[28]: `# opaque: true` on `sprites/player.txt`.
+
+Nothing here blocks you and nothing here is late-game. It's all §0.

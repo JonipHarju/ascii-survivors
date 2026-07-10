@@ -1246,3 +1246,85 @@ was the one that was wrong.
 2. Card width should follow the field, clamped `[24,40]`; evolution box `28` → `44`.
 3. Passives should show their `note` as the effect line, numbers dimmed underneath.
 4. `# opaque: true` on `player.txt` — a ghoul's parenthesis is inside the Warden's boots.
+
+---
+
+## 10.07 — the last §0 criterion, audited: the first minute had no shape
+
+### John → Jane: the card speaks English (`61ca984`)
+
+Landed while Jane was writing her juice note: the `label` column is read (so the
+level-up screen no longer says `hp_per_sec +0.25` at the player), card width follows
+the field clamped `[24,40]`, the evolution box grew `28 → 44`, and the weapon
+fallback dropped its trailing word so it stops truncating. Every item from Jane's
+[27] is closed.
+
+### Jane → John: "One ghoul. Then three. Then a lull." was never true
+
+§0 lists six acceptance criteria and says *"I will play the build and check each one
+by hand."* Five had been checked. This was the sixth:
+
+> *"The first minute has a shape. One ghoul. Then three. Then a lull. The player must
+> feel the tide breathe before it drowns them."*
+
+**Jane dumped `target(t)` out of her own table:**
+
+| t | enemies alive (target) |
+|---|---|
+| 0:00 | **3.00** |
+| 0:30 | 3.86 |
+| 1:00 | 5.43 |
+
+The player has never met one ghoul — he is dropped in front of three. And there is
+no lull *anywhere in the run*, at any minute, because
+`target(t) = 3 + 217·(t/1200)^1.5` is **monotone increasing by construction**.
+
+> **A closed loop chasing a monotone target cannot exhale.**
+
+Jane specified breathing, then specified a curve that forbids it, and the two lived
+four hundred lines apart in the same file for a week. That is now the third time the
+same shape of error has surfaced — the Warden's alphabet, the luminance ladder, and
+now the tide. In all three the rule was fine; the thing the rule was *about* was
+somewhere else, and only dumping the real numbers found it.
+
+**The fix: `open` rows.** The first ninety seconds are authored by hand, linearly
+interpolated, then the formula takes over. The closed loop is the right instrument
+for minute six and the wrong one for minute zero, where every enemy on screen is a
+sentence in a tutorial nobody is reading.
+
+```
+0:00   ONE ghoul. It walks at you. You do not aim, and it dies. The whole
+       game, taught in eight seconds, with nothing else on the screen.
+0:14   Three. Killing was never the constraint. Position is.
+0:28   One. THE LULL — the most important row in the table.
+0:30   Twelve rats: the swarm `beat` finally has a silence to land in.
+1:30   Hand off. formula(90s) = 7.46, the last row is 7, no step.
+```
+
+Silence is what makes the next noise loud, and 0:28 is the only moment before 17:00
+where the player has room to notice he is enjoying himself.
+
+**The one rule this depends on, flagged to John as the easy thing to get wrong:**
+
+> The target is a **spawn gate, never a despawn order.** Above target the director
+> spawns nothing; it never *kills* to meet the number. The lull is not "eight enemies
+> vanish" — that would look like the engine leaking. It is "you kill the three in
+> front of you, and for six seconds the dark does not send more."
+
+A falling target makes `target − alive` go negative for the first time in the
+project's life. John's spawn call has never seen a negative deficit. Clamp it.
+
+### Where §0 stands now
+
+| # | Criterion | |
+|---|---|---|
+| 1 | It opens — double-clicked, or hosted | John, done (single-file build) |
+| 2 | It feels good to walk | John, done (`pickup_radius_base`) |
+| 3 | Things die without aiming | verified by simulation: first kill at 2.2s, standing still |
+| 4 | You can see you, the XP, the threat | Jane, done — one lever left (`opaque` on the player) |
+| 5 | A card reads in two seconds | John, done (`61ca984`) |
+| 6 | **Hitting a thing looks like hitting it** | specced today (§14); John's next |
+| 7 | **The first minute has a shape** | specced today (§11 `open` rows); John's next |
+
+Nothing outstanding is late-game. Endless mode, the Reapers and new Crossroads
+upgrades all stay frozen.

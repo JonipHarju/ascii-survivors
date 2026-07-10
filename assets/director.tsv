@@ -17,7 +17,7 @@
 # The cap keeps 0:00 from dogpiling you and lets 20:00 keep up with a big build.
 #
 param	run_duration	1200	seconds; dawn (or the Countess) at the end
-param	target_start	3	enemies alive at 0:00
+param	target_start	3	enemies alive at 0:00, IF no `open` rows exist. they do -- see below. the first 90s are hand-authored and this is now only the formula's anchor
 param	target_end	220	enemies alive at 20:00. was 300 when enemies were 1 cell each; they now average 8 cells (design.md §10), so 220 is ~16% of a 180x60 field before they clump. legibility is the constraint, not perf.
 param	target_curve	1.5	>1 = back-loaded, most of the ramp is late
 param	cap_start	15	max spawns/sec at 0:00
@@ -81,6 +81,58 @@ param	pickup_radius_base	12	wu. see above. john: replace the literal 6 at world.
 # SCREEN, and the player sees a band closing from left and right instead of a
 # ring closing around them. Inscribed gives 57 wu -- a true circle in world
 # units, which renders as a 57x28 cell ellipse. Correct, and entirely visible.
+
+# ---- open rows: open <mm:ss> <headcount> ------------------------------------
+#
+# THE FIRST NINETY SECONDS ARE AUTHORED BY HAND. After the last `open` row the
+# power curve above takes over for the rest of the run.
+#
+# design.md §0 lists, as an acceptance criterion I promised to check by hand:
+#
+#     "The first minute has a shape. One ghoul. Then three. Then a lull.
+#      The player must feel the tide breathe before it drowns them."
+#
+# I checked it. It has never been true, and it could not have been:
+#
+#     t=0s  target 3.00      t=30s  target 3.86      t=60s  target 5.43
+#
+# The player does not meet one ghoul. He is dropped in front of THREE, and over
+# the next minute they become five. And there is no lull anywhere in the run,
+# because `target(t)` is monotone increasing by construction -- `(t/dur)^1.5`
+# only ever climbs. **A closed loop chasing a monotone target cannot exhale.**
+# I specified breathing and then specified a curve that forbids it, and the two
+# lived four hundred lines apart in the same file for a week.
+#
+# The ambient director is right for minute six. It is the wrong instrument for
+# minute zero, where every enemy is a sentence in a tutorial nobody is reading:
+#
+#   0:00  ONE ghoul. It walks at you. You do not aim, and it dies. That is the
+#         entire game, taught in eight seconds, with nothing else on the screen.
+#   0:14  Three. Now you learn that killing is not the constraint; POSITION is.
+#   0:28  One. The lull. It is the most important row in this table -- silence is
+#         what makes the next noise loud, and it is the only moment before 17:00
+#         that the player is given room to notice he is enjoying himself.
+#   0:30  the rat swarm (`beat`, below) lands INSIDE that silence. Twelve rats.
+#   0:38  and the tide comes back, and from here it never really leaves.
+#
+# Linear interpolation between rows. After the last row, the formula -- which is
+# why the last row is 7: formula(90s) = 7.46, so the hand-off is seamless and the
+# player never feels the author let go of the wheel.
+#
+# THE TARGET IS A SPAWN GATE, NEVER A DESPAWN ORDER. When the count is above the
+# target the director spawns NOTHING; it does not kill anything to get there. The
+# lull is not "eight enemies vanish." The lull is "you kill the three in front of
+# you, and for six seconds the dark does not send more."
+#
+open	0:00	1	ONE ghoul. the whole game, taught in eight seconds
+open	0:10	1	ten seconds alone with it. kill it and another walks out of the dark
+open	0:14	3	then three. killing was never the constraint
+open	0:24	3
+open	0:28	1	THE LULL. the most important row in this file
+open	0:38	2	and the tide comes back
+open	0:50	4
+open	1:10	6
+open	1:30	7	hand off to the curve: formula(90s) = 7.46
 
 # ---- mix rows: mix <entity> <from mm:ss> <weight_early> <weight_late> -------
 # Spawn choice is weighted; weight(t) lerps early->late on t/run_duration and is

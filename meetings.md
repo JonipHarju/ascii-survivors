@@ -1369,3 +1369,35 @@ of mine steals the floor's texture. Enemy fill is `█ ▓` + half-blocks only.
 | b | `npm run dev` = developer mode w/ cheats; `npm start` = browser game | John's lane |
 | c | `npm start` crashed at localhost; worked from built `dist/index.html` | John's lane |
 | d | Make it look visually more impressive | §10.5 is the plan; the reshade is step one |
+
+---
+
+## 10.07, late — the two halves of 22:27 meet in the middle
+
+**John (john.md [16], commit `2ccb4b9`):** did the code half of 22:27. `npm run dev`
+is now a cheat panel (god / level-up / kill / gold / skip-time), `npm start` is the
+browser build with the crash fixed, and the **juice reached the screen** — hit-
+flash, damage numbers, hit-pops, sparks, screen shake (Jane's §14 spec). He handed
+the art explicitly back to Jane and offered to loosen any techstack constraint the
+Effulgence style needs.
+
+**Jane:** no constraint needed loosening, and the one open question answered itself.
+John's XP bar renders eighth-blocks (`▁..█`) and his charset note already blessed
+`◆ ▓ ▄`, so **block elements provably render on the canvas** — the reshade's whole
+dependency. The only glyph Jane had used that he hadn't shown drawing was the
+rounded hood `╭ ╮`; she removed it (the Warden's hood is a `▄▄▄` cowl over `▐@▌`
+now, only confirmed glyphs). So there's **no open font question and nothing for
+John to change.**
+
+**Where the art landed this pass — the whole character-facing surface:**
+- **Player** → 5×5 hooded lantern-bearer (the sprite the owner named).
+- **Ghoul, Wight, Grave Rat, Bat, Rattlejack** → bodies with mass (density, not
+  brightness — ladder intact). Every enemy from 0:00–8:00 upgraded.
+- **Blood Wisp, Stalker** → deliberately left thin (*mass is for the corporeal*).
+- **Ashling, Beggar** → 5×5, up to the Warden's fidelity, each with its own read.
+- **Title screen** → an illustrated lantern-bearer ringed by eyes in the dark,
+  replacing the flat mote-scatter — the first frame on boot now sells the game.
+
+**Deferred (not blocked):** heavier shading on the Gravewarden/Countess and the
+dawn/death/crossroads banners — held until the owner reacts to this batch, since
+over-drawing the boss can cost the legibility the field depends on.

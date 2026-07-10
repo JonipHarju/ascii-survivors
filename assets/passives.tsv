@@ -5,17 +5,29 @@
 # '-' means the passive does not offer that level (only Revival, which caps at 2).
 # Passives apply globally to every weapon. Max 6 passives carried, cap level 8.
 #
+# `note` IS PLAYER-FACING, like the one in weapons.tsv. upgrades.ts falls back to
+# it whenever a level has no value of its own. Today the cap check means that
+# never happens, so nothing leaks -- but it is a loaded gun and the weapons table
+# already went off once. Player copy only. Engineering detail goes in `#` lines.
+#
+# might     +8% damage per level.        haste   multiplies cooldown DOWN.
+# area      scales ax and ay.            swift   base move 20 wu/s (design.md §6).
+# oil       base light radius 14 wu.     magnet  base pickup radius 12 wu (§6).
+# armour    flat damage subtracted per hit; a hit always deals at least 1.
+# luck      chest odds + gold odds + rare drop odds.
+# revival   caps at level 2. The cap is enforced by passiveMaxLevel(), not by this note.
+#
 # id	name	stat	kind	lv1	lv2	lv3	lv4	lv5	lv6	lv7	lv8	note
 #----------------------------------------------------------------------------
-might	Might	damage	mult	1.08	1.16	1.24	1.32	1.4	1.48	1.56	1.64	+8% damage per level
-haste	Haste	cooldown	mult	0.94	0.88	0.82	0.76	0.7	0.64	0.58	0.52	multiplies cooldown DOWN
-area	Area	area	mult	1.07	1.14	1.21	1.28	1.35	1.42	1.49	1.56	scales ax and ay
-duration	Duration	duration	mult	1.08	1.16	1.24	1.32	1.4	1.48	1.56	1.64	
-swift	Swiftness	move_speed	mult	1.05	1.1	1.15	1.2	1.25	1.3	1.35	1.4	base move 20 wu/s
-magnet	Magnet	pickup_radius	mult	1.12	1.24	1.36	1.48	1.6	1.72	1.84	1.96	base pickup 12 wu (design.md §6). John: the base lives in world.ts, not here -- 6 -> 12
-growth	Growth	xp_gain	mult	1.06	1.12	1.18	1.24	1.3	1.36	1.42	1.48	
-luck	Luck	luck	mult	1.08	1.16	1.24	1.32	1.4	1.48	1.56	1.64	chest + gold + rare drop odds
-armour	Armour	flat_reduce	add	1	2	3	4	5	6	7	8	flat damage subtracted per hit, min 1 damage
-regen	Regen	hp_per_sec	add	0.25	0.5	0.75	1.0	1.25	1.5	1.75	2.0	
-oil	Lantern Oil	light_radius	add	2	4	6	8	10	12	14	16	base light radius 14 wu
-revival	Revival	revives	add	1	2	-	-	-	-	-	-	CAPS AT LEVEL 2
+might	Might	damage	mult	1.08	1.16	1.24	1.32	1.4	1.48	1.56	1.64	Everything you own hits harder.
+haste	Haste	cooldown	mult	0.94	0.88	0.82	0.76	0.7	0.64	0.58	0.52	Every weapon swings sooner.
+area	Area	area	mult	1.07	1.14	1.21	1.28	1.35	1.42	1.49	1.56	Your reach widens.
+duration	Duration	duration	mult	1.08	1.16	1.24	1.32	1.4	1.48	1.56	1.64	What you leave behind lingers longer.
+swift	Swiftness	move_speed	mult	1.05	1.1	1.15	1.2	1.25	1.3	1.35	1.4	You move faster. Movement is the only verb.
+magnet	Magnet	pickup_radius	mult	1.12	1.24	1.36	1.48	1.6	1.72	1.84	1.96	Motes come to you from further into the dark.
+growth	Growth	xp_gain	mult	1.06	1.12	1.18	1.24	1.3	1.36	1.42	1.48	Every mote is worth more.
+luck	Luck	luck	mult	1.08	1.16	1.24	1.32	1.4	1.48	1.56	1.64	The night is kinder. Chests, gold, and rarer things.
+armour	Armour	flat_reduce	add	1	2	3	4	5	6	7	8	Blunts every blow. A hit always draws at least a little.
+regen	Regen	hp_per_sec	add	0.25	0.5	0.75	1.0	1.25	1.5	1.75	2.0	The wounds close, slowly.
+oil	Lantern Oil	light_radius	add	2	4	6	8	10	12	14	16	The lantern burns brighter. You see them coming.
+revival	Revival	revives	add	1	2	-	-	-	-	-	-	Death is refused. Once, and then once more.

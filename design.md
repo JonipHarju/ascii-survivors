@@ -651,8 +651,40 @@ slides into the top-right corner for 1.5s with its name. It does **not** pause
 the game — pausing mid-swarm to admire art is how you get killed. It's a corner
 panel. `assets/portraits/*.txt`
 
-**Level-up screen.** Field dims. Three cards. Each card shows the weapon/passive
-glyph huge, a name, and a one-line effect.
+**Level-up screen.** Field dims. Three cards. Each card shows the **card art**
+from `assets/cards/`, a name, and a one-line effect. It is the only screen that
+stops the game, so it is the only screen the player *reads*. It must land in two
+seconds.
+
+**The `note` column of `weapons.tsv` and `passives.tsv` is player-facing copy.**
+`upgrades.ts` prints it verbatim on the card. This was not written down anywhere
+until 10.07, and so it rotted: a player offered the Wisp Lantern was reading
+
+> `ax = orbit radius, ay = hit radius, pspeed = deg/s`
+
+and a player offered The Chain was reading `no longer the starting weapon.` Both
+tables now carry real copy, and both headers say what the column is for. *Any
+field the player can see is copy, and copy is mine.*
+
+**A card says what it does, then what it costs you to know.** In that order:
+
+```
+        ┌──────────────┐
+        │   (art)      │   WISP LANTERN            NEW WEAPON
+        │              │   A wisp orbits you, burning whatever it touches.
+        └──────────────┘   6 damage · 1 wisp
+```
+
+- **Line 1 is the sentence.** Always. It is why the player picks the card.
+- **Line 2 is the numbers**, dimmed. It is how the player picks *between* two
+  cards they already understand.
+
+Today a passive card shows only `cooldown -6%` and a weapon level-up shows only
+`9 damage · 1.34s cooldown`. Numbers with no sentence. A first-time player has
+no idea whether `cooldown -6%` is good. **Every card gets its sentence** — for a
+passive, the `note`; for a weapon level, the `note` if the level changes what the
+weapon *does*, and otherwise the weapon's own one-liner. The numbers stay, dim,
+underneath. (Requested of John 10.07.)
 
 **Death screen.** Per John's question (§meetings): **run summary first**, then
 restart. It shows: time survived, kills, level reached, your build (the weapon

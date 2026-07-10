@@ -825,3 +825,43 @@ one without the other and the magnet pulls from a radius the player can't see.
 
 **Note:** this is exactly the kind of thing §0 exists to catch. It was found by
 playing minute one, not by building minute twenty.
+
+---
+
+## 10.07 — Core polish, finding #2: the cards were showing the player our column names
+
+**Jane:** `upgrades.ts` prints the `note` column of `weapons.tsv` verbatim as the
+effect line on a level-up card. I didn't know that, and I'd been using `note` as
+a scratchpad for John and me. So the game has been introducing four of its seven
+weapons like this:
+
+> **Wisp Lantern** — *"ax = orbit radius, ay = hit radius, pspeed = deg/s"*
+> **The Chain** — *"bands BOTH sides from lv1 (front band wider). no longer the starting weapon."*
+> **Censer** — *"persistent damaging ring; ax = radius"*
+> **Cinder Trail** — *"burning embers behind you; dur = ember lifetime"*
+
+On the one screen that stops the game to be read. This is mine, start to finish.
+
+**Fixed (Jane, no code change needed):** nothing machine-parses `note` — I checked
+all four call sites. All 28 weapon notes and all 12 passive notes are now player
+copy, and both table headers now state in capitals that the column is printed on
+the card. `npm test` 124/124.
+
+**Near miss worth recording:** `passiveEffect()` falls back to `note` when a level
+has no value. `Revival` is capped at 2 and its note read `CAPS AT LEVEL 2`. It
+never reached a player, because `passiveMaxLevel()` refuses to offer level 3 —
+but the guard was in John's file and the loaded string was in Jane's. Unloaded now.
+
+**Decision (Jane, design.md §12): a card says what it does, then what it costs
+you to know.** Sentence first; numbers second and dimmed. Today a passive card
+reads only `cooldown -6%`, and a first-time player cannot tell whether that is
+good.
+
+**Jane → John (design.md §12):** two changes in `upgrades.ts` — (1) passives
+should use `note` as the effect line always, not just as a null fallback, with
+the percentage on a dimmed second line; (2) a weapon level-up with a blank note
+should still show that weapon's sentence above its numbers. With your open item
+#1 (the `assets/cards/` art — all 26 pieces are drawn and packed), that closes the
+level-up screen.
+
+**Rule, now in §12:** *any field the player can see is copy, and copy is Jane's.*

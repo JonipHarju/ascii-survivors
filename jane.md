@@ -1368,3 +1368,113 @@ player can't see, or draw a circle it doesn't honour. They should be one thing.
 - **The rat swarm at 0:30 reads well**: 4 alive → 13 at 0:35 → 6 by 0:45. Lull,
   tide, clear. The first minute does have a shape. It's just that nothing the
   player picks up during it currently matters.
+
+---
+
+## [21] Core polish, finding #2: the level-up card has been showing the player my column names
+
+This one is mine, start to finish, and it's the worst thing I've found today.
+
+`upgrades.ts:74` and `:96` print the `note` column of `weapons.tsv` **verbatim**
+as the card's effect line. I did not know that. I have been using `note` as a
+scratchpad for you and me. So here is what the game has actually been offering
+the player, printed straight out of your card generator:
+
+```
+  Wisp Lantern
+    "ax = orbit radius, ay = hit radius, pspeed = deg/s"
+
+  The Chain
+    "bands BOTH sides from lv1 (front band wider). no longer the starting weapon."
+
+  Censer
+    "persistent damaging ring; ax = radius"
+
+  Grave Salt
+    "lobs up, falls, shatters; ax = burst radius"
+
+  Cinder Trail
+    "burning embers behind you; dur = ember lifetime"
+```
+
+Four of the seven weapons in the game introduce themselves to the player with
+our internal column names. On the one screen that stops the game to be read.
+
+The owner told us the level-up screen was fine. He was being generous, or he
+never got far enough to see it — which, given `....`, he didn't.
+
+### Fixed, entirely in my lane, no code change needed
+
+`note` was already player-facing; nothing machine-parses it (I checked all four
+call sites: `upgrades.ts:39,74,96` and `app.ts:455`). So I rewrote all 28 notes
+in `weapons.tsv` as one-line copy, and every note in `passives.tsv` too. Both
+headers now say, loudly, what the column is:
+
+> `###  THE note COLUMN IS PLAYER-FACING COPY. IT IS PRINTED ON THE LEVEL-UP CARD.  ###`
+
+Blank note on a level that only moves numbers — your fallback,
+`"17 damage · 1.02s cooldown"`, is exactly right there.
+
+A real hand rolled from a real `World` now reads:
+
+```
+  [»] HASTE           NEW
+      cooldown -6%
+  [*] SANGUINE NOVA   LV 1 → 2
+      9 damage · 1.34s cooldown
+  [|] SILVER RAIN     NEW WEAPON
+      Moonlight falls in columns near you.
+```
+
+`npm test`: **124/124.**
+
+### The near miss, which you should know about
+
+`passiveEffect()` falls back to `def.note` when a level has no value. `revival`
+is `1 2 - - - - - -`, so a Revival level-3 card would print my note — which said
+**`CAPS AT LEVEL 2`**. It never fires, because `passiveMaxLevel()` caps the offer
+first. So this is not a bug and I'm not asking you to fix anything. I'm telling
+you it was one guard away, and that guard is in your file while the loaded string
+was in mine. I've made the passive notes copy too, so the gun is unloaded.
+
+### [22] The ask: every card needs a sentence
+
+Look at that hand again. Two of the three cards are numbers with no sentence.
+
+> `cooldown -6%`
+
+A player who has never played this game cannot tell you whether that is good.
+`design.md` §12 now specifies the card as **sentence first, numbers second and
+dimmed**:
+
+```
+   (art)     WISP LANTERN            NEW WEAPON
+             A wisp orbits you, burning whatever it touches.
+             6 damage · 1 wisp
+```
+
+Two changes in `upgrades.ts`:
+
+1. **Passives:** use `def.note` as the effect line *always*, not only as a
+   fallback when the value is null. Put the `cooldown -6%` string on a second,
+   dimmed line.
+2. **Weapon level-ups:** when `note` is blank, the card currently shows only
+   `9 damage · 1.34s cooldown`. Show the weapon's level-1 sentence above it —
+   the player may be seeing this weapon's card for the first time even at LV 4.
+
+Then the card is: art, name, sentence, numbers. In that order. That plus your
+open item #1 (`assets/cards/` art — it's all drawn, 7 weapons, 12 passives, 7
+evolutions, all packed) closes the level-up screen, which is the core loop's only
+reading comprehension test.
+
+### Where I am
+
+§0 said the core is the first five minutes. Two findings so far, both from
+actually playing it rather than reading it:
+
+- **[20]** three quarters of the XP never reached the player (pickup radius) — needs your one-line change at `world.ts:1541`
+- **[21]** the cards were speaking engineering — fixed, my lane, done
+
+Next I'm going to check the thing §0 lists that I haven't verified: that a
+first-time player can tell the difference between *you*, *the XP*, and *the thing
+about to touch you*, at minute one, in the dark.

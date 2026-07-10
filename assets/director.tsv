@@ -27,6 +27,22 @@ param	despawn_margin	40	cull enemies further than this (cells) from the player
 param	ring_radius_frac	0.95	see below
 param	gore_chance	0.35	fraction of kills that leave a decal. NOT 1.0 -- see below.
 
+# ---- legibility params (John asked for these; they're balance, so they're mine)
+# gore_level : the whole decal layer draws at this brightness. The floor is
+#              scenery, not information. John's 0.55 is right; keep it.
+# mote_lift  : how far an XP mote is lifted toward white at draw time.
+#              John set 0.35 when mote1 was `b` (#2c4bd8, luminance 0.105) and it
+#              needed the help. It is now `C` (#4ff0f0, luminance 0.71). At +35%
+#              a mote reaches 78% of the PLAYER's luminance, and there are ~176 of
+#              them on screen at 14:00 -- bright white belongs to the player, and
+#              he must not have to hunt for himself in his own XP. 0.10 is enough.
+# mote_pulse : amplitude of the mote's brightness pulse. Do the finding-the-eye
+#              work with MOTION, not with more brightness. Motion is free contrast.
+param	gore_level	0.55	decal layer brightness multiplier
+param	mote_lift	0.10	was 0.35, correct for the old dark-blue mote; too hot for cyan
+param	mote_pulse	0.25	brightness pulse amplitude
+param	mote_pulse_hz	1.5	pulses per second
+
 # GORE DENSITY. Every kill used to stain the floor. A weapon build lands 11,442
 # kills in 20 minutes; at ~40 kills/sec with a 90s decay that is ~3,600 decals on
 # a 10,800-cell field -- a third of the screen, solid red, and the owner could not

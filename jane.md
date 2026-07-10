@@ -1149,3 +1149,152 @@ shipped and legible without it; it'll be *beautiful* with it.
   owner is asking for a deploy story, and "it's a static bundle" is the answer.
 
 `npm test`: **108/108** against clean `HEAD` with my new tables.
+
+---
+
+## [17] The owner's `"...."` — I reproduced it. It's `file://`, and it's silent.
+
+`owner-feedback.md` 10.07 10:10, three lines, and the middle one is fatal:
+
+> *"Currently the game just loads `"...."`"*
+
+That `....` is our own `<div id="status">loading the night…</div>`. He is looking
+at `index.html` with **no JavaScript having run at all**, and the page has
+nothing else to show him.
+
+### The reproduction
+
+```
+npm run build
+open dist/index.html          # i.e. double-click it, like a human
+```
+
+You get `loading the night…`, forever. I drove headless Chrome over four cases
+to be sure it wasn't something I'd broken in the tables:
+
+| what | result |
+|---|---|
+| `localhost:5173/` (npm start) | boots |
+| `localhost:5173/?play&seed=21` | boots |
+| `localhost:4173/` (npm run preview, the real `dist/`) | boots |
+| **`file:///…/dist/index.html`** | **stuck on `loading the night…`** |
+
+### Why it's silent, which is the actually important part
+
+`boot()` ends with `.catch()` that writes `failed to start: <message>` into the
+status div. On `file://` **that catch never runs**, because the failure is not
+inside `boot()` — it's the `<script type="module">` itself. A module script from
+`file://` has origin `null` and the browser refuses to load it under CORS. The
+module body never executes. Nothing throws, because nothing runs.
+
+So the page keeps the literal string from the HTML source and sits there. Our
+one error path is inside the thing that failed to start.
+
+I checked the data path before blaming the loader: I ran `buildGameData` and
+`SpriteBank.loadFromSources` in node against the live `assets.json` — both clean,
+zero warnings. And I walked boot's whole import graph over HTTP: **27 modules,
+all 200.** The bundle is fine. It's the protocol.
+
+(Note that `fetch('assets.json')` would fail on `file://` too, for the same
+reason. Fixing only the script tag moves the failure, it doesn't remove it.)
+
+### What I think you should do — but the techstack is yours
+
+**Design position (now in `design.md` §12): a loading message that cannot fail is
+a lie.** Whatever you build, I need these two properties:
+
+1. **The page fails loudly on its own.** A plain inline `<script>` — not a module
+   — that starts a ~5s timer and, if the game hasn't drawn a frame, replaces the
+   loader with a real message. It has to work even when *no other JS on the page
+   loaded*, which means it cannot be in a module and cannot import anything.
+2. **The message is for him, not for us.** §12 has the exact copy I want. Short
+   sentence, the one command that fixes it, and the stack trace last and small.
+
+For actually making `file://` work, the only thing that does is a **single
+self-contained `index.html`**: one classic `<script>`, no `import`, and
+`assets.json` inlined as a `const`. It's ~450KB of HTML and it would mean he can
+double-click the game, mail it to someone, put it on a USB stick. I think that's
+worth a build target — `npm run build:single` or just make it the default. Your
+call entirely; if you'd rather tell him "always use the hosted URL," that's a
+legitimate answer, but then rule 1 above is mandatory, because the failure mode
+has to speak.
+
+### Two more deploy things I found while I was in there
+
+**a) `/dist/` is cached `immutable` for a year and the filenames aren't hashed.**
+`vercel.json` and `nginx.conf` both do this. `boot.js` keeps its name across
+deploys, so a browser that has loaded the site once will keep serving itself the
+**old** `boot.js` for 31536000 seconds — while `assets.json` sits right next to
+it on `must-revalidate` and updates immediately. New tables, old code. That is a
+crash or a hang waiting to happen on his machine specifically, because his is the
+browser that has already loaded the broken builds.
+
+Either hash the filenames or drop `/dist/` to `must-revalidate` like the JSON.
+I don't think this is what bit him this time — the old `boot.js` crashed *after*
+`status.remove()`, so he'd have seen a frame first — but it will bite someone.
+
+**b) `nginx.conf`'s `try_files $uri $uri/ /index.html` covers `/dist/` too.**
+A missing `/dist/web/boot.js` therefore returns **`index.html` with a 200** and a
+`text/html` content-type. The browser tries to parse HTML as a module, fails, and
+you get — exactly — a page stuck on `loading the night…`. Same silent symptom,
+different cause. Worth an `location /dist/ { try_files $uri =404; }` so a broken
+Coolify deploy at least tells the truth.
+
+### Everything else he asked for is already done, and he cannot see any of it
+
+This is the part I want you to sit with. I went and checked all of round 1 and
+round 2 against the tree, not against our notes:
+
+| his complaint | state |
+|---|---|
+| "why is it in terminal" | fixed — `npm start` is the browser |
+| "120fps" | fixed — you measured 1.76ms worst frame |
+| "hosted on vercel/coolify" | fixed — `dist/` is static, configs are in |
+| "XP goes under the blood" | fixed — XP is bright cyan, gore is `▒░` and dimmed |
+| "so many red things on the ground" | fixed — one decal per cell, `gore_chance 0.35` |
+| "first weapon is clunky, you walk into enemies to aim" | fixed — Warden opens with Nova, which seeks. `autoFace` aims the Chain too. |
+| "singular characters walking around, this is 1960s" | fixed — every mob is a multi-cell animated sprite. I verified all 7 have art and that `render.ts` never falls back to a bare glyph for anything that can spawn. Only `sprites/elites/gravewarden` is ever elite-spawned, and it's drawn. |
+
+His round-3 line — *"PLEASE MAKE SURE ALSO ABOVE CHANGES ARE MADE"* — isn't him
+asking us to do the work again. **It's him not being able to see that we did it.**
+Every one of those fixes is behind a page that doesn't open for him. We shipped
+seven evolutions and a boss into a room nobody could walk into.
+
+That's why I'm not asking for anything new below.
+
+### [18] The one code bug I found in my own lane's rules
+
+`world.ts:328`:
+```ts
+const starting =
+  wanted !== undefined && data.weapons.byId.has(wanted) ? wanted : (data.weapons.order[0] ?? null);
+```
+`data.weapons.order[0]` is **`chain`** — the aiming weapon. `characters.tsv` opens
+with the words *"no starting weapon may require aiming"* and the fallback quietly
+breaks that rule. Today nothing triggers it because my `start_weapon` values are
+all valid. The day I typo `nova` as `nvoa`, the game hands the player the exact
+weapon the owner complained about, and it'll read as us regressing the design.
+
+Fall back to a seeking weapon, or refuse to start. I've written it into §7 as a
+design constraint so it survives both of us. Not urgent. Just wrong.
+
+### [19] What I'm doing next, given "polish the core"
+
+`design.md` has a new **§0** at the very top: what "core" is, and what's frozen.
+Short version, because it directly contradicts your open list:
+
+**Freeze endless mode.** It's #3 on your list and it is content for people who
+have beaten a 20-minute run. Nobody has finished one. Same for new weapons, new
+evolutions, new Crossroads upgrades.
+
+**Your #1 and #2 are core and I want them both:** the `cards/` art on the
+level-up screen, and the reroll/banish buttons. A card the player can't read in
+two seconds is a core-loop bug — it's the only screen that stops the game.
+
+**Your #4 (juice) is core too, but only the cheap half.** Damage numbers and a
+hit-flash tell the player their build works. Screen shake on a Countess charge is
+minute nineteen; that one can wait with the Reapers.
+
+Card art is `assets/cards/` — 7 weapons, 12 passives, and I've now drawn the 7
+evolutions into `assets/cards/evolutions/`. They're in `assets.json` already
+(51 sprites, I checked). Take them whenever.

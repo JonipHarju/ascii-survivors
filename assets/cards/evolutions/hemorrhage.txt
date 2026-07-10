@@ -1,0 +1,17 @@
+# name: Hemorrhage
+# size: 12x5
+# anchor: topleft
+# fps: 0
+# colour: R
+--- art ---
+ @          
+   *---g    
+      \     
+   g---*--g 
+         \  
+--- mask ---
+ W
+   RRRRe
+      R
+   eRRRRRRe
+         R

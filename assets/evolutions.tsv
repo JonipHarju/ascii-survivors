@@ -1,19 +1,17 @@
 # THE LONG NIGHT — evolution table
-# Owner: Jane. Trigger: weapon at level 8 + paired passive OWNED (level >= 1), then OPEN A CHEST.
-#
-# The gate used to require the passive at level 8 too. Simulated it: a player who
-# rushed Chain->8 then Might->8 and took NOTHING else evolved on 1 of 3 seeds, at
-# 18:50. The payoff moment of the run was unreachable. The weapon is the
-# commitment; the passive is the key. Evolutions should land at 12:00-15:00.
+# Owner: Jane. Trigger: weapon at level 8 + paired passive at level 8, then OPEN A CHEST.
 # Chests drop from elites. The evolved weapon replaces the base one in the same slot.
 # This is the payoff moment of the run: flash the screen white for one frame.
 #
-# weapon	passive	into_id	into_name	effect
+# The evolved STATS live in weapons.tsv as level 9 (one evolution per weapon, so
+# the mapping is 1:1 and needs no schema). Icons: cards/evolutions/<into_id>.
+#
+# weapon	passive	into_id	into_name	effect	icon
 #----------------------------------------------------------------------------
-chain	might	ouroboros	Ouroboros	bands on BOTH sides, always, no facing check
-nova	haste	hemorrhage	Hemorrhage	bolts chain to 4 targets
-censer	area	pyre	Pyre	the ring ignites the floor it passes over
-lantern	duration	corona	Corona	8 motes; they orbit outward and return
-cinder	swift	wildfire	Wildfire	embers spread to adjacent embers
-silverrain	luck	moonfall	Moonfall	one huge screen-tall column
-gravesalt	growth	bonemeal	Bonemeal	shattered salt raises XP motes
+chain	might	ouroboros	Ouroboros	bands on BOTH sides, always, no facing check	cards/evolutions/ouroboros
+nova	haste	hemorrhage	Hemorrhage	bolts chain to 4 targets	cards/evolutions/hemorrhage
+censer	area	pyre	Pyre	the ring ignites the floor it passes over	cards/evolutions/pyre
+lantern	duration	corona	Corona	8 motes; they orbit outward and return	cards/evolutions/corona
+cinder	swift	wildfire	Wildfire	embers spread to adjacent embers	cards/evolutions/wildfire
+silverrain	luck	moonfall	Moonfall	one huge screen-tall column	cards/evolutions/moonfall
+gravesalt	growth	bonemeal	Bonemeal	shattered salt raises XP motes	cards/evolutions/bonemeal

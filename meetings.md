@@ -709,3 +709,78 @@ fixed sim ticks) and a plain statement of the deploy story — `npm run build` /
 what the owner is asking for.
 
 `npm test`: **108/108** against clean HEAD with the new tables.
+
+---
+
+## 10.07 — Owner feedback round 3, and the reason it exists
+
+**Owner (`owner-feedback.md`, 10:10):**
+> The focus is now way too much on late game.
+> Polish the core game before you work on any more later features!!!!
+> Currently the game just loads "....".
+> PLEASE MAKE SURE ALSO ABOVE CHANGES ARE MADE
+
+**Jane:** I chased the `"...."` first, because it makes the other two lines make
+sense. `....` is our own `loading the night…` placeholder. The game never starts.
+
+**Reproduced:** `npm run build`, then double-click `dist/index.html`. Hangs
+forever. Served over http (`npm start`, `npm run preview`) it boots fine — I
+checked all four cases in headless Chrome before saying a word to John.
+
+**Cause:** a `<script type="module">` loaded from `file://` has origin `null`
+and the browser blocks it. The module body never runs. And our only error
+handler lives *inside* that module — so nothing throws, nothing reports, and the
+page just sits on the loading string.
+
+**Q (Jane → John):** can `file://` work at all, or do we tell him "use the hosted
+URL"? Either answer is fine, but the page has to *speak* when it fails.
+**A (pending).** My ask: one plain inline `<script>` (not a module, no imports)
+that swaps the loader for a real message if no frame has drawn in ~5s. For
+double-click-to-play we'd need a single self-contained `index.html` with
+`assets.json` inlined — John's call, it's his techstack.
+
+**Decision (Jane, design.md §12):** *a loading message that cannot fail is a lie.*
+The failure panel is written for the owner — plain sentence, the one command that
+fixes it, stack trace last and small. Copy is in §12.
+
+**Two more, found while reading the deploy configs:**
+- `/dist/` is served `immutable, max-age=31536000` but the filenames aren't
+  content-hashed, while `assets.json` revalidates every load. A returning browser
+  can pair a year-old `boot.js` with today's tables. Flagged to John.
+- `nginx.conf`'s `try_files … /index.html` also catches `/dist/`, so a missing
+  `boot.js` returns `index.html` with a 200. The browser parses HTML as
+  JavaScript, and you get the same silent hang from a completely different cause.
+
+### The thing worth writing down
+
+I audited every complaint from rounds 1 and 2 against the actual tree. **All of
+them are already fixed:** browser build, 120fps (John measured 1.76ms/frame),
+static hosting, XP legibility, the gore carpet, the clunky aiming starting weapon
+(the Warden opens with the seeking Nova now), and the "singular characters" —
+every mob is a multi-cell animated sprite and I verified none of them fall back
+to a bare glyph.
+
+So *"PLEASE MAKE SURE ALSO ABOVE CHANGES ARE MADE"* is not a request to redo the
+work. **It's the owner unable to see that we did it.** We built a boss, seven
+evolutions and a meta-progression economy behind a front door that doesn't open.
+
+That is also the answer to *"too much focus on late game."* He's right, and the
+`....` is the proof.
+
+**Decision (Jane, design.md §0 — new section at the top of the file):**
+*Feel before content.* The core is the first five minutes: it opens, walking
+feels good, things die without aiming, you can see yourself / the XP / the threat,
+and a card reads in two seconds. **Frozen until that's signed off:** endless mode
+and the Reapers, new weapons, new evolutions, new passives, new Crossroads
+upgrades, any bestiary past minute 10.
+
+**Jane → John, on his open list:** freeze #3 (endless). #1 (card art) and #2
+(reroll/banish buttons) are *core* — the level-up screen is the only screen that
+stops the game, so it has to read instantly; please do those. #4 (juice): damage
+numbers and hit-flash are core because they tell the player the build works;
+screen shake on a Countess charge is minute nineteen and can wait.
+
+**Jane → John, minor:** `world.ts:328` falls back to `weapons.order[0]` — which
+is `chain`, the one weapon `characters.tsv` forbids as an opener. Harmless today,
+but a typo in my table would silently reinstate the owner's worst complaint.
+Fall back to something that seeks, or refuse to start. Now written into §7.

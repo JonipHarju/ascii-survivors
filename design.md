@@ -5,6 +5,64 @@
 
 ---
 
+## 0. What we polish first — owner directive, 10.07
+
+> *"The focus is now way too much on late game. Polish the core game before you
+> work on any more later features."*
+
+He is right, and the scoreboard proves it. We built the Crossroads, seven
+evolutions, a scripted Countess and a gold economy — and the thing he actually
+saw when he opened the game was a dead page reading `loading the night…`.
+Everything after minute five is worth nothing if minute zero is broken.
+
+**The core is the first five minutes**, and nothing else is core:
+
+1. The game **opens**. Double-clicked, hosted, or served — it opens.
+2. You walk, and it feels good to walk.
+3. Things die near you without you ever aiming at them.
+4. You can *see* the three things that matter: **you**, **the XP**, and
+   **what is about to touch you**.
+5. A card comes up, you read it in under two seconds, you pick, you feel stronger.
+
+That is the whole product. A player who bounces at minute one never learns the
+Countess exists.
+
+### Frozen until the core is signed off
+
+Not cancelled — **frozen**, in this order when we unfreeze:
+
+| Frozen | Why it can wait |
+|---|---|
+| **Endless mode / the Reapers** | Content for players who already beat a 20-minute run. We have no evidence anyone has finished one. |
+| **New evolutions, new weapons, new passives** | Seven weapons already outnumber what a five-minute player will ever see. |
+| **New Crossroads upgrades** | Meta-progression is a *second-run* reward. There is no second run yet. |
+| **The bestiary past minute 10** | Nobody has met the minute-3 ghoul enough times to be bored of it. |
+
+### What "polished core" means, concretely
+
+These are acceptance criteria, not aspirations. I will play the build and check
+each one by hand.
+
+- **It opens from a double-clicked file, and from a static host.** No terminal,
+  no server, no flags. If the page can't start, it says so *on the page* in
+  words a non-programmer can act on — never a silent spinner. (§12)
+- **Nothing on the floor is brighter than anything standing on it.** (§9)
+- **The starting weapon never asks you to aim.** Walking toward a thing that
+  hurts you on contact, in order to damage it, is the single worst feel bug we
+  had. The rule now lives in `characters.tsv` and it is load-bearing. (§7)
+- **A level-up card is legible at a glance** — art, name, and one line of what
+  it does. No player should read a stat block to pick.
+- **The first minute has a shape.** One ghoul. Then three. Then a lull. The
+  player must feel the tide breathe before it drowns them. (§11)
+- **Every enemy that can appear has drawn art.** A single character standing in
+  for an unfinished sprite is how we get told this looks like 1960. (§10)
+
+### The rule this section exists to enforce
+
+> **Feel before content.** If a thing already in the game feels bad, no new
+> thing may be added until it feels good. Content is the cheapest thing we make
+> and the easiest to add later; feel is neither.
+
 ## 1. The pitch
 
 You are a lantern-bearer stranded in a graveyard at midnight. Dawn is twenty
@@ -179,6 +237,14 @@ A player who learns that at 0:10 is a player who understands the genre by 2:00.
 > player to walk into the damage. The owner hit this immediately. A weapon that
 > punishes the only verb you have is a broken weapon, however elegant its story.
 
+**The rule binds the fallback too.** If `characters.tsv` ever names a starting
+weapon that doesn't exist, the code must fall back to a weapon that *seeks* —
+never to whichever row happens to be first in `weapons.tsv`. That row is The
+Chain. A one-character typo in my table would silently hand the player back the
+exact weapon this section exists to forbid, and it would look like a design
+regression, not a data error. Pick `nova`; if `nova` is gone, refuse to start
+and say so. (Flagged to John 10.07.)
+
 ### THE CHAIN (still in, still great, no longer first)
 
 A whip, and now a level-up pick rather than a starting tax.
@@ -296,6 +362,17 @@ one frame, a 20×8 card slams up.
 > Owning the passive is the genre standard, and it's right: the weapon is the
 > commitment, the passive is the key. Evolutions should land around **12:00–15:00**,
 > leaving a third of the run to enjoy them.
+
+**An evolved weapon is level 9.** Each weapon has exactly one evolution, so the
+mapping is 1:1 and needs no new table: `weapons.tsv` carries a level-9 row per
+weapon, and a weapon reads it when — and only when — it has evolved. Level-up
+cards must never offer level 9.
+
+Evolving is **a whole tier, not a level**: `damage ×1.70`, `cooldown ×0.75`,
+`area ×1.30`, infinite pierce, *plus* the clause. It used to be the clause alone,
+which meant the payoff moment of the run granted a behaviour change and **no
+numbers at all** — the Chain evolved into Ouroboros and hit exactly as hard as it
+had a second earlier. It has to be *felt*.
 
 | Weapon | + Passive | → | Evolution |
 |---|---|---|---|
@@ -558,6 +635,35 @@ single key to run again. `assets/ui/death.txt`
 **Dawn screen.** You earned this one. `assets/ui/dawn.txt`
 
 **Title.** `assets/ui/title.txt`
+
+**The boot screen — and the boot *failure* screen.**
+
+The page currently ships a bare `loading the night…` that stays on screen
+forever if the game never starts. On 10.07 that string *was the entire game* as
+far as the owner was concerned; he reported it as `the game just loads "...."`.
+
+A spinner that cannot fail is a lie. Two rules:
+
+1. **The loading text must never be the last thing on screen.** If the game has
+   not drawn a frame within ~5 seconds, the page replaces the loader with a
+   failure panel *by itself*, whether or not any JavaScript ran.
+2. **The failure panel is written for the owner, not for us.** Not a stack
+   trace. It names the likely cause and the one action that fixes it:
+
+```
+   THE LONG NIGHT could not start.
+
+   If you opened this file directly from your computer, browsers
+   block games from loading their art that way.
+
+   Run it with:   npm start
+   Or play the hosted build:   <url>
+
+   (technical detail, for John: <the actual error>)
+```
+
+The technical detail goes *last* and *small*. The owner should never have to
+read it, and John should never have to ask for it.
 
 ## 13. Meta progression — The Crossroads
 

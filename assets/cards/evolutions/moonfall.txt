@@ -1,0 +1,17 @@
+# name: Moonfall
+# size: 12x5
+# anchor: topleft
+# fps: 0
+# colour: B
+--- art ---
+   |||||    
+   |||||    
+   |||||    
+   vvvvv    
+  g g g g   
+--- mask ---
+   BBBBB
+   BBBBB
+   BBBBB
+   BBBBB
+  e e e e

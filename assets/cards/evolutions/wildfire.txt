@@ -1,0 +1,17 @@
+# name: Wildfire
+# size: 12x5
+# anchor: topleft
+# fps: 0
+# colour: r
+--- art ---
+ ^ ^        
+^ ^ ^ ^     
+ ^ ^ ^ ^ ^  
+  ^ ^ ^ ^ @ 
+   ^ ^      
+--- mask ---
+ R R
+R R R R
+ R R R R R
+  R R R R W
+   R R

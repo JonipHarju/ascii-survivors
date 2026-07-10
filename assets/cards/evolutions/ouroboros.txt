@@ -1,0 +1,17 @@
+# name: Ouroboros
+# size: 12x5
+# anchor: topleft
+# fps: 0
+# colour: w
+--- art ---
+  ,------.  
+ / ====== \ 
+|=   @   =| 
+ \ ====== / 
+  '------'  
+--- mask ---
+  wwwwwwww
+ w wwwwww w
+ww   W   ww
+ w wwwwww w
+  wwwwwwww

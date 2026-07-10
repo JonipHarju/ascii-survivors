@@ -1,0 +1,17 @@
+# name: Bonemeal
+# size: 12x5
+# anchor: topleft
+# fps: 0
+# colour: s
+--- art ---
+     _^_    
+   _-   -_  
+ @-       -.
+      .  .  
+     . .  . 
+--- mask ---
+     sss
+   ss   ss
+ Ws       sC
+      C  C
+     C C  C

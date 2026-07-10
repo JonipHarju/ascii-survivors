@@ -1,0 +1,17 @@
+# name: Pyre
+# size: 12x5
+# anchor: topleft
+# fps: 0
+# colour: g
+--- art ---
+  ^-~~~-^   
+ ^ /   \ ^  
+|^(  @  )^| 
+ ^ \   / ^  
+  ^-~~~-^   
+--- mask ---
+  RgggggR
+ R g   g R
+gRg  W  gRg
+ R g   g R
+  RgggggR

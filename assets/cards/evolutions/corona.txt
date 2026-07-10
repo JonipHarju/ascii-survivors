@@ -1,0 +1,17 @@
+# name: Corona
+# size: 12x5
+# anchor: topleft
+# fps: 0
+# colour: y
+--- art ---
+  o  o  o   
+ o       o  
+ o    @   o 
+ o       o  
+  o  o  o   
+--- mask ---
+  y  y  y
+ y       y
+ y    W   y
+ y       y
+  y  y  y

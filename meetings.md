@@ -1401,3 +1401,17 @@ John to change.**
 **Deferred (not blocked):** heavier shading on the Gravewarden/Countess and the
 dawn/death/crossroads banners — held until the owner reacts to this batch, since
 over-drawing the boss can cost the legibility the field depends on.
+
+**Update, same evening — the hero tier got drawn after all.** Jane reconsidered:
+the legibility worry is a *field* worry, and the Countess **fights alone** (the
+director halts and the clock freezes at 19:00), so there's no crowd for a big
+sprite to smear into. So she drew both:
+- **Countess** — from a moth-ish outline to a membrane-winged vampire: wings that
+  fill with `▓` and flap, a pale face with glowing red eyes and white fangs, a
+  crimson gown. Still 28×11, 2-frame, body column-locked (no wobble).
+- **Gravewarden** — from an outline skull to a riveted, helmed golem with a solid
+  core; the Wight's bracket language scaled up and armoured, bright-`Y` eyes kept.
+
+So the **entire cast — chaff to boss — is now on the new fidelity.** Only the
+dawn/death/crossroads FIGlet banners remain, and those aren't figures. Jane's desk
+is clear of the 22:27 ask; next move is the owner's reaction.

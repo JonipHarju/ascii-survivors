@@ -429,6 +429,28 @@ describe('xp, motes and pickups', () => {
     assert.equal(w.xp, 0);
   });
 
+  /**
+   * Jane tuned this dial in `director.tsv` against six seeds of play. It used to
+   * be a literal, written out twice — once in the getter that reports it and once
+   * in the loop that magnets on it. Two copies of a balance number is one copy
+   * too many.
+   */
+  it('takes its pickup radius from the table, at both the boundary and the getter', () => {
+    const base = param(data.director, 'pickup_radius_base');
+    const w = quietWorld();
+    assert.equal(w.pickupRadius, base, 'no passives yet, so the radius is the base');
+
+    const inside = quietWorld();
+    inside.pickups.push({ kind: 'mote', x: inside.x + base - 1, y: inside.y, value: 1, homing: false, dead: false });
+    step(inside, 1.0);
+    assert.equal(inside.xp, 1, 'a mote just inside the radius flies to you');
+
+    const outside = quietWorld();
+    outside.pickups.push({ kind: 'mote', x: outside.x + base + 1, y: outside.y, value: 1, homing: false, dead: false });
+    outside.update(TICK_DT, { x: 0, y: 0 });
+    assert.equal(outside.pickups[0]!.homing, false, 'a mote just outside it does not');
+  });
+
   it('does not magnet chests — you walk to those', () => {
     const w = quietWorld();
     w.pickups.push({ kind: 'chest', x: w.x + 4, y: w.y, value: 1, homing: false, dead: false });

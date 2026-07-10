@@ -55,8 +55,9 @@ const DEFAULT_PARAMS: Readonly<Record<string, number>> = {
   spawn_margin: 4,
   despawn_margin: 40,
 
-  // Legibility. Jane's, and she reasons about them in `director.tsv` — these are
-  // only the values a table that forgot to mention them falls back to.
+  // Feel and legibility. Jane's, and she reasons about them in `director.tsv` —
+  // these are only the values a table that forgot to mention them falls back to.
+  pickup_radius_base: 12,
   ring_radius_frac: 0.95,
   gore_chance: 0.35,
   gore_level: 0.55,

@@ -443,8 +443,20 @@ export class World {
     return 14 + this.stats().light_radius;
   }
 
+  /**
+   * How far a mote will fly to you, in wu. `pickup_radius_base` is Jane's, in
+   * `director.tsv`: she measured time-to-first-card at 6 wu and 12 wu across six
+   * seeds, and at 6 a player who walks in a straight line waits six and a half
+   * minutes for a level-up while a player who stands still gets one in eighteen
+   * seconds. The dial doesn't touch combat; it decides whether earned XP is ever
+   * received. design.md §6.
+   *
+   * The only definition — `updatePickups` used to carry a second copy of the
+   * literal, and a magnet that pulls from a circle it doesn't draw is a bug
+   * waiting to happen.
+   */
   get pickupRadius(): number {
-    return 6 * this.stats().pickup_radius;
+    return param(this.data.director, 'pickup_radius_base') * this.stats().pickup_radius;
   }
 
   get bossActive(): boolean {
@@ -485,7 +497,7 @@ export class World {
     this.updateColumns(dt);
     this.updateHazards(dt);
     this.reap();
-    this.updatePickups(dt, stats);
+    this.updatePickups(dt);
     this.updateEffects(dt);
     this.pruneDecals();
     this.despawnDistant();
@@ -1537,8 +1549,8 @@ export class World {
     this.pickups.push({ kind, x, y, value, homing: false, dead: false });
   }
 
-  private updatePickups(dt: number, stats: Record<StatName, number>): void {
-    const radius = 6 * stats.pickup_radius;
+  private updatePickups(dt: number): void {
+    const radius = this.pickupRadius;
 
     for (const p of this.pickups) {
       if (p.dead) continue;

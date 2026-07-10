@@ -130,6 +130,9 @@ async function boot(): Promise<void> {
     if (surface.resize()) surface.invalidate();
   });
 
+  // Click away from the tab and the run stops rather than dying without you.
+  addEventListener('blur', () => app.blur());
+
   status?.remove();
 
   // Fixed-timestep sim, free-running render. Same contract as engine/loop.ts.

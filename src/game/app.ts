@@ -96,6 +96,17 @@ export class App {
     else if (opts.openShop === true) this.state = 'crossroads';
   }
 
+  /**
+   * The window lost focus. A background tab stops getting animation frames, but a
+   * merely *unfocused* one keeps running at full speed — so clicking on something
+   * else for ten seconds used to mean coming back to a corpse, standing exactly
+   * where you left it. Only `playing` pauses: a menu is already frozen, and death
+   * doesn't need confirming twice.
+   */
+  blur(): void {
+    if (this.state === 'playing') this.state = 'paused';
+  }
+
   get done(): boolean {
     return this.quitting || this.input.quitRequested;
   }

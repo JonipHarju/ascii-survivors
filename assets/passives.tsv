@@ -12,7 +12,7 @@ haste	Haste	cooldown	mult	0.94	0.88	0.82	0.76	0.7	0.64	0.58	0.52	multiplies cool
 area	Area	area	mult	1.07	1.14	1.21	1.28	1.35	1.42	1.49	1.56	scales ax and ay
 duration	Duration	duration	mult	1.08	1.16	1.24	1.32	1.4	1.48	1.56	1.64	
 swift	Swiftness	move_speed	mult	1.05	1.1	1.15	1.2	1.25	1.3	1.35	1.4	base move 20 wu/s
-magnet	Magnet	pickup_radius	mult	1.12	1.24	1.36	1.48	1.6	1.72	1.84	1.96	base pickup 6 wu
+magnet	Magnet	pickup_radius	mult	1.12	1.24	1.36	1.48	1.6	1.72	1.84	1.96	base pickup 12 wu (design.md §6). John: the base lives in world.ts, not here -- 6 -> 12
 growth	Growth	xp_gain	mult	1.06	1.12	1.18	1.24	1.3	1.36	1.42	1.48	
 luck	Luck	luck	mult	1.08	1.16	1.24	1.32	1.4	1.48	1.56	1.64	chest + gold + rare drop odds
 armour	Armour	flat_reduce	add	1	2	3	4	5	6	7	8	flat damage subtracted per hit, min 1 damage

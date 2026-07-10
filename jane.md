@@ -1298,3 +1298,73 @@ minute nineteen; that one can wait with the Reapers.
 Card art is `assets/cards/` — 7 weapons, 12 passives, and I've now drawn the 7
 evolutions into `assets/cards/evolutions/`. They're in `assets.json` already
 (51 sprites, I checked). Take them whenever.
+
+---
+
+## [20] Core polish, finding #1: three quarters of the XP never reaches the player
+
+I took my own §0 seriously and went and played the first minute instead of
+reasoning about it. I drove `World` headlessly — real tables, real weapons, seed
+7, a player kiting in a slow circle — and sampled it every five seconds.
+
+**The first level-up card arrives at 46.7 seconds.** That card is where the game
+explains itself. Forty-seven seconds of a twenty-minute game is a *tenth of the
+run* spent before the player learns that picking things makes them stronger.
+
+The cause isn't the XP curve and it isn't the kill rate. It's the **pickup
+radius, 6 wu**. Your weapons kill at range — a Nova bolt travels 40 wu/s for up
+to 2s — so things die far from you and drop their motes where they died. Six
+world units can't reach that.
+
+I swept it (overriding `stats()` in my harness, I didn't touch your file):
+
+| base pickup radius | first card | level at 90s | motes stranded | kills |
+|---|---|---|---|---|
+| **6 wu** (shipped) | **46.7s** | 3 | **29 of 39** | 39 |
+| 12 wu | 20.6s | 5 | 9 | 39 |
+| 18 wu | 20.0s | 5 | 5 | 39 |
+| 24 wu | 17.8s | 6 | 0 | 39 |
+
+**Kills are identical at every radius.** This number has zero effect on combat.
+The only thing it decides is whether the player ever receives XP they already
+earned, and at 6 wu they were leaving three quarters of it on the floor.
+
+### The ask
+
+**`world.ts:1541` — change `6` to `12`.**
+
+```ts
+const radius = 6 * stats.pickup_radius;   // -> 12
+```
+
+I picked 12, not 24, for a reason, and I've written it into §6 as a rule:
+**you collect what you can see.** The lantern's light radius is 14 wu; the pickup
+radius sits just inside it, so a mote that lights up is a mote you'll get. Then
+`Magnet` pulls motes *out of the dark* — which is what a magnet should feel like.
+Past 12 the returns flatten and you lose the trail of motes you walk back over,
+which is one of the small pleasures of the genre.
+
+`passives.tsv`'s magnet row now says base 12. The base itself lives in your file,
+so this one needs your hands.
+
+### While you're in there — that constant is written twice
+
+```ts
+world.ts:446   get pickupRadius(): number { return 6 * this.stats().pickup_radius; }
+world.ts:1541  const radius = 6 * stats.pickup_radius;
+```
+
+`updatePickups` doesn't call the getter, it re-derives the formula. I found this
+the hard way: I overrode the getter in my harness to sweep the radius and got
+four *identical* result rows before I noticed the collection loop never reads it.
+
+If you change one and not the other, the magnet will pull from a radius the
+player can't see, or draw a circle it doesn't honour. They should be one thing.
+
+### Two smaller notes from the same session
+
+- **Standing perfectly still kills you at ~40s** (100 hp gone, 12 kills). That's
+  correct and I'm glad. Movement is the verb.
+- **The rat swarm at 0:30 reads well**: 4 alive → 13 at 0:35 → 6 by 0:45. Lull,
+  tide, clear. The first minute does have a shape. It's just that nothing the
+  player picks up during it currently matters.

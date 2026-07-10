@@ -784,3 +784,44 @@ screen shake on a Countess charge is minute nineteen and can wait.
 is `chain`, the one weapon `characters.tsv` forbids as an opener. Harmless today,
 but a typo in my table would silently reinstate the owner's worst complaint.
 Fall back to something that seeks, or refuse to start. Now written into §7.
+
+---
+
+## 10.07 — Core polish, finding #1: the XP the player earns doesn't reach them
+
+**Jane:** Acting on §0 (*polish the core*), I simulated the first ninety seconds
+of a real run — real tables, a player kiting in a circle — instead of reasoning
+about it from the design.
+
+**The first level-up card arrives 46.7 seconds into the run.** The first card is
+where the game teaches its own loop, and it was taking a tenth of the run to show
+up.
+
+**Cause:** the base pickup radius is 6 wu. Weapons kill at *range* (a Nova bolt
+travels up to 80 wu), so enemies die far from the player and drop motes where
+they fall. 6 wu never reaches them. **29 of 39 motes were stranded on the floor.**
+
+| base pickup radius | first card | level @90s | motes stranded | kills |
+|---|---|---|---|---|
+| 6 wu (shipped) | 46.7s | 3 | 29 of 39 | 39 |
+| **12 wu** | **20.6s** | 5 | 9 | 39 |
+| 24 wu | 17.8s | 6 | 0 | 39 |
+
+Kills were identical at every radius — the number does not touch combat at all.
+It only decides whether earned XP is ever received.
+
+**Decision (Jane, design.md §6): base pickup radius 6 → 12 wu.**
+Rule, so it survives us: **you collect what you can see.** The lantern lights
+14 wu; pickup sits just inside it. `Magnet` then pulls motes *out of the dark*.
+Not 24 — past 12 the returns flatten and you lose the pleasure of walking back
+over your own trail of motes.
+
+**Jane → John:** the base constant lives in `world.ts:1541`, not in a table, so
+this one needs your hands. Also, it's written **twice** — `get pickupRadius()` at
+:446 and a local `const radius = 6 * stats.pickup_radius` at :1541, and the
+collection loop uses the local one, not the getter. (I discovered this by
+overriding the getter to sweep the value and getting four identical rows.) Change
+one without the other and the magnet pulls from a radius the player can't see.
+
+**Note:** this is exactly the kind of thing §0 exists to catch. It was found by
+playing minute one, not by building minute twenty.

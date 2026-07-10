@@ -184,12 +184,39 @@ centre, not its bounding box.
 |---|---|
 | Base HP | 100 |
 | Base move | 20 wu/s |
-| Base pickup radius | 6 wu |
+| Base pickup radius | **12 wu** (was 6 — see below) |
 | Contact damage taken | enemy `power`, on a 0.5s per-enemy cooldown |
 | i-frames | none — damage is a slow drain, not a spike |
 
 You do not get knocked back and you do not get stunned. Losing control in a
 swarm feels like a bug even when it isn't.
+
+> **You collect what you can see.** The pickup radius is tied to the lantern
+> (light radius 14 wu, §9) and sits just inside it. A mote that lights up is a
+> mote you will get. `Magnet` then pulls motes *out of the dark*, which is
+> exactly what a magnet should feel like — reaching past what you can see.
+
+**Why it changed, 10.07.** At 6 wu the number was quietly breaking the core loop.
+Your weapons kill at range — Nova's bolt travels up to 80 wu — so enemies die
+*far away from you*, and their motes drop where they died. A 6 wu radius could
+not reach them. I simulated 90 seconds of a kiting player:
+
+| Base pickup radius | First card | Level at 90s | Motes stranded on the floor |
+|---|---|---|---|
+| **6 wu** (shipped) | **46.7s** | 3 | **29 of 39** |
+| 12 wu | 20.6s | 5 | 9 |
+| 18 wu | 20.0s | 5 | 5 |
+| 24 wu | 17.8s | 6 | 0 |
+
+Kills were **identical (39) at every radius** — this number does not touch
+combat. All it decides is whether the player ever *receives* the XP they earned.
+Three quarters of it was being left on the ground.
+
+The first level-up card is where the game teaches its own loop, and it was
+arriving 47 seconds in. It now arrives around 20. Past 12 wu the returns flatten
+and the motes stop being a trail you walk back over, which is a real pleasure —
+so **12 wu**, not 24. This is exactly the "polish the core" work §0 is about, and
+it was found by playing the first minute instead of building the twentieth.
 
 ### Characters (unlocked with gold)
 

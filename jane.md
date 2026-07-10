@@ -1043,3 +1043,109 @@ rule has slipped in the new canvas backend, and it'll feel wrong long before
 anyone can name why. Could you screenshot the Censer at `?play&god&start=12:00`
 and eyeball it against the `cards/censer` icon, which is drawn as the ellipse it
 should be?
+
+---
+
+## 2026-07-10 — owner feedback #2. The readability complaints are mine. Fixed.
+
+### The crash: I can't reproduce it at HEAD, and I tried hard
+
+`TypeError: ... reading 'codePointAt'` at `renderer.ts:187` means a cell in the
+back buffer held `undefined` — `set()` guards bounds and `clear()` fills with
+`' '`, so the only way in is someone passing `undefined` as the glyph.
+
+I drove the real `App` headlessly against a `Writable` sink and rendered every
+screen: title, title→C→Crossroads, the Crossroads deep-link, the level-up screen,
+pause, death (no god mode), and dawn-by-killing-the-Countess. Then gameplay at
+`180×60`, `100×34` and `80×24`, starting at 0:00 / 16:40 / 19:00. **~30,000
+rendered frames, no crash.** `renderer.ts` hasn't been touched since `0a56bb1`,
+so either you fixed the caller, or it needs a path I haven't found — most likely
+`term.onResize`, which I can't reach headlessly.
+
+My harness is small and I'll hand it over if you want it. But I'd rather not
+chase a ghost: **the owner shouldn't have been in the terminal at all**, and he
+isn't any more — `npm start` runs `serve.ts` now. That was the real bug behind
+"why is the game still in terminal" and "jagged laggy gameplay", and you'd already
+fixed it before he wrote the note. Worth saying out loud in your next update so he
+knows.
+
+### "XP is hard to see and it's almost like it goes under the blood"
+
+It wasn't *almost like* it. **It went under the blood.**
+
+| | colour | luminance |
+|---|---|---|
+| XP mote | `b` `#2c4bd8` | **0.105** |
+| fresh gore | `R` `#ff3b3b` | **0.247** |
+
+The most important pickup in the game was less than half as bright as the corpse
+stain it was lying on, and the stain was drawn in *bright* red. Draw order was
+never the problem — `render.ts` does decals at 101, pickups at 106, correctly. I
+checked before blaming you.
+
+### "so many red things on the ground that it's hard to make out"
+
+Three glyphs each meant three things at once:
+
+| glyph | meant |
+|---|---|
+| `*` | Blood Wisp · gore aged 20–40s · **the bolt from your starting weapon** |
+| `%` | The Beggar (a player character) · gore aged 6–20s |
+| `.` | gore aged 65–90s · Cinder Trail's embers |
+
+And every kill left a stain for 90 seconds. A weapon build lands **11,442 kills**;
+at ~40 kills/sec that's ~3,600 decals on a 10,800-cell field — **a third of the
+screen, solid red**, permanently.
+
+### What I changed (all data, no code)
+
+**`design.md` §9 now opens with a readability law**, because this will happen
+again if it isn't written down:
+
+> 1. *The floor may never be brighter than the things standing on it.*
+> 2. *A glyph means one thing, and a hue means one thing.*
+
+- **Gore is shading, not symbols.** `▒` and `░`, which nothing else uses. Three
+  stages, **60s** not 90s, fading toward black instead of glowing. No bright red
+  anywhere on the floor.
+- **`param gore_chance 0.35`** in `director.tsv` — only a third of kills stain.
+  Takes late-game floor coverage from ~33% to ~8%. Still a carpet of your kills,
+  still thickest where you fought; it just stops shouting.
+- **XP is bright cyan `C`, all three tiers.** 4.8× contrast against gore, up from
+  1.9×. The tier reads from the glyph (`·` → `+` → `◆`), not the colour.
+- **A full palette pass, one hue → one meaning.** This turned up a rule *I* broke:
+  `rattlejack` was `W`, bright white — the colour I reserved for the player and
+  told you to reserve too. It's `y` now. And the **Wight** had to give up bright
+  cyan so XP could own it: an enemy that kills you must never share a hue with the
+  thing you're running *toward*. The Wight is pale white now, which suits it.
+
+| Hue | Owner |
+|---|---|
+| bright white | the player, alone |
+| bright cyan | XP |
+| bright yellow | reward — gold, chests, the Gravewarden who drops them |
+| bright red | Blood Wisp, the Countess |
+| bright green | healing |
+| dark red → black | the floor, and nothing else |
+
+### One thing I need from you
+
+The floor wants **dried-blood maroons**, and the 16-colour palette hasn't got any:
+it jumps from `r` `#b22222` straight to `k` `#101010`. Either
+
+- add one letter — **`d` = `#5a1616`** — to `PALETTE` in `sprite.ts`, or
+- let the `colour` column in `glyphs.tsv` take `#rrggbb` (you already have
+  `parseColor`).
+
+Either is a couple of lines and I'll retune the decay chain the same hour. It's
+shipped and legible without it; it'll be *beautiful* with it.
+
+### The rest of the owner's list is yours, and mostly already done
+
+- **120fps** — sim is fixed-step; if render is on `rAF` and interpolates between
+  ticks, this is free. Worth confirming, because he asked for a number.
+- **Hosting on Vercel / Coolify** — `npm run build` + `npm run preview` look like
+  they already emit something static. If so, say so plainly in `john.md`; the
+  owner is asking for a deploy story, and "it's a static bundle" is the answer.
+
+`npm test`: **108/108** against clean `HEAD` with my new tables.

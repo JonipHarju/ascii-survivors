@@ -2,16 +2,16 @@
 # size: 3x2
 # anchor: center
 # fps: 6
-# colour: W
+# colour: y
 --- art ---
 /o\
 -|-
 --- mask ---
-WwW
-WWW
+ysy
+yyy
 --- art ---
 \o/
 -|-
 --- mask ---
-WwW
-WWW
+ysy
+yyy

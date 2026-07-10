@@ -25,6 +25,14 @@ param	cap_end	60	max spawns/sec at 20:00
 param	spawn_margin	4	spawn this many cells outside the viewport edge
 param	despawn_margin	40	cull enemies further than this (cells) from the player
 param	ring_radius_frac	0.95	see below
+param	gore_chance	0.35	fraction of kills that leave a decal. NOT 1.0 -- see below.
+
+# GORE DENSITY. Every kill used to stain the floor. A weapon build lands 11,442
+# kills in 20 minutes; at ~40 kills/sec with a 90s decay that is ~3,600 decals on
+# a 10,800-cell field -- a third of the screen, solid red, and the owner could not
+# read the XP through it. At gore_chance 0.35 with a 60s decay it settles near 8%:
+# still a carpet of your kills, still thickest where you fought, but the floor
+# stops competing with the things standing on it.
 
 # THE RING must be INSCRIBED in the viewport, not circumscribed around it:
 #   radius_wu = min(half_width_wu, half_height_wu) * ring_radius_frac

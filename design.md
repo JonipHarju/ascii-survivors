@@ -237,9 +237,14 @@ inhale from across the screen.
 
 | Glyph | Colour | XP | |
 |---|---|---|---|
-| `·` | blue | 1 | every enemy |
-| `+` | green | 5 | merged, or elites |
-| `◆` | yellow | 20 | merged, or chests |
+| `·` | bright cyan | 1 | every enemy |
+| `+` | bright cyan | 5 | merged, or elites |
+| `◆` | bright cyan | 20 | merged, or chests |
+
+All three are the same hue on purpose: **cyan is XP**, and the tier reads from the
+glyph, not the colour. The Wight used to own bright cyan; it is now pale white,
+because an enemy that kills you must never share a hue with the thing you are
+running *toward*.
 
 `xp_to_next(L) = ceil(5 × 1.16^(L-1))`. Measured over three full simulated runs:
 **level 20–39**, and **1,300–11,400 kills**, depending entirely on the build. A
@@ -319,12 +324,49 @@ The player is the only light. Light radius **14 wu** (`Lantern Oil` raises it).
 *Playtest risk:* 300 dim-grey glyphs may read as mush. **This must be a runtime
 flag (`--no-dark`) from day one** so we can A/B it. If it's ugly, it dies.
 
+### The readability law
+
+*Added 2026-07-10, after the owner reported "XP is hard to see, it's almost like
+it goes under the blood" and "so many red things on the ground it's hard to make
+out." Both were true, and both were my fault.*
+
+Two rules, not negotiable, because breaking them makes the game unreadable no
+matter how good the art is:
+
+1. **The floor may never be brighter than the things standing on it.** Fresh gore
+   was `R` (`#ff3b3b`), brighter than most enemies. The XP mote was `b`
+   (`#2c4bd8`), luminance **0.105 against the blood's 0.247**. The mote was
+   literally dimmer than the blood it lay on. It didn't *look like* it went under
+   the blood — perceptually, it went under the blood.
+2. **A glyph means one thing, and a hue means one thing.** `*` was the Blood
+   Wisp, *and* gore aged 20–40s, *and* the bolt from your starting weapon. `%`
+   was gore *and* the Beggar. `.` was gore *and* Cinder Trail's embers.
+
+**The palette, by owner:**
+
+| Hue | Belongs to |
+|---|---|
+| bright white `W` | **the player**, and nothing else, ever |
+| bright cyan `C` | **XP**, all three tiers |
+| bright yellow `Y` | reward — gold, chests, and the Gravewarden who drops them |
+| bright red `R` | the Blood Wisp, and the Countess |
+| bright green `G` | healing |
+| grey · bone · white · yellow · magenta · red | ghoul · rat · wight · rattlejack · stalker · bat |
+| dark red → black | **the floor.** Never anything else. |
+
 ### The Gore — the floor remembers
 
-A **decal layer** underneath everything. Every death writes gore at the corpse's
-cell and it decays over ~90 seconds:
+A **decal layer** underneath everything. Gore is **shading, not symbols** — `▒`
+and `░`, which nothing else uses — and it fades toward black rather than glowing.
+Three stages over **60 seconds**:
 
-`※` fresh (bright red) → `%` → `*` → `,` → `.` → `` (gone)
+`▒` fresh (dark red) → `░` (dark red) → `░` (near black) → gone
+
+**Only `gore_chance` (0.35) of kills leave a mark at all.** Every kill used to. A
+weapon build lands 11,442 kills; at ~40 kills/sec with a 90-second decay that is
+~3,600 decals on a 10,800-cell field — **a third of the screen, solid red**. At
+0.35 and 60s it settles near **8%**: still a carpet of your kills, still thickest
+where you fought hardest, but the floor stops shouting.
 
 Decals never block movement, never collide, never think. It is a character grid
 and a timestamp grid. By minute 18 the field is a red-brown carpet that thins

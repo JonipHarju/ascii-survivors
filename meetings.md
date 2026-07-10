@@ -648,3 +648,64 @@ cells. If it comes out circular on the canvas, the aspect rule has slipped in th
 new backend, and it will feel wrong long before anyone can name why. Screenshot it
 at `?play&god&start=12:00` and compare against the `cards/censer` icon, which is
 drawn as the ellipse it ought to be.
+
+---
+
+## 2026-07-10 — owner feedback #2: the game was unreadable, and Jane wrote the bug
+
+The owner played again at 23:03 and left four things: a crash, "why is this still
+in a terminal," **"XP is hard to see and it's almost like it goes under the
+blood,"** and **"there are soo many red things on the ground at times that it's
+hard to make out."** Plus: 120fps, and it must deploy to Vercel/Coolify.
+
+**[Crash — not reproducible at HEAD]** Jane drove the real `App` headlessly and
+rendered every screen (title, Crossroads, level-up, pause, death, dawn) at three
+viewport sizes and three start times: **~30,000 frames, no crash.** `renderer.ts`
+is untouched since the canvas port, so either John fixed the caller or it needs
+`term.onResize`, which can't be reached headlessly.
+
+**[The real answer to "why is it still in a terminal"]** It isn't. `npm start`
+already runs `serve.ts` — John had fixed it before the owner wrote the note. The
+owner was running an old build. *Worth John saying so plainly in his next update.*
+
+**[Jane was wrong — the XP really did go under the blood]** Not "almost like."
+The XP mote was `#2c4bd8`, luminance **0.105**. Fresh gore was `#ff3b3b`,
+luminance **0.247**. The most important pickup in the game was less than half as
+bright as the corpse stain it lay on, and the stain was drawn in *bright* red.
+Draw order was never at fault — Jane checked `render.ts` before blaming John.
+
+**[Jane was wrong — three glyphs each meant three things]** `*` was the Blood
+Wisp *and* gore aged 20–40s *and* the bolt from the starting weapon. `%` was gore
+*and* the Beggar. `.` was gore *and* Cinder Trail's embers. And every kill stained
+the floor for 90 seconds: at a weapon build's **11,442 kills**, roughly 3,600
+decals on a 10,800-cell field — **a third of the screen, permanently red.**
+
+**[Decision — the readability law, now in `design.md` §9]**
+> 1. **The floor may never be brighter than the things standing on it.**
+> 2. **A glyph means one thing, and a hue means one thing.**
+
+Gore is now *shading* (`▒`, `░`) that nothing else uses, three stages over 60s,
+fading to black. Only `gore_chance = 0.35` of kills stain at all, taking late-game
+coverage from ~33% to ~8% — still a carpet of your kills, still thickest where you
+fought, but it stops shouting. XP is **bright cyan**, 4.8× contrast against gore
+(was 1.9×), with the tier reading from the glyph rather than the colour.
+
+**[The palette pass, and a rule Jane broke herself]** One hue, one meaning. The
+audit found `rattlejack` painted `W` — **bright white, the colour Jane reserved
+for the player and told John to reserve too.** Fixed. And the Wight had to give up
+bright cyan so XP could own it: *an enemy that kills you must never share a hue
+with the thing you are running toward.* Bright white → the player alone; bright
+cyan → XP; bright yellow → gold, chests and the Gravewarden who drops them; dark
+red → the floor, and nothing else.
+
+**[Request — Jane → John]** The floor wants dried-blood maroons and the 16-colour
+palette has none: it jumps from `#b22222` straight to `#101010`. Either add one
+letter (`d` = `#5a1616`) to `PALETTE`, or let the `colour` column take `#rrggbb`
+(`parseColor` already exists). Shipped and legible without it; beautiful with it.
+
+**[Still John's]** 120fps (free if render runs on `rAF` and interpolates between
+fixed sim ticks) and a plain statement of the deploy story — `npm run build` /
+`npm run preview` look like they already emit a static bundle, which is exactly
+what the owner is asking for.
+
+`npm test`: **108/108** against clean HEAD with the new tables.

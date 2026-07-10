@@ -17,14 +17,14 @@
 # id	glyph	name	colour	hp	speed	power	cost	from	xp	hit_rad	notes
 #--------------------------------------------------------------------------------------
 player	@	The Warden	W	100	20	0	-	-	0	1.2	bright white, bold; nothing else may be bright white
-ashling	&	The Ashling	Y	70	24	0	-	-	0	1.2	unlockable character
-beggar	%	The Beggar	M	100	20	0	-	-	0	1.2	unlockable character
+ashling	&	The Ashling	W	70	24	0	-	-	0	1.2	unlockable character
+beggar	%	The Beggar	W	100	20	0	-	-	0	1.2	unlockable character
 
 ghoul	g	Ghoul	e	10	9	4	1	0:00	1	1.4	walks straight at player
 rat	r	Grave Rat	s	2	14	2	1	0:30	1	0.8	spawns in packs of 12+
 bat	w	Bat	r	5	26	3	2	2:00	1	0.9	sine-wave drift, amplitude 6wu period 1.2s
-wight	W	Wight	C	40	6	9	5	4:00	2	2.2	advances in a line
-rattlejack	x	Rattlejack	W	16	11	6	4	8:00	2	1.4	on death spawns 2 rats
+wight	W	Wight	w	40	6	9	5	4:00	2	2.2	advances in a line
+rattlejack	x	Rattlejack	y	16	11	6	4	8:00	2	1.4	on death spawns 2 rats
 wisp	*	Blood Wisp	R	12	16	5	4	12:00	2	1.3	ignores enemy-enemy collision
 stalker	S	Stalker	m	30	18	12	9	14:00	5	2.0	INVISIBLE outside light radius; show ? at light edge 1.0s before entry
 
@@ -32,18 +32,32 @@ gravewarden	G	Gravewarden	Y	600	7	16	0	-	40	3.4	ELITE. bold+bright, hp bar above
 countess	M	The Countess	R	9000	10	25	0	-	200	7.0	BOSS. drawn from sprites/countess.txt (28x11, 2 frames); glyph M is only the loader fallback. spawns 19:00, clock stops.
 
 # --- pickups (not enemies; same table so John has one parser) ---
-mote1	·	XP Mote	b	-	0	0	-	-	1	0	merges with adjacent motes -> mote5
-mote5	+	XP Shard	G	-	0	0	-	-	5	0	merges -> mote20
-mote20	◆	XP Heart	Y	-	0	0	-	-	20	0	does not merge further
+mote1	·	XP Mote	C	-	0	0	-	-	1	0	merges with adjacent motes -> mote5
+mote5	+	XP Shard	C	-	0	0	-	-	5	0	merges -> mote20
+mote20	◆	XP Heart	C	-	0	0	-	-	20	0	does not merge further
 gold	$	Gold	Y	-	0	0	-	-	0	0	1-in-50 kills, all chests/elites
 chest	▄	Chest	Y	-	0	0	-	-	0	0	from elites; triggers evolution if eligible
-heal	♥	Roast Chicken	R	-	0	0	-	-	0	0	rare drop, heals 30
+heal	♥	Roast Chicken	G	-	0	0	-	-	0	0	rare drop, heals 30
 
 # --- decals (gore layer, design.md §9) --------------------------------------
 # age is seconds since the kill. Decals never collide, never move, never think.
+#
+# READABILITY LAW (design.md §9): the floor may never be brighter than the things
+# standing on it, and a decal may never share a glyph with anything that acts.
+# The old table broke both. It used bright red `R` for fresh gore -- brighter than
+# most enemies -- and its glyphs `*`, `%` and `.` were also the Blood Wisp, the
+# Beggar, and Cinder Trail's embers. Three things on screen, one character each,
+# no way to tell them apart. Gore is now SHADING (`▒`/`░`), which nothing else
+# uses, and it fades toward black instead of glowing.
+#
+# TODO(John): I want dried-blood maroons here, not `r` then a jump to near-black.
+# Please add one palette letter -- `d` = #5a1616 -- or let this column take
+# `#rrggbb` (parseColor already exists). Then decal1 becomes `d` and decal2 `#2a0c0c`.
+#
+# Lifetime dropped 90s -> 60s and only `gore_chance` of kills leave a mark at all
+# (director.tsv). At 18:00 that takes floor coverage from ~33% to ~8%.
+#
 # decal	glyph	colour	age_from	age_to
-decal0	※	R	0	6
-decal1	%	r	6	20
-decal2	*	r	20	40
-decal3	,	e	40	65
-decal4	.	k	65	90
+decal0	▒	r	0	10
+decal1	░	r	10	30
+decal2	░	k	30	60

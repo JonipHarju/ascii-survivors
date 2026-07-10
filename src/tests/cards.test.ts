@@ -18,6 +18,7 @@ import { parseCrossroads } from '../data/crossroads.ts';
 import { parseCountess } from '../data/countess.ts';
 import type { GameData } from '../data/gamedata.ts';
 import { generateCards } from '../game/upgrades.ts';
+import { wrap } from '../game/app.ts';
 import { World } from '../game/world.ts';
 
 const WEAPONS = [
@@ -104,5 +105,38 @@ describe('level-up hands', () => {
     w.weapons.length = 0; // no weapons, so every card is new
     assert.doesNotThrow(() => generateCards(w, new Rng(5)));
     assert.equal(generateCards(w, new Rng(5)).length, 3);
+  });
+});
+
+describe('card effect text', () => {
+  const W = 20; // a 24-wide card, less its border and padding
+
+  it('keeps a whole sentence that fits on two lines', () => {
+    const lines = wrap('Sweeps a wide band to either side of you.', W, 2);
+    assert.deepEqual(lines, ['Sweeps a wide band', 'to either side of…']);
+  });
+
+  it('never exceeds the width or the line budget', () => {
+    for (const s of [
+      'damage +16%',
+      '9 damage · 1.34s cooldown',
+      'A fourth wisp.',
+      'the ring ignites the floor it passes over',
+      'supercalifragilisticexpialidocious',
+    ]) {
+      const lines = wrap(s, W, 2);
+      assert.ok(lines.length <= 2, `${s}: ${lines.length} lines`);
+      for (const l of lines) assert.ok(l.length <= W, `${s}: "${l}" is ${l.length} wide`);
+    }
+  });
+
+  it('leaves a short line alone rather than padding or ellipsizing it', () => {
+    assert.deepEqual(wrap('damage +16%', W, 2), ['damage +16%']);
+  });
+
+  it('says so when it had to drop text', () => {
+    const lines = wrap('the ring ignites the floor it passes over and keeps burning', W, 2);
+    assert.equal(lines.length, 2);
+    assert.ok(lines[1]!.endsWith('…'), `no ellipsis: "${lines[1]}"`);
   });
 });

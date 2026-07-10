@@ -355,10 +355,16 @@ export class App {
     return { x: Math.floor((r.width - w) / 2), y: 1, w, h };
   }
 
+  /**
+   * Flatten the field to one dim grey behind a menu. A late-game field carries
+   * 250 enemies and 4,000 decals; at 0x4a it was still loud enough to compete
+   * with three cards laid on top of it, and the cards are the only thing the
+   * player can act on while they're up.
+   */
   private dimField(r: Surface, field: Rect): void {
     for (let y = field.y; y < field.y + field.h; y++) {
       for (let x = field.x; x < field.x + field.w; x++) {
-        if (r.getChar(x, y) !== ' ') r.tint(x, y, 0x4a4a4a);
+        if (r.getChar(x, y) !== ' ') r.tint(x, y, 0x333333);
       }
     }
   }
@@ -501,7 +507,14 @@ export class App {
       this.drawCardArt(r, card, rect, bg);
       drawCentered(r, mid, rect.y + 8, card.title, TEXT, bg);
       drawCentered(r, mid, rect.y + 9, card.levelText, card.isNew ? 0x3aff3a : DIM, bg);
-      drawCentered(r, mid, rect.y + 11, truncate(card.effect, cardW - 4), DIM, bg);
+
+      // Jane writes real sentences in the `note` column — "Sweeps a wide band to
+      // either side of you." A card that cuts her off at "Sweeps a wide ba…" is
+      // asking the player to choose blind. Two lines, and the card is 24 wide
+      // because three of them plus gaps must still fit an 80-column terminal.
+      const lines = wrap(card.effect, cardW - 4, 2);
+      for (const [j, line] of lines.entries()) drawCentered(r, mid, rect.y + 11 + j, line, DIM, bg);
+
       drawCentered(r, mid, rect.y + cardH - 1, ` ${i + 1} `, border, bg);
     }
 
@@ -600,4 +613,33 @@ function truncate(s: string, max: number): string {
   return s.length <= max ? s : `${s.slice(0, Math.max(1, max - 1))}…`;
 }
 
-export { MIN_COLS, MIN_ROWS };
+/**
+ * Greedy word wrap to at most `maxLines` lines of `width`, ellipsizing the last.
+ * A word longer than the line is cut rather than allowed to overflow the card.
+ */
+function wrap(s: string, width: number, maxLines: number): string[] {
+  const lines: string[] = [];
+  let line = '';
+
+  for (const word of s.split(' ')) {
+    const candidate = line === '' ? word : `${line} ${word}`;
+    if (candidate.length <= width) {
+      line = candidate;
+    } else {
+      if (line !== '') lines.push(line);
+      line = word;
+    }
+  }
+  if (line !== '') lines.push(line);
+
+  // A word longer than the line gets cut wherever it lands; text that ran out of
+  // lines is dropped, and the surviving last line says so.
+  const overflowed = lines.length > maxLines;
+  if (overflowed) lines.length = maxLines;
+
+  const out = lines.map((l) => truncate(l, width));
+  if (overflowed && out.length > 0) out[out.length - 1] = truncate(`${out[out.length - 1]!}…`, width);
+  return out;
+}
+
+export { MIN_COLS, MIN_ROWS, wrap };

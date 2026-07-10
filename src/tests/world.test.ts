@@ -439,21 +439,30 @@ describe('xp, motes and pickups', () => {
 });
 
 describe('evolution', () => {
-  it('needs the weapon maxed AND the paired passive maxed', () => {
+  it('needs the weapon maxed and the paired passive merely OWNED', () => {
+    // Jane simulated the old "both maxed" gate: a player rushing exactly these
+    // two and nothing else evolved in one seed of three, in the last minute.
     const w = quietWorld();
     assert.equal(w.eligibleEvolution(), null);
 
     w.weapons[0]!.level = 4; // maxLevel of 'chain' in this fixture
-    assert.equal(w.eligibleEvolution(), null, 'weapon maxed but no Might');
+    assert.equal(w.eligibleEvolution(), null, 'weapon maxed but no Might at all');
 
+    w.passives.push({ id: 'might', level: 1 });
+    assert.equal(w.eligibleEvolution()?.intoId, 'ouroboros', 'level 1 Might is the key');
+  });
+
+  it('still needs the weapon at max level', () => {
+    const w = quietWorld();
+    w.weapons[0]!.level = 3; // one short
     w.passives.push({ id: 'might', level: 8 });
-    assert.equal(w.eligibleEvolution()?.intoId, 'ouroboros');
+    assert.equal(w.eligibleEvolution(), null, 'the weapon is the commitment');
   });
 
   it('opening a chest evolves the weapon and flashes the screen', () => {
     const w = quietWorld();
     w.weapons[0]!.level = 4;
-    w.passives.push({ id: 'might', level: 8 });
+    w.passives.push({ id: 'might', level: 1 });
 
     w.pickups.push({ kind: 'chest', x: w.x, y: w.y, value: 1, homing: false, dead: false });
     step(w, 0.05);
@@ -539,6 +548,41 @@ describe('the spawn director', () => {
       w.enemies.length <= Math.ceil(target) + 2,
       `must not overshoot the target: ${w.enemies.length} vs target ${target.toFixed(1)}`,
     );
+  });
+
+  it('spawns The Ring fully on screen', () => {
+    // A circle in wu is an ellipse on screen: the viewport is 90 wu wide but only
+    // 60 wu tall, so a wu-circle put half the ring outside the field, and the
+    // player saw a band closing from left and right rather than a ring.
+    const ringDirector = [
+      'param\trun_duration\t1200',
+      'param\ttarget_start\t0',
+      'param\ttarget_end\t0',
+      'mix\tghoul\t0:00\t100\t100',
+      'beat\t7:00\tring\tghoul\t60\tTHE RING',
+    ].join('\n');
+
+    const w = new World(makeData(ringDirector), 3);
+    const cols = 180;
+    const rows = 60;
+    w.setViewport(cols, rows);
+    w.weapons.length = 0;
+    w.time = 7 * 60 - 0.5;
+    step(w, 1.0);
+
+    const ring = w.enemies.filter((e) => e.def.id === 'ghoul');
+    assert.equal(ring.length, 60);
+
+    const halfX = cols / 2;
+    const halfY = (rows / 2) * WU_PER_ROW;
+    const onScreen = ring.filter((e) => Math.abs(e.x - w.x) <= halfX && Math.abs(e.y - w.y) <= halfY);
+    assert.equal(onScreen.length, 60, `${60 - onScreen.length} ghouls spawned off-screen`);
+
+    // And it must still surround the player, not hug one axis.
+    assert.ok(ring.some((e) => e.y < w.y - halfY * 0.5), 'ghouls above');
+    assert.ok(ring.some((e) => e.y > w.y + halfY * 0.5), 'ghouls below');
+    assert.ok(ring.some((e) => e.x < w.x - halfX * 0.5), 'ghouls left');
+    assert.ok(ring.some((e) => e.x > w.x + halfX * 0.5), 'ghouls right');
   });
 
   it('fires the rat swarm beat exactly once', () => {

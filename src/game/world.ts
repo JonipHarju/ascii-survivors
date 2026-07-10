@@ -732,10 +732,17 @@ export class World {
 
       case 'ring': {
         if (def === undefined) return;
-        const radius = Math.max(this.viewHalf().x, 40) * 0.95;
+        // A circle in wu is an ellipse on screen, and the viewport is far wider
+        // in wu than it is tall (a cell is 1x2). A wu-circle of radius 85 put
+        // half the ring outside the field: the player saw a band closing from
+        // the left and right, not a ring closing around them. Spawn on an
+        // ellipse matching the viewport, which *is* a circle once drawn.
+        const half = this.viewHalf();
+        const rx = half.x * 0.92;
+        const ry = half.y * 0.92;
         for (let i = 0; i < beat.count; i++) {
           const a = (i / beat.count) * Math.PI * 2;
-          this.spawnEnemy(def, this.x + Math.cos(a) * radius, this.y + Math.sin(a) * radius);
+          this.spawnEnemy(def, this.x + Math.cos(a) * rx, this.y + Math.sin(a) * ry);
         }
         return;
       }
@@ -1596,7 +1603,14 @@ export class World {
     this.gold += Math.round(crossroadsParam(this.data.crossroads, 'gold_per_chest') * this.goldMultiplier);
   }
 
-  /** Weapon at max level + its paired passive at max level. */
+  /**
+   * Weapon at max level + the paired passive **owned** (any level).
+   *
+   * It used to require the passive at max level too. Jane simulated a player who
+   * rushes exactly those two and nothing else, and the payoff moment of the run
+   * landed in one seed out of three, with 70 seconds left. The weapon is the
+   * commitment; the passive is the key. design.md §8.
+   */
   eligibleEvolution(): Evolution | null {
     for (const w of this.weapons) {
       if (w.evolved !== null) continue;
@@ -1604,11 +1618,7 @@ export class World {
 
       const evo = evolutionFor(this.data.evolutions, w.id);
       if (evo === null) continue;
-
-      const passive = this.passives.find((p) => p.id === evo.passive);
-      const def = this.data.passives.byId.get(evo.passive);
-      if (passive === undefined || def === undefined) continue;
-      if (passive.level < passiveMaxLevel(def)) continue;
+      if (!this.passives.some((p) => p.id === evo.passive && p.level >= 1)) continue;
 
       return evo;
     }

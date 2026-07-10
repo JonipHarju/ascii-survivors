@@ -1,6 +1,11 @@
 /**
- * `assets/evolutions.tsv` — weapon at max level + paired passive at max level,
+ * `assets/evolutions.tsv` — weapon at max level + the paired passive **owned**,
  * then open a chest. The evolved weapon replaces the base one in the same slot.
+ *
+ * The gate used to demand the passive at max level too. Jane simulated it: a
+ * player rushing exactly those two items and taking nothing else evolved in one
+ * seed out of three, in the last minute of the run. The weapon is the
+ * commitment; the passive is only the key. design.md §8.
  *
  * design.md §8 calls this "the payoff moment of the entire run", so the trigger
  * check lives close to the data and the presentation is loud.

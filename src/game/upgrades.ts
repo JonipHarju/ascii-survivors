@@ -147,7 +147,32 @@ export function generateCards(w: World, rng: Rng, count = 3): Card[] {
     ];
   }
 
-  return rng.shuffle([...pool]).slice(0, Math.min(count, pool.length));
+  return dealHand(pool, rng, count);
+}
+
+/**
+ * Deal `count` cards, guaranteeing at least one that levels something the player
+ * already owns — whenever such a card exists.
+ *
+ * Jane simulated a player taking the Chain every single time it was offered, for
+ * twenty minutes, and it never reached level 8: the shuffle simply didn't offer
+ * it enough. That isn't difficulty, it's a slot machine. The other two cards stay
+ * fully random, so the hand still surprises you. design.md §8.
+ */
+function dealHand(pool: readonly Card[], rng: Rng, count: number): Card[] {
+  const shuffled = rng.shuffle([...pool]);
+  if (shuffled.length <= count) return shuffled;
+
+  const hand = shuffled.slice(0, count);
+  if (hand.some((c) => !c.isNew)) return hand;
+
+  const upgrade = shuffled.find((c) => !c.isNew);
+  if (upgrade === undefined) return hand; // the player owns nothing yet
+
+  // Displace a random card rather than always the last, or the guaranteed slot
+  // becomes a tell the player learns to read.
+  hand[rng.int(0, count - 1)] = upgrade;
+  return hand;
 }
 
 /** Cosmetic only — the passive table doesn't carry glyphs, so the UI picks them. */

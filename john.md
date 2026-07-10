@@ -652,3 +652,105 @@ complaining about. I think it reads now; you'll have a better eye for it.
 2. Rerolls / Banishes: bought, saved, applied — no buttons on the level-up screen.
 3. Endless mode.
 4. Juice: screen shake on a Countess charge, damage numbers, ember particles.
+
+---
+
+## [17] The "...." was `file://`. It's gone, and so is a HUD bug you never saw.
+
+`owner-feedback.md` 10.07 10:10: *"Currently the game just loads '....'"*, and
+*"the focus is way too much on late game — polish the core game."* Both taken.
+
+### The loading screen was `loading the night…` forever, and it was structural
+
+He wasn't running a stale build. He **double-clicked `index.html`**.
+
+A `<script type="module" src="…">` is a *fetch*, and browsers refuse cross-origin
+fetches from a `file://` path. So on a multi-file build, opening the page from
+disk runs **no JavaScript at all** — not the game, and not the `.catch()` that
+would have told him why. The page sits on its loading text until he closes the
+tab. I reproduced it in one command and it fails 100% of the time.
+
+**`npm run build` now emits exactly one file: `dist/index.html`.** The code and
+every byte of `assets/` are inlined into it. It fetches nothing, so there is
+nothing left to block: it plays off `file://`, off a USB stick, and off Vercel or
+Coolify unchanged. 251 KB. `npm start` is unchanged for you — still recompiles and
+re-packs `assets/` on every refresh.
+
+(I wrote a ~100-line bundler to do it. `tsc` emits CommonJS, where every import is
+a literal `require("./x.js")`, so bundling is just "wrap each module in a function
+and hand it a `require`". No dependency, no AST.)
+
+The dev page also grew a plain-`<script>` tripwire: if the module never runs, the
+loading text now says so instead of lying.
+
+### While screenshotting your ring, I found the canvas eating a HUD row
+
+**The bottom HUD row — the XP bar, the weapon strip, the fps counter — has not
+rendered in the browser for as long as the canvas has existed.** Neither has the
+right-hand end of the top HUD, which is why the kill counter looked truncated.
+
+`resize()` recomputes two things: the grid (cols × rows) and the cell size. It
+was skipping the canvas element's resize whenever the *grid* was unchanged — but
+the grid pins at 120×40 across nearly every window, so a resize normally changes
+only the cell. The game then drew a bigger cell into a smaller canvas and the last
+row and last columns fell off the edge. Fixed, with two tests.
+
+Your field was never wrong. The frame around it was.
+
+### Your ring is inscribed now, and your params are wired
+
+I had "fixed" the ring by spawning on an ellipse and left a comment claiming a
+wu-circle draws as an ellipse. **That comment was wrong and your table was right.**
+A cell is 1 wu wide and 2 wu tall, so a wu is the same number of *pixels* in both
+axes: a circle in world units draws as a circle. It reads as a ring now, centred
+on the player, entirely on screen. `ring_radius_frac` comes from your table.
+
+Also read from `director.tsv`, no longer constants in my code:
+
+| param | was | now |
+|---|---|---|
+| `gore_chance` | every kill stained | 0.35, rolled on a cell's *first* kill |
+| `gore_level` | `const GORE_LEVEL` | yours |
+| `mote_lift` | 0.35, hardcoded | 0.10, yours |
+| `mote_pulse` / `mote_pulse_hz` | I claimed a pulse; there wasn't one | yours, and only motes pulse now |
+| `pickup_radius_base` | `6`, written twice | 12, read once |
+
+You were right that `gore_chance` belongs on *distinct cells stained* rather than
+on kills — that is what floor coverage means. Re-killing ground you're still
+standing on refreshes it either way.
+
+And **the decal lifetime was hardcoded to 90s** while your chain ends at 60. Dead
+decals were holding their cells and their memory for thirty seconds after they
+stopped being visible. It reads the last stage's `ageTo` off your table now.
+
+### Two things you asked for, both done
+
+1. **`d` = `#5a1616` is in `PALETTE`.** Dried blood. It's yours.
+2. **The `colour` column now also takes `#rrggbb`** anywhere a palette letter
+   goes. The letters stay the vocabulary — one hue, one meaning — but you should
+   never have to file a ticket for a shade again.
+
+### Your card art is on the cards
+
+`cards/<weapon>` and `cards/passives/<id>`, by convention, no new table column.
+The card grew to 24×14 to hold your 12×5 art with the title, level and effect
+under it. My `↑ » ○` glyphs are the fallback for anything you haven't drawn.
+Never tinted — your mask assigns a colour per character and a tint would flatten
+the drawing to one hue.
+
+**`?cards` (or `--cards`) opens a level-up hand straight away** so you can look at
+them without playing to level 2. `?cards&seed=5` if you want a specific three.
+
+### One correction for you
+
+`evolutions.tsv` line 2 still says *"weapon at level 8 + paired passive at level 8"*.
+The code and `design.md` §8 both say the passive only has to be **owned** — your
+simulation is the reason it changed. The header is stale; the data is fine.
+
+### Still open, in order
+1. Juice: damage numbers, screen shake on a Countess charge, ember particles.
+   This is the core-game polish the owner is asking for, and it's next.
+2. Rerolls / Banishes: bought, saved, applied — still no buttons on the level-up
+   screen.
+3. Endless mode. **Parked** — the owner explicitly said no more late-game work
+   until the core is polished, and he's right.

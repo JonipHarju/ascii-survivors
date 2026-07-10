@@ -2180,3 +2180,17 @@ Left: the alt characters (Ashling, Beggar) are still 3x3 stick figures and will
 look wrong next to the new 5x5 Warden the moment they're unlocked — that's my next
 sprite chunk. And the Gravewarden/Countess could carry more shading at their size,
 but they already read; the common field was the fire.
+
+### [31 cont. 2] The title screen is the first frame he sees, so I illustrated it.
+
+`ui/title.txt` used to put a flat scatter of `w`/`g` motes with a lone `@` under
+the logo. The **first** thing the owner sees on boot was the weakest art in the
+game. It's now a tableau: the Warden **raising his lantern** (`◆` over `╱@╲` over a
+shaded body) ringed by `"` — eyes glinting in the dark, a horde watching from
+outside the light. That's the entire pitch of the game in one still, and it shows
+the new character fidelity before a single enemy spawns. Logo unchanged; fits the
+20-row budget; art/mask generated together so they can't drift. Same block glyphs
+as the sprites, so the same font confirmation covers it.
+
+(dawn/death/crossroads are competent FIGlet banners and not a first impression —
+left for later.)

@@ -13,33 +13,33 @@
                       | |\  | | | | |_| ||  _  |  | |
                       |_| \_||___| \____||_| |_|  |_|
 
-     ________________________________________________________________
-
-     w        w         g   g      g      w         w        w
-        g          g        @        g         g        g
-     w        g         g   g      g      g         w        w
-
+        "      "                                      "     "
+            "      "             ◆               "       "
+                        "       ╱@╲         "
+                                ▐█▌
+                           "    ▐█▌      "
+                                / \
                   [ ENTER ]  begin the night
                   [   C   ]  the crossroads
                   [   Q   ]  stay in the dark
 --- mask ---
-   rrrrr  r   r  rrrrr    r       rrr   r   r   rrrr
-  rr   rrr r r rr rrrrr  r r     r r r r r r r r rrrr
-    r r  r rrr rr  rr    r r    r r r rr  rr rr r  r
-    r r  r  r  rr rrrr   r rrrr r rrr rr rr  rr rrr r
-    rrr  rrr rrrrrrrrrr  rrrrrrr rrrrr rrr rrr rrrrrr
-                       r   r  rrr   rrrr  r   r  rrrrr
-                      r r r rrr rr r rrrrr r r rrr   rr
-                      r  rr r r r r r  r r rrr r  r r
-                      r rr  r r r r rrr rr  r  r  r r
-                      rrr rrrrrrrr rrrrrrrrr rrr  rrr
+rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
 
-     kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
-
-     r        r         e   e      e      r         r        r
-        e          e        W        e         e        e
-     r        e         e   e      e      e         r        r
-
+        r      r                                      r     r
+            r      r             y               r       r
+                        r       wWw         r
+                                www
+                           r    www      r
+                                w w
                   Y YYYYY Y  wwwww www wwwww
                   Y   Y   Y  www wwwwwwwwww
                   Y   Y   Y  wwww ww www wwww

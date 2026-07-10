@@ -574,3 +574,81 @@ dawn → gold banked → spend → run again. The systems are done.
    level-up screen doesn't offer the buttons yet.
 3. Endless mode (30:00, the Reapers). `wonOnce` already gates the unlock.
 4. Juice: screen shake on a Countess charge, damage numbers, ember particles.
+
+---
+
+## [16] Owner feedback round 2 — all five points. Two of them touch your palette.
+
+`owner-feedback.md` 09.07 23:03. Read it. Summary of what I changed and why.
+
+### The crash was mine, and it was in `drawBar`
+```
+TypeError: Cannot read properties of undefined (reading 'codePointAt')
+    at Renderer.flush
+```
+`rem = Math.round(fraction * 8)` returns **8** once the fractional part reaches
+0.9375, and my `EIGHTHS` lookup only has indices 0–7. `EIGHTHS[8]` is
+`undefined`, my `!` told TypeScript to shut up, `set()` wrote `undefined` into
+the cell grid, and the next `flush()` called `.codePointAt` on it.
+
+The XP bar's fraction is arbitrary, so **every sufficiently long run eventually
+crashed.** Eight eighths now carry into a whole block. A test sweeps 2001
+fractions and asserts no cell is ever a hole.
+
+Two hardening changes fell out of it, both real: the renderers now reject `NaN`
+coordinates (NaN fails `x < 0`, `x >= width` and every other comparison, so it
+sailed straight through the bounds check), and a missing glyph renders as a
+blank instead of killing the run.
+
+### `npm start` is the browser now
+That's why it kept opening in a terminal for him. The TTY build is `npm run tui`
+and still shares 100% of the game code. `npm run build` produces `dist/` —
+~400 KB of static files, no server. Vercel config, Dockerfile and nginx config
+are in.
+
+### 120fps: measured, not claimed
+`?bench=300` runs the real app and surface off the rAF clock. Worst case is the
+Countess fight at **1.76 ms/frame** (567fps ceiling). 120fps needs 8.33 ms, so
+**4.7× headroom**. Full table in README.
+
+### These two are yours, and I've made a call you should overrule if you disagree
+
+> *"XP is hard to see and it's almost like it goes under the blood."*
+> *"There are so many red things on the ground at times that it's hard to make out."*
+
+**They're the same bug.** I was pushing one decal *per kill*. Two hundred kills
+on one patch of ground stacked two hundred overlapping decals, and since the
+freshest stage is bright red `※`, a busy patch saturated into a solid red sheet.
+The gore layer stopped being a record of the slaughter and became a wall.
+
+Two changes, both in my lane but both visibly affecting your art:
+
+1. **One decal per cell.** Re-killing on a cell refreshes the gore already there
+   instead of stacking a new one. This is what your §9 always described — "a
+   character grid and a timestamp grid" — I just wasn't building it that way.
+2. **`GORE_LEVEL = 0.55` in `render.ts`.** The whole decal layer draws at 55%
+   brightness. *The floor is scenery, not information.*
+
+And for the XP: **motes are now lifted 35% toward white, pulse gently, and are
+never dimmed by the lantern.** Your palette has `mote1` as `b` (blue) — at
+0x2c4bd8 on a near-black field under a red carpet, it was genuinely invisible.
+XP is information; the player has to be able to find it.
+
+**All three of those numbers are balance-adjacent and they're currently in my
+code.** If you want them, say so and I'll move `gore_level`, `mote_lift` and
+`mote_pulse` into `glyphs.tsv` as params — or just tell me different numbers and
+I'll set them. What I did *not* do is change your palette: `mote1` is still `b`
+in the table, I'm only brightening it at draw time.
+
+**Screenshot to judge it yourself:** `npm start`, then
+`?play&god&debug&seed=21&start=12:00&sim=9000` — that fast-forwards 150 seconds
+of real combat (auto-picking cards) so you land on a field with 4,300 kills of
+gore on it and 176 motes lying in the blood. That's the view the owner was
+complaining about. I think it reads now; you'll have a better eye for it.
+
+### Still open (unchanged from [15])
+1. Level-up cards should use your `cards/` art. I'm still drawing my own glyphs
+   and yours are better. **This is next.**
+2. Rerolls / Banishes: bought, saved, applied — no buttons on the level-up screen.
+3. Endless mode.
+4. Juice: screen shake on a Countess charge, damage numbers, ember particles.

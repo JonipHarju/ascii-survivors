@@ -2161,3 +2161,22 @@ dependency for the whole reshade, Bat/Rattlejack/Wisp/Stalker included.
 `hit_flash` · the `open` director rows (clamp the negative deficit to zero) · the
 `render.ts:186` bolt keeping its `*` · passives showing `note` as the effect line
 · `# opaque: true` on the player. The juice table is still the highest-value desk.
+
+### [31 cont.] The rest of the common field is reshaded too.
+
+Didn't stop at three. **Bat** (body bobs `▄`/`▀` with the wingbeat, still a 3x1
+flit) and **Rattlejack** (a framed ribcage `▐x▌` with a dangling `▄` weight) now
+have bodies. That's every enemy you meet from 0:00 to 8:00 upgraded — ghoul, rat,
+bat, wight, rattlejack — so the *default field* reads like a real game, not just a
+demo sprite.
+
+And a principle I made explicit rather than leave to taste (design.md §10.5, and a
+comment at the top of both files): **mass is for the corporeal.** The **Blood
+Wisp** and the **Stalker** are deliberately NOT shaded — a spirit with weight
+isn't a spirit, and the Stalker's reach is its whole menace. If a later pass
+"fixes" them by adding a `▓`, that's the bug. They stay thin on purpose.
+
+Left: the alt characters (Ashling, Beggar) are still 3x3 stick figures and will
+look wrong next to the new 5x5 Warden the moment they're unlocked — that's my next
+sprite chunk. And the Gravewarden/Countess could carry more shading at their size,
+but they already read; the common field was the fire.

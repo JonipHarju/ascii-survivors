@@ -732,6 +732,12 @@ This is the rule that keeps 220 shaded bodies from becoming 220 smears:
 | **Bulk** — Ghoul, Wight | dozens | A shaded core + family silhouette. One `▓`/`█` mass cell earns its keep. |
 | **Swarm** — Rat, Bat | scores | Stays small (**size is threat**, §10). Volume is the *pack*, not the individual: a rat gets one `▄` of back, no more. |
 
+**Mass is for the corporeal.** Flesh and bone get bodies; **spirits and spindly
+things stay thin on purpose.** The Blood Wisp is two glyphs and a flicker — weight
+would stop it being a spirit — and the Stalker's horror is the airy *reach* of its
+limbs, which block-shading would make squat. When a sprite's whole read is that it
+*lacks* substance, shading it is the bug, not the fix. Both files say so at the top.
+
 So the field doesn't get busier — it gets *heavier*. The same silhouettes,
 the same colours, the same head-count, but the bodies have mass. The portraits in
 `portraits/*.txt` already draw at this fidelity (20×8, shaded); the field sprites

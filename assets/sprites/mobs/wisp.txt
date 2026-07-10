@@ -19,6 +19,10 @@
 # The shell flickers out on the second frame and the bead of blood hangs there
 # alone -- a will-o'-wisp guttering. The flicker IS the animation; it needs no
 # extra glyph to sell it.
+#
+# DO NOT SHADE THIS. §10.5 gives flesh and bone a body (`▓`/`█`); mass is for the
+# corporeal. A spirit that gained weight would stop being a spirit. It stays two
+# thin glyphs and a flicker on purpose -- that IS the drawing.
 --- art ---
 {o}
  ~

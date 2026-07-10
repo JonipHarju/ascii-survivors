@@ -1,5 +1,5 @@
 # name: Rattlejack
-# size: 3x2
+# size: 3x3
 # anchor: center
 # fps: 6
 # colour: y
@@ -7,15 +7,24 @@
 # Vermin dashes for the arms, and its own `x` from glyphs.tsv for the ribcage.
 # It rattles: the arms clatter up and down and the body never moves. When it
 # dies it splits into two rats, so it shares their dash-and-chevron language.
+#
+# The ribcage `x` is framed in bone half-blocks now (`▐x▌`) and a `▄` weight
+# dangles below -- a hanged jack with heft, not a scarecrow of two lines. Only
+# the arms move between frames; the body hangs still, which is the whole read of
+# the thing. Bone `s` on the frame, yellow `y` on the head and ribs (§9, §10.5).
 --- art ---
 =o=
- x
+▐x▌
+ ▄
 --- mask ---
 ysy
- y
+sys
+ s
 --- art ---
 -o-
- x
+▐x▌
+ ▄
 --- mask ---
 ysy
- y
+sys
+ s

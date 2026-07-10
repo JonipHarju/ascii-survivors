@@ -20,6 +20,11 @@
 #          rotting; it is patient.
 # `<¤>` is unclaimed, and it is a better drawing: a lamp of an eye held in
 # mandibles, rather than a hole.
+#
+# NOT shaded, and that is deliberate (§10.5). The Stalker is "long-limbed,
+# reaching" -- the airy spread of the limbs IS the horror. A block-shaded body
+# would make it squat, and squat is the opposite of what stalks you. Spirits and
+# spindly things stay thin; mass is for flesh and bone.
 --- art ---
 ^   ^
  <¤>

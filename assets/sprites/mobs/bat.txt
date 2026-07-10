@@ -6,12 +6,18 @@
 #
 # Vermin speak in DASHES AND CHEVRONS -- low, quick, horizontal. The old `\v/`
 # borrowed the Warden's strokes, and at 26 wu/s a bat crosses the player's own
-# sprite more often than anything else in the game. Wings up, wings level.
+# sprite more often than anything else in the game.
+#
+# It stays a 3x1 flit -- size is threat (§10) and a bat is barely any. But the
+# body is a half-block now that BOBS with the wingbeat: `▄` on the downstroke,
+# `▀` on the up, between chevron wings. That reads as a flapping thing instead of
+# a static `v`. This is the light end of §10.5: a swarm sprite gets one shaded
+# cell, no more, and the read comes from the flock.
 --- art ---
-^v^
+^▄^
 --- mask ---
 rRr
 --- art ---
--v-
+-▀-
 --- mask ---
 rRr

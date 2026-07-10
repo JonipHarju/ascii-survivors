@@ -19,6 +19,11 @@ import { countessParam } from '../data/countess.ts';
 import { formatTime, WU_PER_ROW, type Enemy, type World } from './world.ts';
 
 const PLAYER_COLOR: Color = 0xffffff;
+/**
+ * The card a `# opaque: true` sprite sits on. Near-black rather than black so it
+ * reads as the player's own shadow and not as a hole cut in the floor.
+ */
+const OPAQUE_BG: Color = 0x0a0a0a;
 const HUD_BG: Color = 0x141414;
 const HUD_DIM: Color = 0x6a6a6a;
 const HUD_TEXT: Color = 0xc7c7c7;
@@ -118,7 +123,10 @@ export class GameView {
     // Her head is still the `@`; the sprite carries the rest of the silhouette.
     const playerSprite = this.sprites.get(w.character?.sprite ?? 'sprites/player');
     if (!playerSprite.placeholder) {
-      drawSprite(r, frameAt(playerSprite, w.timeAlive), p.col(w.x), p.row(w.y), field);
+      // An opaque player carries her own background, so the horde parts around
+      // her outline instead of a ghoul's `(` sitting between her boots.
+      const fill = playerSprite.opaque ? OPAQUE_BG : null;
+      drawSprite(r, frameAt(playerSprite, w.timeAlive), p.col(w.x), p.row(w.y), field, null, DEFAULT, fill);
     } else {
       r.setF(p.colF(w.x), p.rowF(w.y), w.playerDef.glyph, PLAYER_COLOR);
     }

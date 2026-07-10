@@ -104,6 +104,16 @@ export type Sprite = {
   readonly fps: number;
   readonly anchor: Anchor;
   readonly frames: readonly Frame[];
+  /**
+   * `# opaque: true` — the sprite's transparent cells are painted with the
+   * background instead of letting the field show through, so nothing can be
+   * drawn *inside* the silhouette.
+   *
+   * Transparency is right for every monster and wrong for exactly one sprite:
+   * at a glance a ghoul's `(` in the gap between the player's boots reads as
+   * part of the player. jane.md [28].
+   */
+  readonly opaque: boolean;
   /** Unrecognized header keys, kept verbatim so Jane can annotate freely. */
   readonly meta: Readonly<Record<string, string>>;
   /** True when this was synthesized because no art file existed. */
@@ -144,6 +154,16 @@ function parseAnchor(raw: string, warn: (m: string) => void): Anchor {
   if (s === 'topleft' || s === 'bottom') return s;
   warn(`anchor: unknown value '${s}', using 'center'`);
   return 'center';
+}
+
+/** Header booleans. Absent is false; anything unrecognized warns and is false. */
+function parseBool(raw: string | undefined, warn: (m: string) => void): boolean {
+  if (raw === undefined) return false;
+  const s = raw.trim().toLowerCase();
+  if (s === 'true' || s === 'yes' || s === '1') return true;
+  if (s === 'false' || s === 'no' || s === '0' || s === '') return false;
+  warn(`opaque: '${raw}' is not a boolean, using false`);
+  return false;
 }
 
 /** Resolve `# colour:` — a palette letter, a colour name, or hex. */
@@ -301,11 +321,12 @@ export function parseSprite(id: string, source: string): ParseResult {
     i++;
   }
 
-  const known = new Set(['name', 'fps', 'anchor', 'colour', 'color', 'size']);
+  const known = new Set(['name', 'fps', 'anchor', 'colour', 'color', 'size', 'opaque']);
   const meta: Record<string, string> = {};
   for (const [k, v] of header) if (!known.has(k)) meta[k] = v;
 
   const anchor = header.has('anchor') ? parseAnchor(header.get('anchor')!, warn) : 'center';
+  const opaque = parseBool(header.get('opaque'), warn);
 
   const colourRaw = header.get('colour') ?? header.get('color');
   const defaultColor = colourRaw !== undefined ? parseHeaderColor(colourRaw, warn) : PALETTE['w']!;
@@ -379,6 +400,7 @@ export function parseSprite(id: string, source: string): ParseResult {
       fps: frames.length > 1 ? fps : 0,
       anchor,
       frames,
+      opaque,
       meta,
       placeholder: false,
     },
@@ -400,6 +422,7 @@ export function placeholderSprite(id: string, ch?: string, fg: Color = DEFAULT):
     fps: 0,
     anchor: 'center',
     frames: [{ w: 1, h: 1, cells: [{ ch: glyph, fg }], ox: 0, oy: 0 }],
+    opaque: false,
     meta: {},
     placeholder: true,
   };

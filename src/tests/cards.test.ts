@@ -108,6 +108,47 @@ describe('level-up hands', () => {
   });
 });
 
+describe('what a card says', () => {
+  /** As Jane ships it: a `note` sentence at index 12, a `label` at index 13. */
+  const LABELLED = [
+    'armour\tArmour\tflat_reduce\tadd\t1\t2\t3\t4\t5\t6\t7\t8\tBlunts every blow.\tarmour',
+    'regen\tRegen\thp_per_sec\tadd\t.25\t.5\t.75\t1\t1.25\t1.5\t1.75\t2\tThe wounds close, slowly.\tHP per second',
+  ].join('\n');
+
+  /** Every card the pool can offer, so an assertion never misses one by chance. */
+  function everyCard(passives: string = PASSIVES) {
+    const w = new World({ ...data, passives: parsePassives(passives) }, 1);
+    w.setViewport(180, 60);
+    w.weapons.length = 0; // own nothing, so every weapon is offered at level 1
+    return generateCards(w, new Rng(1), 99);
+  }
+
+  it('never prints a StatName at the player', () => {
+    for (const card of everyCard(LABELLED)) {
+      const text = `${card.effect} ${card.detail ?? ''}`;
+      assert.doesNotMatch(text, /_/, `"${text}" leaked an identifier`);
+    }
+  });
+
+  it("leads with Jane's sentence and puts the numbers underneath", () => {
+    const armour = everyCard(LABELLED).find((c) => c.title === 'Armour')!;
+    assert.equal(armour.effect, 'Blunts every blow.');
+    assert.equal(armour.detail, 'armour +1');
+  });
+
+  it('falls back to the identifier when the table predates the label column', () => {
+    // PASSIVES has 12 columns: no note, no label.
+    const growth = everyCard().find((c) => c.title === 'Growth')!;
+    assert.equal(growth.effect, 'xp gain +6%');
+    assert.equal(growth.detail, null, 'with no sentence, the number IS the effect line');
+  });
+
+  it('drops the word "cooldown" from a noteless weapon, because "s" already says it', () => {
+    const chain = everyCard().find((c) => c.title === 'The Chain')!;
+    assert.equal(chain.effect, '10 damage · 1.1s');
+  });
+});
+
 describe('card effect text', () => {
   const W = 20; // a 24-wide card, less its border and padding
 

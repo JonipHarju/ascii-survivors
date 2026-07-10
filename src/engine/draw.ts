@@ -18,8 +18,13 @@ export function rectContains(r: Rect, x: number, y: number): boolean {
 
 /**
  * Draw one sprite frame with its anchor cell landing on (sx, sy).
+ *
  * `tint`, when given, overrides every glyph's color — used for damage flashes
  * and for silhouetting things the player shouldn't read detail on.
+ *
+ * `fill`, when given, paints the frame's *transparent* cells instead of skipping
+ * them, so the sprite occupies its whole bounding box and nothing already on the
+ * field shows through the gaps in it. See `Sprite.opaque`.
  */
 export function drawSprite(
   r: Surface,
@@ -29,6 +34,7 @@ export function drawSprite(
   clip: Rect,
   tint: Color | null = null,
   bg: Color = DEFAULT,
+  fill: Color | null = null,
 ): void {
   const x0 = sx - frame.ox;
   const y0 = sy - frame.oy;
@@ -43,13 +49,16 @@ export function drawSprite(
     if (py < clip.y || py >= clip.y + clip.h) continue;
 
     for (let fx = 0; fx < frame.w; fx++) {
-      const cell = frame.cells[fy * frame.w + fx];
-      if (cell === null || cell === undefined) continue;
-
       const px = x0 + fx;
       if (px < clip.x || px >= clip.x + clip.w) continue;
 
-      r.set(px, py, cell.ch, tint ?? cell.fg, bg);
+      const cell = frame.cells[fy * frame.w + fx];
+      if (cell === null || cell === undefined) {
+        if (fill !== null) r.set(px, py, ' ', fill, fill);
+        continue;
+      }
+
+      r.set(px, py, cell.ch, tint ?? cell.fg, fill ?? bg);
     }
   }
 }

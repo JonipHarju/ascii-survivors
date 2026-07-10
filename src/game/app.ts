@@ -25,6 +25,14 @@ const RED: Color = 0xff3b3b;
 /** Below this the HUD and field can't coexist; we ask for a bigger window. */
 const MIN_COLS = 80;
 const MIN_ROWS = 24;
+
+/**
+ * Level-up card width. The floor is what three cards plus two 3-column gaps
+ * cost on an 80-column terminal (3×24 + 2×3 = 78); the ceiling is where Jane's
+ * longest sentence stops wrapping and extra width buys nothing but margin.
+ */
+const MIN_CARD_W = 24;
+const MAX_CARD_W = 40;
 /**
  * The field the game is designed around (jane.md: 180x60 target, 120x40 min).
  * A bigger window shows the same world, scaled — never more world.
@@ -443,7 +451,13 @@ export class App {
     }
 
     // Rows are drawn in file order, which is the order Jane offers them in.
-    const listW = 62;
+    //
+    // The list scrolls, so a row has to be exactly one line tall — wrapping the
+    // note here would desync `maxRows` and `first` from the rows on screen. So
+    // the note column grows with the window instead: 24 columns on an 80-wide
+    // terminal, up to 46 on the canvas. Jane's longest note is 24 characters,
+    // which means the `truncate` below is now a guard rather than a policy.
+    const listW = clamp(r.width - 8, 62, 84);
     const x0 = cx - Math.floor(listW / 2);
     const maxRows = Math.max(1, r.height - y - 4);
     const first = Math.max(0, Math.min(this.shopIndex - Math.floor(maxRows / 2), rows.length - maxRows));
@@ -492,11 +506,18 @@ export class App {
 
   private drawCards(r: Surface, field: Rect): void {
     const n = this.cards.length;
-    const cardW = 24;
-    // Jane's card art is 12x5 (`sprite.ts` enforces it). The card is sized to
-    // hold it with the title, the level and one line of effect text beneath.
-    const cardH = 14;
     const gap = 3;
+
+    // The card used to be a flat 24, the widest that fits three-across on an
+    // 80-column terminal. But the canvas is 180 columns and that is where the
+    // game is actually played: three 24s left two thirds of the screen empty
+    // while Jane's sentences wrapped. Take what the field gives, up to 40 —
+    // past which every string in the game is on one line and the box is just air.
+    const cardW = clamp(Math.floor((field.w - (n - 1) * gap) / n) - 2, MIN_CARD_W, MAX_CARD_W);
+
+    // Jane's card art is 12x5. Art, title, level, two lines of effect, and the
+    // dimmed numbers line under them.
+    const cardH = 15;
     const totalW = n * cardW + (n - 1) * gap;
     const x0 = field.x + Math.floor((field.w - totalW) / 2);
     const y0 = field.y + Math.floor((field.h - cardH) / 2);
@@ -521,10 +542,14 @@ export class App {
 
       // Jane writes real sentences in the `note` column — "Sweeps a wide band to
       // either side of you." A card that cuts her off at "Sweeps a wide ba…" is
-      // asking the player to choose blind. Two lines, and the card is 24 wide
-      // because three of them plus gaps must still fit an 80-column terminal.
+      // asking the player to choose blind.
       const lines = wrap(card.effect, cardW - 4, 2);
-      for (const [j, line] of lines.entries()) drawCentered(r, mid, rect.y + 11 + j, line, DIM, bg);
+      for (const [j, line] of lines.entries()) drawCentered(r, mid, rect.y + 11 + j, line, TEXT, bg);
+
+      // The numbers sit below the sentence and below it in the reading order too.
+      // Fixed row, not `after the last line`, or a one-line card and a two-line
+      // card put their numbers on different rows and the hand stops scanning.
+      if (card.detail !== null) drawCentered(r, mid, rect.y + 13, truncate(card.detail, cardW - 4), DIM, bg);
 
       drawCentered(r, mid, rect.y + cardH - 1, ` ${i + 1} `, border, bg);
     }
@@ -559,12 +584,19 @@ export class App {
     if (evo === null) return;
 
     const cx = field.x + Math.floor(field.w / 2);
-    const box: Rect = { x: cx - 14, y: field.y + Math.floor(field.h / 2) - 4, w: 28, h: 9 };
+
+    // 44 wide, not 28. This box is drawn alone at the payoff moment of the whole
+    // run, and at 28 it was cutting the one sentence that explains the reward:
+    // "bands on BOTH sides, always, no facing check" -> "bands on BOTH sides, a…".
+    const boxW = clamp(field.w - 4, 28, 44);
+    const box: Rect = { x: cx - Math.floor(boxW / 2), y: field.y + Math.floor(field.h / 2) - 4, w: boxW, h: 9 };
     drawBox(r, box, ACCENT, 0x1c1a10);
 
     drawCentered(r, cx, box.y + 2, 'EVOLUTION', ACCENT, 0x1c1a10);
     drawCentered(r, cx, box.y + 4, evo.intoName.toUpperCase(), 0xffffff, 0x1c1a10);
-    drawCentered(r, cx, box.y + 6, truncate(evo.effect, box.w - 4), DIM, 0x1c1a10);
+
+    const lines = wrap(evo.effect, box.w - 4, 2);
+    for (const [j, line] of lines.entries()) drawCentered(r, cx, box.y + 6 + j, line, DIM, 0x1c1a10);
   }
 
   private drawSummary(r: Surface, field: Rect): void {
@@ -618,6 +650,10 @@ export class App {
     drawCentered(r, cx, y + 5, `⛁ ${this.profile.gold.toLocaleString('en-US')} banked`, ACCENT);
     drawCentered(r, cx, y + 7, 'any key: run again   C: crossroads   Q: quit', DIM);
   }
+}
+
+function clamp(n: number, lo: number, hi: number): number {
+  return n < lo ? lo : n > hi ? hi : n;
 }
 
 function truncate(s: string, max: number): string {

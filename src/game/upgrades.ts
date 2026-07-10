@@ -31,33 +31,51 @@ export type Card = {
   icon: string | null;
   /** One line of effect text, already resolved for the level being granted. */
   effect: string;
+  /**
+   * The exact numbers behind `effect` — `damage +16%` — drawn dimmed beneath it.
+   * `null` when the effect line already *is* the number, which is every weapon:
+   * a weapon's note describes what the level does, and there is no one stat to
+   * restate. design.md §8.
+   */
+  detail: string | null;
   /** `LV 3 → 4`, or `NEW`. */
   levelText: string;
   isNew: boolean;
   apply(w: World): void;
 };
 
-/** Describe what one more level of a passive does, from its own curve. */
-function passiveEffect(data: GameData, id: string, nextLevel: number): string {
+/**
+ * The numbers one more level of a passive buys, from its own curve — the line
+ * that goes *under* Jane's sentence, not in place of it.
+ *
+ * Uses the table's `label`, never `stat`: `stat` is a key in `StatName` and
+ * printing it showed the player `hp_per_sec` and `flat_reduce`.
+ */
+function passiveNumbers(data: GameData, id: string, nextLevel: number): string {
   const def = data.passives.byId.get(id);
   if (def === undefined) return '';
 
   const value = def.values[nextLevel - 1];
-  if (value === null || value === undefined) return def.note;
+  if (value === null || value === undefined) return '';
 
-  if (def.kind === 'add') {
-    return `${def.stat.replace(/_/g, ' ')} +${round(value)}`;
-  }
+  if (def.kind === 'add') return `${def.label} +${round(value)}`;
 
   // Multiplicative: show it as a percentage off the base, which is what a
   // player actually reasons about. Cooldown goes down, everything else up.
   const pct = Math.round((value - 1) * 100);
-  const label = def.stat.replace(/_/g, ' ');
-  return pct >= 0 ? `${label} +${pct}%` : `${label} ${pct}%`;
+  return pct >= 0 ? `${def.label} +${pct}%` : `${def.label} ${pct}%`;
 }
 
 function round(n: number): number {
   return Math.round(n * 100) / 100;
+}
+
+/**
+ * A weapon with no note. `1.34s` already reads as a time, so the word "cooldown"
+ * only cost us the characters that pushed the line off the card.
+ */
+function weaponFallback(dmg: number, cd: number): string {
+  return `${round(dmg)} damage · ${round(cd)}s`;
 }
 
 export function generateCards(w: World, rng: Rng, count = 3): Card[] {
@@ -79,7 +97,8 @@ export function generateCards(w: World, rng: Rng, count = 3): Card[] {
       color: next.color,
       kind: 'weapon',
       icon: `cards/${owned.id}`,
-      effect: next.note !== '' ? next.note : `${round(next.dmg)} damage · ${round(next.cd)}s cooldown`,
+      effect: next.note !== '' ? next.note : weaponFallback(next.dmg, next.cd),
+      detail: null,
       levelText: `LV ${owned.level} → ${owned.level + 1}`,
       isNew: false,
       apply: (world) => {
@@ -102,7 +121,8 @@ export function generateCards(w: World, rng: Rng, count = 3): Card[] {
         color: first.color,
         kind: 'weapon',
         icon: `cards/${id}`,
-        effect: first.note !== '' ? first.note : `${round(first.dmg)} damage · ${round(first.cd)}s cooldown`,
+        effect: first.note !== '' ? first.note : weaponFallback(first.dmg, first.cd),
+        detail: null,
         levelText: 'NEW WEAPON',
         isNew: true,
         apply: (world) => {
@@ -122,13 +142,21 @@ export function generateCards(w: World, rng: Rng, count = 3): Card[] {
     if (owned === undefined && w.passives.length >= MAX_PASSIVES) continue;
 
     const next = (owned?.level ?? 0) + 1;
+
+    // Jane's sentence is the card; the numbers are the footnote. A player choosing
+    // between three cards in two seconds reads "Blunts every blow.", not
+    // "armour +3". If she left the note empty the number is all we have.
+    const numbers = passiveNumbers(data, id, next);
+    const hasNote = def.note !== '';
+
     pool.push({
       title: def.name,
       glyph: PASSIVE_GLYPHS[id] ?? '◇',
       color: 0x4ff0f0,
       kind: 'passive',
       icon: `cards/passives/${id}`,
-      effect: passiveEffect(data, id, next),
+      effect: hasNote ? def.note : numbers,
+      detail: hasNote && numbers !== '' ? numbers : null,
       levelText: owned === undefined ? 'NEW' : `LV ${owned.level} → ${next}`,
       isNew: owned === undefined,
       apply: (world) => {
@@ -149,6 +177,7 @@ export function generateCards(w: World, rng: Rng, count = 3): Card[] {
         kind: 'bonus',
         icon: null,
         effect: 'restore 30 health',
+        detail: null,
         levelText: '',
         isNew: false,
         apply: (world) => {

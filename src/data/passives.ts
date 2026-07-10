@@ -33,6 +33,11 @@ export type PassiveDef = {
   /** Absolute value at each level; `null` where the passive doesn't go. */
   readonly values: readonly (number | null)[];
   readonly note: string;
+  /**
+   * The human name of the quantity, for the card's numbers line. `stat` is an
+   * identifier in a union type — printing it gave the player `hp_per_sec`.
+   */
+  readonly label: string;
 };
 
 export type PassiveTable = {
@@ -87,7 +92,11 @@ export function parsePassives(source: string): PassiveTable {
     const values: (number | null)[] = [];
     for (let i = 0; i < 8; i++) values.push(optNum(f[4 + i]));
 
-    byId.set(id, { id, name: f[1]!, stat: stat as StatName, kind, values, note: f[12] ?? '' });
+    // `label` is appended at index 13, so a table written before it existed still
+    // parses — it just falls back to spelling the identifier out.
+    const label = f[13] !== undefined && f[13] !== '' ? f[13] : stat.replace(/_/g, ' ');
+
+    byId.set(id, { id, name: f[1]!, stat: stat as StatName, kind, values, note: f[12] ?? '', label });
     order.push(id);
   }
 

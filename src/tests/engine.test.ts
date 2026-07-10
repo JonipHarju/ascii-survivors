@@ -8,8 +8,8 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { drawBar } from '../engine/draw.ts';
-import { detectDepth, parseColor, rgb } from '../engine/color.ts';
+import { drawBar, drawSprite } from '../engine/draw.ts';
+import { DEFAULT, detectDepth, parseColor, rgb } from '../engine/color.ts';
 import { Renderer } from '../engine/renderer.ts';
 import { parseGlyphTable } from '../data/entities.ts';
 import { frameAt, parseSprite } from '../assets/sprite.ts';
@@ -62,6 +62,18 @@ describe('sprite parsing', () => {
     assert.equal(f.cells[0]!.ch, 'a');
     assert.equal(f.cells[1], null);
     assert.equal(f.cells[2]!.ch, 'b');
+  });
+
+  it('is transparent unless the header says otherwise', () => {
+    assert.equal(parseSprite('x', ['--- art ---', 'a'].join('\n')).sprite.opaque, false);
+    assert.equal(parseSprite('x', ['# opaque: true', '--- art ---', 'a'].join('\n')).sprite.opaque, true);
+    assert.equal(parseSprite('x', ['# opaque: no', '--- art ---', 'a'].join('\n')).sprite.opaque, false);
+  });
+
+  it('warns on an opaque flag it cannot read, and stays transparent', () => {
+    const { sprite, warnings } = parseSprite('x', ['# opaque: sometimes', '--- art ---', 'a'].join('\n'));
+    assert.equal(sprite.opaque, false);
+    assert.match(warnings[0]!, /not a boolean/);
   });
 
   it('colours each art cell from the mask column beneath it', () => {
@@ -223,6 +235,36 @@ describe('renderer', () => {
       r.set(1, 1, 'o');
     });
     assert.equal(r.getChar(1, 1), 'o');
+  });
+});
+
+describe('drawSprite', () => {
+  const clip = { x: 0, y: 0, w: 10, h: 5 };
+
+  /** `a a` — three cells wide with a transparent hole in the middle. */
+  function holed() {
+    return parseSprite('x', ['--- art ---', 'a a'].join('\n')).sprite.frames[0]!;
+  }
+
+  function field(): Renderer {
+    const r = new Renderer(10, 5, 'truecolor', stream(new Capture()));
+    r.clear();
+    r.fillRect(0, 0, 10, 5, '#'); // stand in for the horde already on the ground
+    return r;
+  }
+
+  it('lets the field show through a transparent cell', () => {
+    const r = field();
+    drawSprite(r, holed(), 1, 0, clip);
+    assert.equal(r.getChar(1, 0), '#', 'the hole should not have been painted');
+  });
+
+  it('paints the hole when given a fill, so nothing can sit inside the sprite', () => {
+    const r = field();
+    drawSprite(r, holed(), 1, 0, clip, null, DEFAULT, 0x0a0a0a);
+    assert.equal(r.getChar(1, 0), ' ');
+    assert.equal(r.getChar(0, 0), 'a', 'the art itself must survive the fill');
+    assert.equal(r.getChar(3, 0), '#', 'the fill must not spill past the frame');
   });
 });
 

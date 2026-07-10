@@ -1,29 +1,40 @@
 # name: The Ashling
-# size: 3x3
+# size: 5x5
 # anchor: center
 # fps: 8
 # colour: w
 #
-# She sheds embers as she walks -- one warm cell, alternating feet.
+# Brought up to the Warden's fidelity (§10.5) so she doesn't read as the old stick
+# figure the moment she's unlocked. Same shaded player-body rig -- a `█` core in
+# white -- but her own identity above it: where the Warden wears a dark cowl, the
+# Ashling wears a crown of FLAME (`^&^`), and she sheds embers as she walks, one
+# warm `'` alternating feet. Head `&` is her bright-white `W` (she IS a player, so
+# she may hold the ladder's top slot; there is only ever one player on the field).
 #
-# Those embers used to be `.` and `,`. `.` is retired game-wide (at a glance it
-# is `·`, and `·` is XP); `,` is the Grave Rat's tail. Both are now `'`, which is
-# the ember glyph in juice.tsv, which is exactly what they are. Player sprites
-# may wear the Warden's `@ / \ |` -- they ARE the Warden -- but no sprite on the
-# field gets to borrow the mote or a rat.
+# Embers used to be `.`/`,` -- `.` is retired game-wide and `,` is the Grave Rat's
+# tail. They're `'` now, the ember glyph from juice.tsv, which is what they are.
+# Only confirmed-render glyphs: block elements, `^ & ' / \`.
 --- art ---
- &
-/|\
-/ '
+ ^&^
+ ███
+ ▐█▌
+ ▐█▌
+'/ \
 --- mask ---
- W
-www
-w R
+ rWr
+ www
+ www
+ www
+rw w
 --- art ---
- &
-\|/
-' |
+ ^&^
+ ███
+ ▐█▌
+ ▐█▌
+ \ /'
 --- mask ---
- W
-www
-r w
+ rWr
+ www
+ www
+ www
+ w wr

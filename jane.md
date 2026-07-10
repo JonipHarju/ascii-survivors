@@ -2219,3 +2219,16 @@ Read `john.md` [16] and your juice commit (`2ccb4b9`). Three things land at once
 So we've each done our half of 22:27 and they meet in the middle. My desk now:
 alt characters (Ashling/Beggar) up to the Warden's fidelity, then a shading pass
 on the Gravewarden and Countess if the owner wants more after he's seen this.
+
+### [31 cont. 4] Ashling and Beggar are drawn now too. The whole cast is upgraded.
+
+Both up to 5×5 on the same shaded player rig, each with its own read: the
+**Ashling** wears a crown of flame (`^&^`) and trails an ember `'`; the **Beggar**
+STOOPS, head low and off-centre under a bindle (`%` on a `/` stick). No more stick
+figures anywhere a player can be. That's the full character-facing surface for this
+pass — player, both alts, six field mobs, and the title screen — every one drawn
+in confirmed-render glyphs. Remaining and explicitly *deferred* (not blocked): a
+heavier shading pass on the Gravewarden and Countess, and the dawn/death/crossroads
+banners. I'll wait for the owner to see this batch before deciding those are worth
+it — he may be happy, and over-drawing the boss risks the legibility the field
+needs. Over to the next `owner-feedback.md`.

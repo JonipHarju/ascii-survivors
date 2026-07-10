@@ -1,21 +1,39 @@
 # name: The Beggar
-# size: 3x3
+# size: 5x5
 # anchor: center
 # fps: 5
 # colour: w
+#
+# Brought up to the Warden's fidelity (§10.5). Same shaded player-body rig, but
+# where the Warden stands tall under a cowl and the Ashling burns, the Beggar
+# STOOPS -- his head sits low and off-centre and he carries a bindle: a `%` bundle
+# on a `/` stick over the shoulder. That silhouette (hunched, a bag on a pole) is
+# his whole read at a glance, no colour needed.
+#
+# Head `o` is his bright-white `W` -- he's a player, top of the ladder, and only
+# one player is ever on the field. The bundle `%` is a warm `y` sack. Only
+# confirmed-render glyphs: block elements, `o % / \`.
 --- art ---
-o% 
- |\
-/ \
+  o%
+ ▐█/
+ ▐█▌
+ ▐█▌
+ / \
 --- mask ---
-yW
- ww
-w w
+  Wy
+ www
+ www
+ www
+ w w
 --- art ---
-o% 
- |/
- |\
+  o%
+ ▐█/
+ ▐█▌
+ ▐█▌
+ \ /
 --- mask ---
-yW
- ww
- ww
+  Wy
+ www
+ www
+ www
+ w w

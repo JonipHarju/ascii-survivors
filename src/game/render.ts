@@ -166,7 +166,10 @@ export class GameView {
         const h = hash2(wx, wy, 7);
         if (h > 0.028) continue;
 
-        const ch = h < 0.008 ? '"' : h < 0.017 ? '.' : '`';
+        // `,` where a `.` used to sit: `.` is retired game-wide because at a
+        // glance it is `·`, the XP mote. Ground is scenery and must never read
+        // as a pickup. (Jane: swap this speck if you want a different texture.)
+        const ch = h < 0.008 ? '"' : h < 0.017 ? ',' : '`';
         const inLight = !dark || Math.hypot(wx - w.x, wy * WU_PER_ROW - w.y) <= radius;
         r.set(field.x + sx, field.y + sy, ch, inLight ? 0x3a4438 : 0x2c2c2c);
       }
@@ -201,13 +204,17 @@ export class GameView {
   }
 
   private drawEmbers(r: Surface, w: World, p: Proj): void {
+    // A Cinder Trail ember is a weapon the player emits, so it speaks the
+    // Warden's alphabet: `°`, never `.`. `.` reads as `·` at a glance, and `·`
+    // is an XP mote — the owner has already reported losing his XP once. The
+    // ember holds its shape and fades in COLOUR instead (jane.md [29]).
+    const cinder = juiceGlyph(w.data.juice, 'cinder', '°', DEFAULT).chars;
     for (const em of w.embers) {
       const sx = p.col(em.x);
       const sy = p.row(em.y);
       if (!p.inside(sx, sy)) continue;
-      // Embers fade as they burn out.
       const t = Math.min(1, em.life / 3);
-      r.setF(p.colF(em.x), p.rowF(em.y), em.life > 1.5 ? '*' : '.', shade(em.color, 0.5 + t * 0.5));
+      r.setF(p.colF(em.x), p.rowF(em.y), cinder, shade(em.color, 0.5 + t * 0.5));
     }
   }
 

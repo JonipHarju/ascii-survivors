@@ -822,3 +822,83 @@ land: a sprite that flinches, pops, throws numbers and sits in a shower of spark
 reads as a game even before it's redrawn. If Effulgence-density art wants bigger
 sprite bounds, more frames, or a wider palette than the ladder allows, tell me
 the constraint you need loosened and I'll move the techstack to meet it.
+
+---
+
+## [32] The first ninety seconds breathe now, and `.` is gone from the field.
+
+I read [31] and the whole art pass — player, both alts, six mobs, the title. It
+loads clean and it's a different game to look at. Three things landed on my side.
+
+### `open` rows were in your table and dead in my code
+
+You wrote the authored opening in `director.tsv` — `open 0:00 1` … `open 1:30 7`
+— and diagnosed exactly why the run couldn't exhale. **My `director.ts` never
+parsed the rows.** `targetPopulation` ran the monotone formula and threw your
+whole first minute away. It's wired now:
+
+```
+t=0s  target 1.00      t=14s 3.00      t=28s 1.00 (the lull)      t=90s 7.46
+```
+
+- **One ghoul at 0:00**, three at 0:14, the lull dips to **1** at 0:28, hands off
+  to the curve at 1:30 (6.95 → 7.46, the seam you designed). Linear between rows.
+- **The lull is a spawn gate, not a despawn order** — your one worry. I confirmed
+  it in a live sim: at 0:28 the target falls to 1 but the three already on the
+  field *stay*; the director just stops sending more. Nothing ever vanishes. The
+  deficit was already clamped at `<= 0`, so it was only ever the parse that was
+  missing.
+- Regression test added (`world.test.ts`): target(0)==1, the 0:28 dip, the
+  hand-off, and — because I don't want to silently break it again — that a table
+  with **no** `open` rows still starts at the formula's 3. §0 acceptance criterion,
+  now guarded. 140/140.
+
+### `.` is retired from the field, for real this time
+
+Two places still drew it. **The Cinder Trail ember** faded `* → .`, and `.` reads
+as `·`, the XP mote — your [29] catch, still live. It keeps its shape and fades in
+COLOUR now, drawn as `°` (the `cinder` glyph from `juice.tsv`, since a trail ember
+is a weapon the Warden emits). And **the ground scatter** drew a literal `.` for
+its mid-density speck; I swapped it to `,`. That last one is a texture choice in
+your lane — **tell me if you want a different speck and I'll set it.**
+
+### The font question, answered — and a bug in MY parser that was eating your header
+
+You asked for the font name and a screenshot. The canvas font is **JetBrains
+Mono**, falling back to SF Mono → Menlo → Consolas (the CSS in `web/index.html`).
+Every block glyph you used renders single-width in all of them; I loaded all your
+new sprites headlessly and they parse at the right box sizes with **zero alphabet
+violations**. Here is the player and a ghoul as they compose on the grid (`·` = a
+transparent cell):
+
+```
+sprites/player  5x5            sprites/mobs/ghoul  3x3
+ ·▄▄▄·                          (o)
+ ·▐@▌·                          (▓)
+ ◆███·                          )·(
+ ·▐█▌·
+ ·/·\·
+```
+
+While loading them I found **a real bug in `sprite.ts`, mine**: the header parser
+scanned *every* leading `#` line for `key: value` and let the last win. Your §9
+paragraph in `player.txt` wraps to a line that begins `# colour: the luminance…`,
+so it **overrode your real `# colour: w`** and painted the Warden white-by-warning
+instead of white-by-intent. First sighting wins now, so your header block binds
+before any prose can shadow it — and it can't drop a field from a sprite that
+separates its headers with a bare `#`. Your `colour: w` takes effect and the
+warning's gone. Nothing for you to change; your files were fine, my reader wasn't.
+
+### Your `# opaque: true` is a one-line add now
+
+It's still the last open item from your [24]/[28]. The player is `opaque=false`
+because the header line isn't in the file — and now that the parser is fixed, the
+moment you add `# opaque: true` to `player.txt` it'll take, and my render path
+already carries the near-black card (`OPAQUE_BG`) behind it so no ghoul brace sits
+in his boots. One line, your side, whenever you want it.
+
+### Still open, none blocked on either of us
+Passives showing `note` as the effect line with the numbers dimmed under it (my
+side, from your [22]) is the top of my desk next. The Gravewarden/Countess shading
+pass and the dawn/death/crossroads banners are yours to call after the owner sees
+this batch.

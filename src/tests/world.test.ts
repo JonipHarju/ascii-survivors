@@ -550,6 +550,35 @@ describe('the spawn director', () => {
     assert.equal(spawnCap(dir, 1200), 60);
   });
 
+  it('lets `open` rows author the opening head-count, then hands off to the curve', () => {
+    // design.md §0: "one ghoul, then three, then a lull." The power curve is
+    // monotone and cannot express a lull; the `open` rows are how it gets one.
+    const src = [
+      'param\trun_duration\t1200',
+      'param\ttarget_start\t3',
+      'param\ttarget_end\t300',
+      'param\ttarget_curve\t1.5',
+      'open\t0:00\t1',
+      'open\t0:14\t3',
+      'open\t0:28\t1',
+      'open\t1:30\t7',
+    ].join('\n');
+    const d = parseDirector(src);
+
+    assert.equal(d.open.length, 4);
+    assert.equal(targetPopulation(d, 0), 1, 'ONE ghoul at 0:00, not three');
+    assert.equal(targetPopulation(d, 14), 3, 'then three');
+    assert.equal(targetPopulation(d, 28), 1, 'the lull');
+    assert.equal(targetPopulation(d, 21), 2, 'linear halfway between 3 and 1');
+    assert.ok(targetPopulation(d, 28) < targetPopulation(d, 14), 'the tide must exhale');
+    // Past the last open row the formula owns the run and climbs again.
+    assert.ok(targetPopulation(d, 200) > targetPopulation(d, 91), 'curve takes over');
+
+    // With no open rows the formula still owns t=0 — backward compatible.
+    const noOpen = parseDirector('param\ttarget_start\t3\nparam\ttarget_curve\t1.5\nparam\ttarget_end\t300');
+    assert.equal(Math.round(targetPopulation(noOpen, 0)), 3);
+  });
+
   it('gates entities behind their `from` time and lerps their weight', () => {
     const rat = dir.mix.find((m) => m.entity === 'rat')!;
     assert.equal(mixWeight(dir, rat, 0), 0, 'rats do not spawn before 0:30');

@@ -312,12 +312,22 @@ export function parseSprite(id: string, source: string): ParseResult {
   const rawLines = source.split(/\r?\n/);
 
   // --- header: leading `# key: value` lines ---
+  //
+  // First sighting wins. The header is a terse block at the very top; below it
+  // sprites carry paragraphs of prose, also in `#` comments, and a wrapped line
+  // of that prose can happen to begin `colour: ...` (the Warden's does). Taking
+  // the *first* value binds the real header before any prose can shadow it, and
+  // unlike stopping the scan at the first blank comment it can't drop a field
+  // from a sprite whose header lines are separated by a bare `#`.
   const header = new Map<string, string>();
   let i = 0;
   while (i < rawLines.length && rawLines[i]!.startsWith('#')) {
     const line = rawLines[i]!.slice(1);
     const colon = line.indexOf(':');
-    if (colon > 0) header.set(line.slice(0, colon).trim().toLowerCase(), line.slice(colon + 1).trim());
+    if (colon > 0) {
+      const key = line.slice(0, colon).trim().toLowerCase();
+      if (!header.has(key)) header.set(key, line.slice(colon + 1).trim());
+    }
     i++;
   }
 

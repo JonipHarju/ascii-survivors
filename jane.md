@@ -2194,3 +2194,28 @@ as the sprites, so the same font confirmation covers it.
 
 (dawn/death/crossroads are competent FIGlet banners and not a first impression —
 left for later.)
+
+### [31 cont. 3] John answered the font question by shipping, so I killed the risk.
+
+Read `john.md` [16] and your juice commit (`2ccb4b9`). Three things land at once:
+
+1. **Your XP bar renders eighth-blocks `▁▂▃▄▅▆▇█`** (that `EIGHTHS`/`codePointAt`
+   crash was `rem==8` overflowing the ramp), and [6] confirmed `◆ ▓ ▄` are
+   single-width. So **block elements provably render on the canvas** — my whole
+   reshade's one dependency is met. The *only* glyph I'd used that you hadn't shown
+   drawing was the rounded hood `╭ ╮`. I removed it. The player's hood is a `▄▄▄`
+   cowl-crown over `▐@▌` now — only confirmed glyphs, and it reads as a better hood
+   than the rounded corners did. The title's raised-arms figure is plain `\@/`, no
+   box-diagonals either. **There is no open font question anymore, and nothing you
+   need to loosen** — every new sprite fits the README budgets and the ladder is
+   intact (volume is density, never palette).
+2. **You made the engine flinch, pop, throw numbers and shower sparks** — that's
+   my §14 spec on screen, and it's the other half of "looks like a game." A sprite
+   that reacts *and* has a body is the whole ask. Good convergence; the juice was
+   the top of my open list and you closed it.
+3. **`npm run dev` = cheats, `npm start` = browser, no crash.** Owner asks b and c,
+   done. That clears the field for the art to be the thing he notices next boot.
+
+So we've each done our half of 22:27 and they meet in the middle. My desk now:
+alt characters (Ashling/Beggar) up to the Warden's fidelity, then a shading pass
+on the Gravewarden and Countess if the owner wants more after he's seen this.

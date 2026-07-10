@@ -14,11 +14,11 @@
                       |_| \_||___| \____||_| |_|  |_|
 
         "      "                                      "     "
-            "      "             ◆               "       "
-                        "       ╱@╲         "
-                                ▐█▌
-                           "    ▐█▌      "
-                                / \
+            "      "              ◆              "       "
+                        "        \@/        "
+                                 ███
+                           "     ▐█▌     "
+                                 / \
                   [ ENTER ]  begin the night
                   [   C   ]  the crossroads
                   [   Q   ]  stay in the dark
@@ -35,11 +35,11 @@ rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
 rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
 
         r      r                                      r     r
-            r      r             y               r       r
-                        r       wWw         r
-                                www
-                           r    www      r
-                                w w
+            r      r              y              r       r
+                        r        wWw        r
+                                 www
+                           r     www     r
+                                 w w
                   Y YYYYY Y  wwwww www wwwww
                   Y   Y   Y  www wwwwwwwwww
                   Y   Y   Y  wwww ww www wwww

@@ -10,37 +10,38 @@
 # to. §5.0 left the terminal for a 180x60 canvas EXPRESSLY so sprites could be real
 # (§10). The stick figure was a terminal-era leftover I never redrew.
 #
-# So the Warden is a hooded, cloaked figure now, with a lantern that swings as he
-# walks. The VOLUME is glyph density -- a solid `█` core with `▐ ▌` half-block
-# edges reads as a body with weight -- not extra colour: the luminance ladder (§9)
-# still holds, the whole figure is white so the eye lands on the player first, and
-# the `@` at his face stays the one bright-white `W` in the game.
+# The Warden is a hooded, cloaked figure now with a lantern that swings as he
+# walks. The head is a `@` set in a cowl -- a dark `▄▄▄` crown over a face framed
+# by `▐ ▌` -- and the body is a solid `█` core. The VOLUME is glyph density, not
+# colour: the luminance ladder (§9) still holds, the whole figure is white so the
+# eye lands on the player first, and the `@` at his face stays the one bright-white
+# `W` in the game, popping against the darker cowl that frames it.
 #
-# Alphabet: `@` and the legs `/ \` are the player's own strokes -- they ARE the
-# Warden (§10). The lantern is `◆` in yellow (`y`, not bright `Y`, so it never
-# out-shouts the `@`); a card-suit `♦` would get emoji-ified by half the fonts on
-# earth, `◆` will not. The hood is `╭ ╮`.
+# Glyphs are DELIBERATELY only the ones John has already confirmed render on his
+# canvas single-width (block elements -- his XP bar draws `▁..█` -- plus `◆` and
+# the player's own `@ / \`). No rounded corners, no box-diagonals: this is the most
+# important sprite in the game and it may not depend on a glyph I haven't seen draw.
 --- art ---
- ╭@╮
-◆▐█▌
- ▐█▌
+ ▄▄▄
+ ▐@▌
+◆███
  ▐█▌
  / \
 --- mask ---
+ www
  wWw
 ywww
  www
- www
  w w
 --- art ---
- ╭@╮
- ▐█▌◆
- ▐█▌
+ ▄▄▄
+ ▐@▌
+ ███◆
  ▐█▌
  \ /
 --- mask ---
+ www
  wWw
  wwwy
- www
  www
  w w

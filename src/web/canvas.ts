@@ -121,8 +121,17 @@ export class CanvasSurface implements Surface {
    * jane.md: "Min 120x40; below that scale the canvas, don't show less world."
    * So a small window shrinks the cell until the minimum grid fits, and a large
    * one stops growing the grid at 180x60 rather than revealing more graveyard.
+   *
+   * Note the two independent outputs: the **grid** (cols x rows) and the **cell
+   * size**. Resizing the window usually changes only the second one — the grid
+   * pins at 120x40 across most of the useful range — and the canvas element is
+   * sized in pixels, so it has to follow `cellW`, not the grid. Skipping the
+   * element resize because "the grid didn't change" leaves the game drawing a
+   * bigger cell into a smaller canvas: the bottom row and the right-hand columns
+   * fall off the edge, taking the XP bar and the kill counter with them.
    */
   resize(): boolean {
+    const prevDpr = this.dpr;
     this.dpr = Math.min(2, globalThis.devicePixelRatio || 1);
 
     const { width: cssW, height: cssH } = this.opts.measure();
@@ -144,10 +153,12 @@ export class CanvasSurface implements Surface {
       rows = Math.min(rows, maxRows);
     }
 
+    const gridChanged = cols !== this.width || rows !== this.height;
+    const metricsChanged = cellW !== this.cellW || this.dpr !== prevDpr;
+    if (!gridChanged && !metricsChanged) return false;
+
     this.cellW = cellW;
     this.cellH = cellW * CELL_ASPECT;
-    if (cols === this.width && rows === this.height) return false;
-
     this.width = cols;
     this.height = rows;
 
@@ -156,16 +167,20 @@ export class CanvasSurface implements Surface {
     this.canvas.style.width = `${Math.round(cols * this.cellW)}px`;
     this.canvas.style.height = `${Math.round(rows * this.cellH)}px`;
 
-    const size = cols * rows;
-    this.ch = new Array<string>(size).fill(' ');
-    this.fg = new Int32Array(size).fill(DEFAULT);
-    this.bg = new Int32Array(size).fill(DEFAULT);
-    this.ox = new Float32Array(size);
-    this.oy = new Float32Array(size);
+    // Only the grid dimensions govern the buffers. A cell that merely changed
+    // size keeps the frame that's already in them, so a resize doesn't flicker.
+    if (gridChanged) {
+      const size = cols * rows;
+      this.ch = new Array<string>(size).fill(' ');
+      this.fg = new Int32Array(size).fill(DEFAULT);
+      this.bg = new Int32Array(size).fill(DEFAULT);
+      this.ox = new Float32Array(size);
+      this.oy = new Float32Array(size);
+    }
 
-    // Cached tiles are rasterized at the old DPR; they'd be blurry now.
+    // Tiles are rasterized for one cell size at one DPR. Both just moved.
     this.glyphCache.clear();
-    return true;
+    return gridChanged;
   }
 
   invalidate(): void {

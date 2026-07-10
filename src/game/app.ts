@@ -48,6 +48,8 @@ export type AppOptions = ViewOptions & {
   store?: SaveStore | undefined;
   /** Open straight on The Crossroads. Dev deep-link. */
   openShop?: boolean | undefined;
+  /** Open straight on a level-up hand, so Jane can look at her card art. */
+  openCards?: boolean | undefined;
 };
 
 export class App {
@@ -89,7 +91,8 @@ export class App {
 
     this.world = this.newWorld();
     this.view = new GameView(sprites);
-    if (opts.skipTitle === true) this.state = 'playing';
+    if (opts.openCards === true) this.openCards();
+    else if (opts.skipTitle === true) this.state = 'playing';
     else if (opts.openShop === true) this.state = 'crossroads';
   }
 
@@ -473,7 +476,9 @@ export class App {
   private drawCards(r: Surface, field: Rect): void {
     const n = this.cards.length;
     const cardW = 24;
-    const cardH = 10;
+    // Jane's card art is 12x5 (`sprite.ts` enforces it). The card is sized to
+    // hold it with the title, the level and one line of effect text beneath.
+    const cardH = 14;
     const gap = 3;
     const totalW = n * cardW + (n - 1) * gap;
     const x0 = field.x + Math.floor((field.w - totalW) / 2);
@@ -493,14 +498,36 @@ export class App {
       drawBox(r, rect, border, bg);
 
       const mid = rect.x + Math.floor(cardW / 2);
-      drawCentered(r, mid, rect.y + 2, card.glyph, card.color, bg);
-      drawCentered(r, mid, rect.y + 4, card.title, TEXT, bg);
-      drawCentered(r, mid, rect.y + 5, card.levelText, card.isNew ? 0x3aff3a : DIM, bg);
-      drawCentered(r, mid, rect.y + 7, truncate(card.effect, cardW - 4), DIM, bg);
+      this.drawCardArt(r, card, rect, bg);
+      drawCentered(r, mid, rect.y + 8, card.title, TEXT, bg);
+      drawCentered(r, mid, rect.y + 9, card.levelText, card.isNew ? 0x3aff3a : DIM, bg);
+      drawCentered(r, mid, rect.y + 11, truncate(card.effect, cardW - 4), DIM, bg);
       drawCentered(r, mid, rect.y + cardH - 1, ` ${i + 1} `, border, bg);
     }
 
     drawCentered(r, cx, y0 + cardH + 2, '← → select   ENTER confirm   1-3 quick pick', DIM);
+  }
+
+  /**
+   * Jane's art if she's drawn it, the single glyph if she hasn't.
+   *
+   * Never tinted: her mask assigns a colour per character, and a tint would
+   * flatten the whole drawing to one hue. Selection is carried by the border and
+   * the card's background instead.
+   */
+  private drawCardArt(r: Surface, card: Card, rect: Rect, bg: Color): void {
+    const mid = rect.x + Math.floor(rect.w / 2);
+    const sprite = card.icon === null ? null : this.sprites.get(card.icon);
+
+    if (sprite === null || sprite.placeholder) {
+      drawCentered(r, mid, rect.y + 3, card.glyph, card.color, bg);
+      return;
+    }
+
+    // `drawSprite` positions by anchor, so add the offset back to land the art's
+    // top-left where we want it whatever anchor Jane gives the file.
+    const frame = sprite.frames[0]!;
+    drawSprite(r, frame, mid - Math.floor(frame.w / 2) + frame.ox, rect.y + 2 + frame.oy, rect, null, bg);
   }
 
   private drawEvolution(r: Surface, field: Rect): void {

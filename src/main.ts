@@ -45,6 +45,7 @@ type Args = {
   god: boolean;
   save: boolean;
   shop: boolean;
+  cards: boolean;
 };
 
 /** `mm:ss` or a bare seconds count. */
@@ -67,6 +68,7 @@ function parseArgs(argv: readonly string[]): Args {
     god: false,
     save: true,
     shop: false,
+    cards: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -75,6 +77,7 @@ function parseArgs(argv: readonly string[]): Args {
     else if (a === '--god') args.god = true;
     else if (a === '--no-save') args.save = false;
     else if (a === '--shop') args.shop = true;
+    else if (a === '--cards') args.cards = true;
     else if (a === '--debug') args.debug = true;
     else if (a === '--watch') args.watch = true;
     else if (a === '--preview') args.preview = true;
@@ -172,6 +175,7 @@ async function main(): Promise<void> {
     god: args.god,
     store: args.save ? fileStore() : memoryStore(),
     openShop: args.shop,
+    openCards: args.cards,
   });
 
   term.onResize((cols, rows) => {

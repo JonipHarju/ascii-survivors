@@ -107,6 +107,7 @@ async function boot(): Promise<void> {
     god: flag('god'),
     store: pickStore(),
     openShop: flag('shop'),
+    openCards: flag('cards'),
   });
 
   // `?sim=600` advances the simulation N ticks before the first frame is drawn,

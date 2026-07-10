@@ -207,4 +207,62 @@ describe('CanvasSurface', () => {
 
     assert.equal(surface.resize(), false, 'an unchanged grid reports false');
   });
+
+  /**
+   * The real window: the grid pins at its minimum and only the cell size moves.
+   * The canvas element is measured in pixels, so it has to follow the cell — and
+   * for a long time it didn't, because the early-out keyed on the grid alone.
+   */
+  it('resizes the canvas element when only the cell size changes', () => {
+    const canvas = new StubCanvas(300, 400);
+    const box = { width: 300, height: 400 };
+    const surface = new CanvasSurface(canvas as unknown as HTMLCanvasElement, {
+      cellWidth: 10,
+      glow: 0,
+      background: 0x000000,
+      measure: () => box,
+      minCols: 40,
+      minRows: 20,
+      maxCols: 999,
+      maxRows: 999,
+    });
+
+    assert.deepEqual([surface.width, surface.height], [40, 20], 'pinned to the minimum grid');
+    assert.equal(surface.cellW, 7.5);
+    assert.equal(canvas.width, 300);
+
+    box.width = 200;
+    assert.equal(surface.resize(), false, 'the grid is unchanged, so it still reports false');
+    assert.equal(surface.cellW, 5, 'the cell shrank to fit');
+    assert.equal(canvas.width, 200, 'and the canvas element shrank with it');
+    assert.equal(canvas.height, 200);
+  });
+
+  it('keeps the bottom row and the last column inside the canvas after a resize', () => {
+    const canvas = new StubCanvas(300, 400);
+    const box = { width: 300, height: 400 };
+    const surface = new CanvasSurface(canvas as unknown as HTMLCanvasElement, {
+      cellWidth: 10,
+      glow: 0,
+      background: 0x000000,
+      measure: () => box,
+      minCols: 40,
+      minRows: 20,
+      maxCols: 999,
+      maxRows: 999,
+    });
+
+    box.width = 200;
+    surface.resize();
+
+    // The HUD lives on the last row; the kill counter ends in the last column.
+    surface.clear();
+    surface.set(surface.width - 1, surface.height - 1, 'x', 0xffffff);
+    canvas.ctx.drawImages.length = 0;
+    surface.flush();
+
+    const tile = canvas.ctx.drawImages[0]!;
+    assert.ok(tile.x + surface.cellW <= canvas.width, `x ${tile.x} spills past ${canvas.width}`);
+    assert.ok(tile.y + surface.cellH <= canvas.height, `y ${tile.y} spills past ${canvas.height}`);
+  });
 });

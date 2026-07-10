@@ -22,6 +22,13 @@ export type Card = {
   glyph: string;
   color: Color;
   kind: 'weapon' | 'passive' | 'bonus';
+  /**
+   * Sprite id for Jane's card art — `cards/chain`, `cards/passives/might`. The
+   * ids are a convention, not a table column, because every weapon and every
+   * passive needs exactly one and a column would only ever restate the id.
+   * `glyph` stays the fallback for art she hasn't drawn.
+   */
+  icon: string | null;
   /** One line of effect text, already resolved for the level being granted. */
   effect: string;
   /** `LV 3 → 4`, or `NEW`. */
@@ -71,6 +78,7 @@ export function generateCards(w: World, rng: Rng, count = 3): Card[] {
       glyph: next.glyph,
       color: next.color,
       kind: 'weapon',
+      icon: `cards/${owned.id}`,
       effect: next.note !== '' ? next.note : `${round(next.dmg)} damage · ${round(next.cd)}s cooldown`,
       levelText: `LV ${owned.level} → ${owned.level + 1}`,
       isNew: false,
@@ -93,6 +101,7 @@ export function generateCards(w: World, rng: Rng, count = 3): Card[] {
         glyph: first.glyph,
         color: first.color,
         kind: 'weapon',
+        icon: `cards/${id}`,
         effect: first.note !== '' ? first.note : `${round(first.dmg)} damage · ${round(first.cd)}s cooldown`,
         levelText: 'NEW WEAPON',
         isNew: true,
@@ -118,6 +127,7 @@ export function generateCards(w: World, rng: Rng, count = 3): Card[] {
       glyph: PASSIVE_GLYPHS[id] ?? '◇',
       color: 0x4ff0f0,
       kind: 'passive',
+      icon: `cards/passives/${id}`,
       effect: passiveEffect(data, id, next),
       levelText: owned === undefined ? 'NEW' : `LV ${owned.level} → ${next}`,
       isNew: owned === undefined,
@@ -137,6 +147,7 @@ export function generateCards(w: World, rng: Rng, count = 3): Card[] {
         glyph: '♥',
         color: 0xff3b3b,
         kind: 'bonus',
+        icon: null,
         effect: 'restore 30 health',
         levelText: '',
         isNew: false,

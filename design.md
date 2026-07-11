@@ -1648,6 +1648,56 @@ doesn't show" repeat of §15.7.
 `npm test`: 144/144 (backgrounds.ts added 2). `npm run build`: 25 media
 files copied, all accounted for.
 
+### 15.9 Weapon effects — a proposal, not a curation, and here's why
+
+Went looking at `!WEAPON PACK!/Weapons/` (`Bullets/`, `LaserBeams/`, `Beam,
+Jet/`, `Lunar/`, `MainWeapons/`) to pick per-weapon art for the 7 weapons
+(§7's table: Chain, Sanguine Nova, Censer, Grave Salt, Wisp Lantern, Silver
+Rain, Cinder Trail). Stopped short of actually picking files, on purpose:
+
+1. **There's no code path for this yet, at all.** §7 is explicit — weapons
+   resolve as *procedural shapes* (`band`/`bolt`/`ring`/`arc`/`orbit`/
+   `column`/`trail`), drawn by `drawBands`/`drawBolts`/etc. off `juice.tsv`
+   glyphs and colours, never a sprite id. `drawPickups` (checked while
+   confirming the XP-legibility risk from §15.3) confirms the pattern: it
+   reads straight from `glyphs.tsv`, no `imageFor()` call at all. Curating
+   art for a draw path that doesn't consult `images.tsv` would just be dead
+   weight sitting in `assets/space/` until someone builds the plumbing.
+2. **The pack's files don't have names I can act on.** Unlike the roster
+   (`spacebug_blue.png`, `battlecruiser_shiny.png` — self-describing), this
+   folder is `bullets1_0020_Circle---.png`, `beams_0112_Rectangle---.png`,
+   `weapon_0064_Package---.png` — hundreds of numbered spritesheet slices
+   with no content in the filename. Picking "the right one" means opening
+   dozens of images per weapon, and doing that before question 1 has an
+   answer risks picking against a contract that doesn't match what gets
+   built (single static image? a strip meant for the `loop compatible`
+   beams? `MainWeapons/` clearly has real props mixed in — `Rocket_34x75
+   .png`, `bulletGlow.png` — worth a second, more careful pass once there's
+   a shape to pick *for*).
+
+**What I will commit to now — the folder-level mapping, cheap to write and
+useful even before file-level picks exist:**
+
+| Weapon | Shape (§7) | Candidate folder | Why |
+|---|---|---|---|
+| Sanguine Nova | `bolt`, homing | `Bullets/` | A single homing round — the pack's plainest bullet category. |
+| The Chain | `band`, facing | `LaserBeams (for loop compatible)/` | A band reads as a beam more than a bullet; "loop compatible" suggests it's built to stretch/tile along a length, which is exactly what a band needs. |
+| Censer | `ring`, persistent | `Lunar/` | Circular glyphs (`_Circle_` in every filename), a persistent ring around the player — orbital naming fits the orbital shape. |
+| Grave Salt | `arc`, lobbed | `MainWeapons/` (`Rocket_*`) | The only category with an actual lobbed-projectile silhouette (a rocket), matching "lobs upward, falls, shatters." |
+| Wisp Lantern | `orbit` | `Lunar/` | Same reasoning as Censer — orbiting motes, orbital-named folder. |
+| Silver Rain | `column` | `Beam, Jet/` | A falling column reads as a beam/jet coming down, not a bullet. |
+| Cinder Trail | `trail` | `MainWeapons/` (`bulletGlow.png`) or a new small-embers pick | Needs a soft glow/ember look, not a hard-edged bullet or beam — the one row I'm least sure of. |
+
+This is a **proposal for John**, posted to `jane.md`, not a spec: does a
+`shape`-resolving weapon even get a raster treatment the same way an entity
+does, or does the visual effect stay procedural (glyph/colour, no sprite id)
+forever and only the **level-up card icon** (`cards/<id>`, a static,
+non-moving UI element) gets raster art? The second option is far cheaper —
+same shape as `images.tsv`, no new rendering concept — and given `images.tsv`
+already shadows `sprites/*` ids generically, `cards/<id>` might already be
+one row away from working if the card-drawing code calls `imageFor()`.
+Asked, not assumed.
+
 ## Open questions / assumptions I'm running with
 
 Tracked live in `jane.md`. Anything settled gets promoted **into this file** and

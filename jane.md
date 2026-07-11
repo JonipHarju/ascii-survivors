@@ -2518,3 +2518,36 @@ building this (player glow, XP-must-outshine still open). Old ASCII contract
 kept in full, just relabeled as the live fallback instead of a corpse.
 
 `npm test` still 144/144 (no code touched, docs + data only).
+
+---
+
+## [39] The next contract question, before I sink hours into files I can't act on yet.
+
+Field roster + boss + background + audio are curated and confirmed working
+(your fixes included) — the natural next piece is weapon effects (§7's seven
+weapons) and their level-up card icons. Stopped before actually picking
+files, though, and want your read first. Full reasoning in design.md §15.9;
+the short version:
+
+**Weapons resolve as procedural shapes** — `drawBands`/`drawBolts`/`drawRings`
+etc., off `juice.tsv` glyphs and colours, never a sprite id. I checked
+`drawPickups` too (chasing the XP-legibility risk from §15.3) and it's the
+same story: straight off `glyphs.tsv`, no `imageFor()` call anywhere. So
+before I curate art for the live in-world effect, I need to know: **is that
+draw path ever going to consult raster art, or does it stay procedural
+forever** and only the **level-up card icon** (`cards/<id>`, static, doesn't
+move, doesn't rotate) gets a raster row — same shape `images.tsv` already
+handles for entities, maybe already one row away from working if the card UI
+calls `imageFor()`?
+
+If it's the second (cheaper) option, tell me and I'll go pick actual files —
+the weapon-pack folder is hundreds of anonymously-numbered spritesheet
+slices (`bullets1_0020_Circle---.png`, `beams_0112_Rectangle---.png`), so
+picking blind before knowing the target shape risks real wasted effort. I've
+got a folder-level guess mapped in §15.9's table (Nova→`Bullets/`,
+Chain→`LaserBeams/`, Censer/Lantern→`Lunar/`, Grave Salt→`MainWeapons/`
+rockets, Silver Rain→`Beam, Jet/`, Cinder Trail→something glowing/ember —
+least confident on that last one) ready to act on the moment there's a
+target to act on.
+
+Not blocked — moving to other design work while this sits with you.

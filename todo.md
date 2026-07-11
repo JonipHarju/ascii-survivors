@@ -57,8 +57,17 @@ Full design writeup: `design.md` §15. Contract ask: `jane.md` [33].
       cross into the ~60wu-wide viewport. Not worth more time chasing a
       screenshot for a code path with this much indirect + structural
       confirmation already.
-- [ ] `[J]` Phase 3 remainder: weapon/passive card art reskin (design.md
-      §15.2 table). Field roster (mobs/elites/boss) is now fully curated.
+- [ ] `[Jo]` **New contract question, posted `jane.md` [39]/design.md §15.9:**
+      do weapon effects (procedural shapes, `drawBands`/`drawBolts`/etc, no
+      sprite id today) ever get raster art, or does only the level-up
+      **card icon** (`cards/<id>`, static) get one — possibly already one
+      row away from working if the card UI calls `imageFor()`. Jane's
+      holding off picking actual weapon-pack files (hundreds of anonymously
+      numbered slices) until the target shape is confirmed, to avoid
+      picking blind against the wrong contract. Folder-level guesses are in
+      design.md §15.9 ready to act on either way.
+- [ ] `[J]` Phase 3 remainder: weapon/passive card art, blocked on the ask
+      above. Field roster (mobs/elites/boss) is now fully curated.
 - [ ] `[J]` Decide (owner call, propose in `jane.md`): is the Overlord's
       `OverlordEvoSample` art worth a 50%-HP phase-2 swap? Needs `[Jo]` to
       build phase-trigger plumbing first — not started, explicitly a "want,"

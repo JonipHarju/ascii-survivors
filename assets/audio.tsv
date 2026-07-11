@@ -16,14 +16,18 @@
 #         fires once (win/death/evolve).
 # loop    1 for music beds, blank for one-shots.
 #
-# One track for `music/theme` for now — WebAudioSink (john.md) plays one
-# active loop per id and App only ever calls play('music/theme') once per
-# run start. An intensity-reactive swap (calm -> DynamicFight_* as the
-# spawn director's target population climbs, design.md §15.4) needs a
-# second music id and a call site in world.ts/app.ts that doesn't exist
-# yet — that's a code ask, tracked in todo.md, not something this table can
-# do alone. DynamicFight_1/2/3, dark/dark2 and DubStepDropBoom are already
-# curated into space/audio/ waiting for that hook.
+# Three music beds, not one — John built `AudioSink.setMusic(weights)` (a
+# real crossfade, not a hard cut) driven off `World.musicIntensity`, which
+# reuses `targetPopulation()` normalized against `target_end` (director.tsv)
+# — literally "the same curve the horde already climbs," §15.4's original
+# ask. `App.updateMusic()` composes the weights:
+#   bossActive ? {ambient:0, combat:0, boss:1}
+#              : {ambient:1-intensity, combat:intensity, boss:0}
+# So all three ids can be *simultaneously active* at partial gain — pick
+# tracks that can plausibly overlap during the crossfade window, not just
+# ones that sound good alone. `boss_phase` stays a one-shot sting layered on
+# top of the `boss` bed, not a replacement for it — one-shots never touch
+# the loop gain ramps.
 #
 # id	path	volume	loop
 hit	space/audio/sfx_hit.wav	0.35	-
@@ -39,4 +43,6 @@ heal	space/audio/sfx_heal.mp3	0.6	-
 evolve	space/audio/sfx_evolve.mp3	0.9	-
 chest	space/audio/sfx_chest.mp3	0.6	-
 levelup	space/audio/sfx_levelup.wav	0.8	-
-music/theme	space/audio/DeepSpaceA.mp3	0.5	1
+music/ambient	space/audio/DeepSpaceA.mp3	0.5	1
+music/combat	space/audio/DynamicFight_1.mp3	0.55	1
+music/boss	space/audio/dark2.mp3	0.6	1

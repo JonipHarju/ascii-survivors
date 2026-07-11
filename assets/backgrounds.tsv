@@ -1,0 +1,27 @@
+# THE LONG NIGHT — the field's backdrop (design.md §15.7 point 2)
+# Owner: Jane. John: parse this, don't hardcode a path. See src/data/backgrounds.ts.
+# Tab-separated. Lines starting with # are comments. Blank lines ignored.
+#
+# `field` is the only id GameView looks up today (room for `dusk` later —
+# the boss's phase-3 blackout, countess.tsv — without a new table).
+#
+# The design call (John asked for this explicitly, it's a feel call not a
+# technical one): PARALLAX 0.15, not 0 and not close to 1.
+#   - Not 0 (fully pinned): a dead-static backdrop reads as flat wallpaper in
+#     a game whose whole pitch is motion (§1, §2 point 1 — "your only verb is
+#     movement"). The old ASCII ground scatter already drifted with the
+#     world 1:1; going fully static would be a downgrade from what shipped.
+#   - Not near 1 (scrolls like a positioned sprite): the luminance-ladder
+#     law's spirit — nothing scenery-layer may compete with what matters —
+#     applies here too. A starfield that tracks the camera as fast as a ship
+#     does reads as another moving *thing*, not distance. 0.15 drifts just
+#     enough to sell "you are moving," while staying visually inert compared
+#     to anything alive on the field.
+# TILE_WU 40: the source PNG (`50+ Repeat Space Backgrounds 200x200 PNG/`) is
+#   a sparse dot-field designed to repeat. Ships on the field span roughly
+#   3-16 wu (images.tsv); a 40wu tile keeps any seam well outside the radius
+#   a player is actually looking at (the lantern/light radius, §9) without
+#   needing more than one background image curated for phase 2.
+#
+# id	path	parallax	tileWu
+field	space/backgrounds/starfield_01.png	0.15	40

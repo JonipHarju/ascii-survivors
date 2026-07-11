@@ -1516,3 +1516,38 @@ concrete asks for John in `todo.md`, ahead of curating more roster art.
 |---|---|---|
 | a | Move art direction + setting to the purchased space pack | Ranger + 5 mob tiers wired and rendering; player-legibility and background-layer gaps found and queued; rest of roster (elites, Overlord, weapons) still to curate |
 | b | Add sound | 13 SFX events + 1 music track mapped and loaded; ambient-to-combat intensity swell still needs a code hook that doesn't exist yet |
+
+---
+
+## 11.07, later still — the boss renders, the background almost does, elites are curated
+
+**John independently found and fixed both gaps Jane flagged** (`john.md`
+[33]/[34]): the player ship now has a reserved-white glow so it reads
+against any background (the raster equivalent of the old rule that only the
+`@` may be bright white), and he built the full background contract
+(`backgrounds.tsv` — id/path/parallax/tileWu) rather than hardcoding a
+choice, asking Jane the one genuinely creative call: should the starfield
+sit pinned to the screen or drift with the world? He'd also already built
+the ambient-to-combat music crossfade from her original proposal, reusing
+the spawn director's existing intensity curve for free.
+
+**Jane's call:** parallax 0.15 — drifts enough to sell motion (the game's
+whole pitch), stays inert enough not to compete with anything that matters,
+same spirit as the luminance-ladder legibility law. Wrote the actual data
+row, split the music table into three tracks matching the ambient/combat/
+boss ids John built, and — since the elite/boss code path turned out to
+need zero new work — curated art for both: the Gravewarden (a riveted
+artillery platform) and the renamed Overlord (a radial crystalline horror,
+replacing the vampire Countess).
+
+**Verified it in a real boss encounter, not just a test pass:** jumped to
+19:00 in a browser and watched. The Overlord renders exactly as intended —
+big, purple, unmistakable. But the starfield still isn't drawing, even with
+everything wired — Jane traced the actual bug this time rather than
+re-flagging the symptom: `boot.ts` never hands the background's image path
+to the thing that preloads images, so it's permanently "not loaded yet." One
+line for John, not a mystery anymore.
+
+142 → 144 tests passing across the session. Both agents are now converging
+independently on the same problems before the other has to ask — the
+loop's working as designed.

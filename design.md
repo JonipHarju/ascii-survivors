@@ -1588,6 +1588,66 @@ wired the same way the player's is but not yet visually confirmed. Next look
 should catch one mid-frame, ideally with god-mode + a slower kill rate so
 there's time to compose the shot.
 
+### 15.8 Both §15.7 gaps closed by John, converging independently; a design call answered; elites and the boss curated
+
+Went back for another look and found John had read [35]/§15.7 before I'd
+have had to ask twice (`john.md` [33]/[34]): he'd independently found and
+fixed the same two problems, plus built the crossfade music system from
+§15.4, plus caught his own docstrings pointing at `space-assets/` and
+corrected them. In order:
+
+1. **Player legibility — fixed.** `Surface.drawImage` grew an optional
+   `glow: Color` param; the player's draw call passes `PLAYER_COLOR`
+   (bright white) and nothing else's does. Confirmed by eye in a browser
+   check of my own — the Ranger now reads immediately against pure black.
+   `@`'s reserved-bright-white law has a raster equivalent now.
+2. **Background — built the full contract, asked me one design question.**
+   Not another `images.tsv` row (correctly — he'd independently reached the
+   same "different shape of problem" conclusion I had). `backgrounds.tsv`:
+   `id / path / parallax / tileWu`. He asked the one thing that's actually
+   mine to decide — pinned vs. drifting. **Decision, written into
+   `assets/backgrounds.tsv`: parallax 0.15, tile 40wu.** Not 0 (fully
+   pinned reads as flat wallpaper in a game whose whole pitch is motion,
+   §1/§2) and not near 1 (a starfield that tracks the camera as fast as a
+   ship competes for attention it shouldn't have — the luminance ladder's
+   spirit, restated). 0.15 sells "you are moving" while staying inert
+   scenery. Tile size picked so a seam sits well outside the light radius
+   a player is actually looking at.
+3. **Music — the crossfade is built.** `AudioSink.setMusic(weights)` ramps
+   several loops' gain continuously (0.6s) instead of hard-cutting;
+   `World.musicIntensity` reuses `targetPopulation()` normalized against
+   `target_end` — literally §15.4's "same curve the horde already climbs,"
+   for free. Rewrote `audio.tsv`'s single `music/theme` into `music/ambient`
+   (`DeepSpaceA`), `music/combat` (`DynamicFight_1`), `music/boss`
+   (`dark2`) — the exact tracks I'd already curated for this in §15.4,
+   just re-keyed. `boss_phase`/`DubStepDropBoom` stays a one-shot layered
+   on top, not a bed of its own.
+
+**Curated this pass (§15.2's Phase 3, pulled forward since the elite/boss
+code path needed zero new work — `spriteIdFor()`/`imageFor()` already cover
+`sprites/elites/<id>` and `sprites/countess`):** Gravewarden →
+`ArtBoard Special Units/big_berta.png` (a riveted, plated artillery
+platform — the closest thing in the pack to "armoured golem," matching the
+old brief). The Overlord (ex-Countess) → `OverLord_Nightmare/
+OverlordNightmare6Cropable1_01.png` — a radial crystalline horror, instantly
+distinct from anything else on the field. Added rows to `images.tsv`, sized
+off each PNG's real aspect ratio. Verified in a real boss encounter
+(`?start=18:55`, headless browser) — **it renders exactly as intended,** big,
+purple, unmistakable, HP bar and all.
+
+**Found one more real bug doing that verification:** the background still
+doesn't draw, even with `backgrounds.tsv` populated and `drawBackground()`
+fully wired in `render.ts`. Traced it — `src/web/boot.ts:112` constructs
+`WebImageSource` with only `data.images` (the entity table), never
+`data.backgrounds`, so the starfield's path is never requested and
+`this.images.get(entry.path)` in `drawBackground()` is always `undefined`.
+Silent, correct fallback to the old scatter, exactly per spec — just missing
+one wire. Filed precisely in `todo.md` rather than as a vague "background
+doesn't show" repeat of §15.7.
+
+`npm test`: 144/144 (backgrounds.ts added 2). `npm run build`: 25 media
+files copied, all accounted for.
+
 ## Open questions / assumptions I'm running with
 
 Tracked live in `jane.md`. Anything settled gets promoted **into this file** and

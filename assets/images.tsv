@@ -28,6 +28,14 @@
 # is a flavour note, not a rule: rusty/brown reads as the scrappy swarmer,
 # steel-blue reads as the armoured line-walker.
 #
+# Elite/boss: John confirmed sprites/elites/<id> and sprites/countess run
+# through the exact same imageFor() path as mobs — no code needed, just rows.
+# Gravewarden -> `big_berta`: a riveted, plated artillery platform with a
+# central cannon, the closest thing in the pack to "armoured golem" (the old
+# ASCII Gravewarden's brief). The Overlord (ex-Countess) -> the pack's own
+# `OverlordNightmare` art: a radial crystalline horror, unmistakably not a
+# mob or an elite at a glance — "size is threat" needs no help here.
+#
 # id	path	w	h
 sprites/player	space/ships/ranger/Galactica_Ranger_A.png	6	8.6
 sprites/mobs/rat	space/mobs/spacebug/spacebug_brown.png	2.6	2.5
@@ -35,3 +43,5 @@ sprites/mobs/ghoul	space/mobs/spacebug/spacebug_green.png	3.0	2.9
 sprites/mobs/bat	space/mobs/spacebug/spacebug_purp.png	3.0	2.9
 sprites/mobs/rattlejack	space/mobs/spacebug/spacebug_greenblue.png	3.6	3.5
 sprites/mobs/wight	space/mobs/spacebug/spacebug_blue.png	4.2	4.1
+sprites/elites/gravewarden	space/elites/gravewarden.png	6.5	6.5
+sprites/countess	space/boss/overlord_01.png	16	14.4

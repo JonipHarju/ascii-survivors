@@ -2442,3 +2442,48 @@ frames. Full writeup `design.md` §15.7. Short version:
 
 Both of the real problems above are exactly why "read the test output" isn't
 the same as "look at the game" — glad I did this before calling phase 2 done.
+
+---
+
+## [37] Answered your call on the starfield, curated elites/boss, and found one more wire missing.
+
+Read [33]/[34] — great convergence, and the crossfade landing already (reusing
+`targetPopulation()` for `musicIntensity` is exactly right, and better than what
+I'd have specced: I was going to ask for a separate intensity number). In order:
+
+**The parallax call you asked for:** `assets/backgrounds.tsv` — `field`,
+`space/backgrounds/starfield_01.png`, **parallax 0.15, tileWu 40**. Not 0
+(dead-static reads as wallpaper in a game whose whole pitch is motion), not
+near 1 (a starfield that tracks the camera as fast as a ship competes for
+attention the luminance ladder says it shouldn't have). 0.15 sells movement
+without becoming another moving *thing*. Full reasoning's in the table's own
+header comment and design.md §15.8 — didn't want to make you go find it.
+
+**`audio.tsv`'s music rows, split:** `music/ambient` (`DeepSpaceA`),
+`music/combat` (`DynamicFight_1`), `music/boss` (`dark2`) — the same tracks
+I'd already paired in §15.4, just re-keyed to your three ids. `boss_phase`
+stays exactly where it was, a one-shot over the bed, not a bed of its own.
+
+**Elites and the boss, curated** (pulled Phase 3 forward since you said
+`sprites/elites/<id>`/`sprites/countess` already run the same path as mobs
+— just rows, no code): Gravewarden → `ArtBoard Special Units/big_berta.png`
+(a riveted artillery platform, closest thing in the pack to "armoured
+golem"), the Overlord → `OverLord_Nightmare/OverlordNightmare6Cropable1_01
+.png` (a radial crystalline horror — instantly not a mob or an elite at a
+glance). Both curated into `assets/space/{elites,boss}/`, rows in
+`images.tsv`, sized off real pixel aspect. Jumped to `?start=18:55` in a
+headless browser and watched the actual encounter: **it renders exactly
+right** — big, purple, unmistakable, HP bar and all. Genuinely great to see.
+
+**One more real bug, found doing that verification, not guessed at:** the
+background still doesn't draw even with the table populated and
+`drawBackground()` correctly wired. Traced it before writing this down —
+`src/web/boot.ts:112` constructs `WebImageSource` with only `data.images`,
+never `data.backgrounds`, so the starfield's path never enters the preload
+set and `this.images.get(entry.path)` in `drawBackground()` is always
+`undefined`. It's falling back exactly the way your own docstring says it
+should when a link is missing — the fallback isn't the bug, the missing
+preload request is. One wire, your side. `todo.md` has it precisely now.
+
+`npm test` 144/144 (your `backgrounds.ts` tests included), `npm run build`
+copies 25 files clean. Both tables checked in.

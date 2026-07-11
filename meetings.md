@@ -1479,3 +1479,40 @@ before the full reshade.
 |---|---|---|
 | a | Move art direction + setting to the purchased space pack | design.md §15 written; roster mapped; contract ask posted to John; no engine changes yet — that's phase 2, John's lane once the contract answers land |
 | b | Add sound, currently unfun without it | proposal written (§15.4), wired to existing juice/director hooks; needs John's audio-engine answer before it's buildable |
+
+---
+
+## 11.07, later — the pivot's contract got answered, wired, and actually looked at
+
+**Jane:** went looking for whether John had started before he'd written
+anything up, and he had — `images.tsv`/`audio.tsv` parsers, the raster and
+audio engines, all wired into `App`/`World`, all built and waiting for data
+files that didn't exist yet. His code answered all three open contract
+questions from the last entry: sprites are one static image per id (no
+frames/tiers), world units stay isotropic with the same 2:1 cell convention
+as before (a guess of Jane's that turned out wrong, corrected), and audio is
+Web Audio with one active music loop plus unlimited overlapping one-shots —
+no crossfade yet, so the ambient-to-combat swell Jane proposed needs a real
+follow-up code change, not just data.
+
+Wrote `assets/images.tsv` (the Ranger + 5 mob tiers, sized off each PNG's
+real pixel aspect ratio) and `assets/audio.tsv` (all 13 sound events `World`
+already raises, plus the music bed), both pointing at the tracked
+`assets/space/` folder per the owner's earlier call, never the gitignored
+vendor pack. `npm test`: 142/142. `npm run build`: copied exactly the 20
+files referenced, nothing more.
+
+**Then Jane actually looked**, rather than trusting the test suite — ran the
+real build in a headless browser and screenshotted it. The Ranger renders,
+correctly positioned, no errors. But two things a passing test can't catch
+showed up immediately: the player ship is nearly invisible against the black
+field (no glow/outline — "the player must never be lost" failing on the
+first sprite shipped), and the curated starfield background is committed but
+never drawn (no code path for a full-field background exists yet — a
+different kind of ask than the per-entity `images.tsv`). Both written up as
+concrete asks for John in `todo.md`, ahead of curating more roster art.
+
+| # | Owner ask, 11.07 00:03 | Status |
+|---|---|---|
+| a | Move art direction + setting to the purchased space pack | Ranger + 5 mob tiers wired and rendering; player-legibility and background-layer gaps found and queued; rest of roster (elites, Overlord, weapons) still to curate |
+| b | Add sound | 13 SFX events + 1 music track mapped and loaded; ambient-to-combat intensity swell still needs a code hook that doesn't exist yet |

@@ -1388,7 +1388,7 @@ phase 3/4 (§15.6).
 
 | Old (ASCII/gothic) | New (space) | Source | Note |
 |---|---|---|---|
-| The Warden (player) | **The Ranger** | `Galactica Ranger/` (15 numbered variants + an `_Extreme`) | Numbered files read like a fit-out ladder, not animation frames — my working read is they're colour/loadout skins, not walk-cycle frames. Flagging as an assumption for John (§15.5); if his loader wants frames instead I'll pick differently. |
+| The Warden (player) | **The Ranger** | `Galactica Ranger/` (15 numbered variants + an `_Extreme`) — shipped as `Galactica_Ranger_A.png`, `images.tsv` | Resolved by §15.5: John's loader takes one static image per id, not frames or tiers. The other 14 variants are just unused options now — good raw material for a character-select skin later, not a mechanic today. |
 | Ghoul / Wight / Grave Rat / Bat / Rattlejack (5 chaff tiers) | **Spacebug**, 5 colour variants | `ArtBoard Special Units/spacebug_{blue,purple,brown,green,greenblue}.png` | One base silhouette, five palette swaps — this *is* the old "same shape language, tier by colour" law, already built by the vendor. Cleanest 1:1 in the whole pack. |
 | Elites (Wight-tier armoured, Gravewarden) | **Crusader** (7 colour variants), **Iceblade** (5), **Battlecruiser** (5 "shiny" variants), **Big Berta**, **Missile Launcher** | `ArtBoard Special Units/` | More elite variety than the old bestiary had — I'm not using all of them at once; picking a subset per §15.6 phasing so the field doesn't turn into a toy box. |
 | The Countess (boss) | **The Overlord** | `OverLord_Nightmare/` — 3 base frames (`OverlordNightmare6Cropable1_0{1,2,3}`) + 3 `NightmareB_0{1,2,3}` + a `Samples/` set that includes `OverlordEvoSample_0{1,2,3}` | The `Evo` samples are a gift: a visual second form for the boss fight is already drawn. Proposing a **phase 2 at 50% HP** that swaps to the Evo art — mechanically a new beat, art-wise it's free. Written as a proposal, not yet in `countess.tsv` — that's John's file to add a phase trigger to, once he's built the phase-swap plumbing (or tells me it's not worth the complexity right now — §0's "polish the core first" cuts both ways). |
@@ -1461,30 +1461,63 @@ I don't own the audio engine choice (Web Audio vs an `<audio>` pool vs
 something else is squarely tech stack), so the concrete contract is part of
 the §15.5 ask.
 
-### 15.5 The one contract to settle first (again) — the ask for John
+### 15.5 The contract — answered, from John's own code, before he'd written a word
 
-Same shape as the original ASCII contract in `assets/README.md`: I own the
-art and the mapping, John owns how it loads. Posted in full in `john.md`, in
-short:
+I posted three open questions here originally. John was already mid-build when
+I went looking (`src/data/images.ts`, `src/assets/imagesource.ts`,
+`src/data/audio.ts`, `src/engine/audio.ts`, `src/web/audio.ts`, and the
+`images`/`audio` wiring into `gamedata.ts`/`app.ts`/`world.ts`) — the contract
+was already answered in working code, just not narrated yet. Reading it
+instead of waiting was faster than asking twice:
 
-1. **Sprite loading.** Are the numbered `Galactica Ranger` files frames or
-   loadout tiers (my assumption above, §15.2)? Single PNGs per entity, or does
-   the pack's `!SHEETS - PNG & PSD!` folder mean some of these are actually
-   spritesheets I haven't accounted for? What's the animation contract now
-   that there's no `# fps:` header on a PNG?
-2. **Coordinate system.** Sizes in `assets/README.md` are all in character
-   cells (`5×5`, `28×11`) because that was the ASCII grid. Pixels now — what
-   footprint (in wu, §5) does a Ranger/Spacebug/Overlord actually occupy, and
-   does that math change now that sprites have real proportions instead of a
-   fixed cell aspect (§5.1's "a terminal cell is twice as tall as wide" is
-   gone; pixels are square)?
-3. **Audio engine.** What plays `.mp3` — and can it crossfade (needed for
-   §15.4's ambient-to-combat swell) and layer a one-shot over a loop without
-   cutting either?
-4. Everything else in the old `assets/README.md` contract (the folder/size
-   table, the two ASCII laws) is superseded by this pivot; I'm rewriting that
-   file's contract section to point at the new roster once #1–2 above have an
-   answer, rather than guess at a shape John's loader doesn't want.
+1. **Sprite loading — answered: one static image per id, no frames, no
+   sheets.** `images.tsv` is `id / path / w / h`, one row per sprite id
+   (`sprites/player`, `sprites/mobs/<id>`, …), one PNG. It **shadows** the
+   glyph sprite of the same id — if the row exists and the image has decoded,
+   raster wins; otherwise the ASCII glyph draws, same as always. So my "are
+   the 15 numbered Ranger files frames?" question dissolves: they're not
+   frames *or* tiers in the current contract, they're just fifteen options —
+   I pick one. Used `Galactica_Ranger_A.png`. No animation contract exists yet
+   for raster (a real gap vs. the old `# fps:` sprites — noted in todo.md, not
+   blocking).
+2. **Coordinate system — answered: still isotropic wu, still `WU_PER_ROW=2`,
+   nothing about §5.1 changed.** `render.ts`'s `imageFor()` takes `images.tsv`'s
+   `w` directly as the column count and divides `h` by `WU_PER_ROW` for the row
+   count — i.e. both columns are plain wu, and the engine still draws a wu-tall
+   unit as half as many rows as a wu-wide unit is columns, exactly like every
+   glyph on the field. My "does the 2:1 cell aspect go away since pixels are
+   square" guess was **wrong** — it doesn't, because "cell" was never about
+   pixels being square, it's the world's own aspect convention, and that
+   didn't change. I sized every row in `images.tsv` by taking each PNG's real
+   pixel aspect ratio at a chosen wu width, so nothing I ship looks stretched.
+3. **Audio engine — answered: Web Audio, id-keyed, one active loop per id,
+   unlimited overlapping one-shots.** `WebAudioSink` decodes and caches per
+   path, `play(id)` on a playing loop is a no-op (so `App` can call
+   `play('music/theme')` on every restart for free), and one-shots are
+   fire-and-forget `AudioBufferSourceNode`s that stack without cutting each
+   other — built specifically so 40 simultaneous hits don't fight over one
+   channel. **What it does not do yet: crossfade, or hold more than one active
+   music id at a time.** My §15.4 ambient-to-combat swell needs both a second
+   music id and a call site that watches the director's target population —
+   that's a real, still-open code ask, now precise instead of vague. Tracked
+   in `todo.md`.
+
+**Shipped against this, this pass:** `assets/images.tsv` (player + the 5
+mob-tier ids that have art) and `assets/audio.tsv` (all 13 of `World`'s
+`playSfx` ids, plus `music/theme`), both pointing at `assets/space/` — never
+`assets/space-assets/`. `npm test` still 142/142 with both tables in place.
+
+**A docstring example pointed at the vendor pack; the actual code doesn't
+care.** `images.ts`'s comment path (`space-assets/Top Down SpaceShips/...`)
+made it look like `tools/build.ts` expected rows to reference the vendor pack
+directly. Read `tools/media.ts` to check before flagging it as a real
+mismatch: `copyReferencedMedia` just copies whatever paths `images.tsv`/
+`audio.tsv` name, relative to `assets/`, with zero hardcoding of
+`space-assets/`. Ran `npm run build` to confirm rather than trust the read —
+it copied exactly the 20 files both tables reference, all correctly under
+`dist/assets/space/...`. So: no code change needed, the stale docstring
+example is the only leftover, and pointing every row at the tracked `space/`
+folder (owner's call, §15.2) Just Works with John's existing build tool.
 
 ### 15.6 Phasing — this is not a one-pass redo
 
@@ -1507,6 +1540,53 @@ Nothing here is blocked on the other side finishing first — same rule as
 always. I start phase 2's art the moment I've made a reasonable assumption
 about #1/#2 above, whether or not John has answered yet, and correct it if
 he pushes back.
+
+### 15.7 The vertical slice, actually looked at — two problems the tables couldn't have caught
+
+`npm test` passing and `npm run build` copying the right files both check
+that the *pipeline* works. Neither checks that the result looks like a game.
+Ran the real build in a headless browser and looked — the Ranger genuinely
+renders, centred, no console errors, exactly where `images.tsv` says it
+should. And immediately, two problems that only exist because I looked:
+
+1. **The player is nearly lost against the void.** This is the *exact* law
+   §15.3.1 restated — "the player must never be lost" — and it's failing
+   already, on the very first sprite. The Ranger is a fine-detail greyscale
+   ship with no glow, outline, or colour separating it from a black
+   background; at a glance it reads as part of the scenery, not the thing
+   you're piloting. The old ASCII player solved this with a reserved
+   bright-white `@` nothing else could use. Raster has no equivalent
+   mechanism yet — `drawImage` just blits pixels, no highlight pass. This
+   needs a code answer (a rim-light/outline treatment John draws under or
+   around the player's raster sprite, the raster equivalent of "bright white
+   reserved to the player"), not an art answer — a differently-lit PNG alone
+   won't fix "must always read against *any* background," a bloom/outline
+   layer will. **Flagging as the top of the raster-legibility list**, ahead
+   of curating more roster art — the owner has now made this exact complaint
+   about ASCII XP once already; shipping the same failure in a new medium
+   would be a real miss.
+2. **The curated background never draws.** `assets/space/backgrounds/
+   starfield_01.png` exists, is committed, and is never referenced by
+   anything — `images.tsv` only maps *entity* ids (`sprites/player`,
+   `sprites/mobs/*`), and there's no "world background" concept in the
+   contract at all. The field the Ranger flies in is still the old ASCII
+   void (a sparse scatter of `"` glyphs on black). This is a **new code ask**,
+   not a data-table gap: a full-field background blit is a different shape
+   of problem than a per-entity sprite (it has to tile or cover the whole
+   viewport, sit under literally everything, and probably shouldn't move
+   with the camera the same way a positioned entity does). Not filed against
+   `images.tsv` — that table's shape is right for what it does, this is
+   something else. Written up as a fresh ask in `todo.md`.
+
+Both are real, both are now precise instead of hypothetical, and both landed
+because looking at a screenshot costs five minutes and catches things a
+passing test suite structurally cannot. Enemies did spawn and die during the
+15-second natural-play check (kill counter reached 5) — I didn't manage to
+catch a live Spacebug in the same frame as a screenshot (they die fast
+against even an unlevelled starting weapon), so the mob-tier raster art is
+wired the same way the player's is but not yet visually confirmed. Next look
+should catch one mid-frame, ideally with god-mode + a slower kill rate so
+there's time to compose the shot.
 
 ## Open questions / assumptions I'm running with
 

@@ -1,0 +1,42 @@
+# THE LONG NIGHT — sound table (the space pivot, design.md §15.4)
+# Owner: Jane. John: parse this, don't hardcode a path. See src/data/audio.ts.
+# Tab-separated. Lines starting with # are comments. Blank lines ignored.
+#
+# id      the fixed event strings World/App already push (game/world.ts
+#         playSfx calls, game/app.ts startMusic): hit, kill, hurt, death,
+#         revive, win, boss_phase, pickup, gold, heal, evolve, chest,
+#         levelup, music/theme. An id with no row here is silent — never a
+#         bug. A row with no matching id is just inert.
+# path    relative to `assets/`. ALWAYS under `space/audio/` (tracked,
+#         curated) — never `space-assets/` (gitignored vendor drop). See the
+#         same note in images.tsv.
+# volume  0..1. Kept low on anything that can fire dozens of times a second
+#         at 220-enemy density (hit/pickup) so it beds under the music
+#         instead of turning into white noise; kept high on anything that
+#         fires once (win/death/evolve).
+# loop    1 for music beds, blank for one-shots.
+#
+# One track for `music/theme` for now — WebAudioSink (john.md) plays one
+# active loop per id and App only ever calls play('music/theme') once per
+# run start. An intensity-reactive swap (calm -> DynamicFight_* as the
+# spawn director's target population climbs, design.md §15.4) needs a
+# second music id and a call site in world.ts/app.ts that doesn't exist
+# yet — that's a code ask, tracked in todo.md, not something this table can
+# do alone. DynamicFight_1/2/3, dark/dark2 and DubStepDropBoom are already
+# curated into space/audio/ waiting for that hook.
+#
+# id	path	volume	loop
+hit	space/audio/sfx_hit.wav	0.35	-
+kill	space/audio/sfx_kill.wav	0.3	-
+hurt	space/audio/sfx_hurt.wav	0.6	-
+death	space/audio/sfx_death.mp3	0.8	-
+revive	space/audio/sfx_revive.mp3	0.8	-
+win	space/audio/sfx_win.mp3	1	-
+boss_phase	space/audio/sfx_boss_phase.mp3	0.7	-
+pickup	space/audio/sfx_pickup.wav	0.2	-
+gold	space/audio/sfx_gold.wav	0.4	-
+heal	space/audio/sfx_heal.mp3	0.6	-
+evolve	space/audio/sfx_evolve.mp3	0.9	-
+chest	space/audio/sfx_chest.mp3	0.6	-
+levelup	space/audio/sfx_levelup.wav	0.8	-
+music/theme	space/audio/DeepSpaceA.mp3	0.5	1

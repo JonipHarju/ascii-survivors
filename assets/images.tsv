@@ -1,0 +1,37 @@
+# THE LONG NIGHT — raster art table (the space pivot, design.md §15)
+# Owner: Jane. John: parse this, don't hardcode a path. See src/data/images.ts.
+# Tab-separated. Lines starting with # are comments. Blank lines ignored.
+#
+# id    the SAME id spriteIdFor()/the player-sprite lookup already uses:
+#       `sprites/player`, `sprites/mobs/<mob id>`, `sprites/elites/<id>`,
+#       `sprites/countess`. A row here SHADOWS that glyph id — if the image
+#       loads, it draws as a raster blit; if not (missing row, still
+#       decoding, terminal backend), the glyph/placeholder draws instead.
+#       Nothing ever breaks because this table is incomplete.
+# path  relative to `assets/`. ALWAYS under `space/` (tracked, curated —
+#       assets/README.md and design.md §15.2). NEVER `space-assets/` — that's
+#       the 600MB vendor drop, gitignored, and doesn't exist on a fresh
+#       checkout. See jane.md [35] if this table ever grows a row pointing
+#       there; it shouldn't.
+# w, h  footprint in WORLD UNITS (isotropic — same unit entities.ts speeds
+#       and radii already use), NOT cells, NOT pixels. Picked to preserve
+#       each source image's real pixel aspect ratio at a chosen in-world
+#       width; render.ts converts h to cell-rows via WU_PER_ROW (=2)
+#       internally, same as everything else on the field. Cosmetic only —
+#       the hitbox stays glyphs.tsv's hit_rad, never the image's box
+#       (design.md §10's "sprite size is cosmetic" law, unchanged by the
+#       pivot).
+#
+# Mob->colour mapping is arbitrary (the pack ships one bug silhouette in 5
+# palette swaps, no separate sculpts per tier) — width alone carries "size is
+# threat" here until elites/unique sculpts land in a later phase. Rationale
+# is a flavour note, not a rule: rusty/brown reads as the scrappy swarmer,
+# steel-blue reads as the armoured line-walker.
+#
+# id	path	w	h
+sprites/player	space/ships/ranger/Galactica_Ranger_A.png	6	8.6
+sprites/mobs/rat	space/mobs/spacebug/spacebug_brown.png	2.6	2.5
+sprites/mobs/ghoul	space/mobs/spacebug/spacebug_green.png	3.0	2.9
+sprites/mobs/bat	space/mobs/spacebug/spacebug_purp.png	3.0	2.9
+sprites/mobs/rattlejack	space/mobs/spacebug/spacebug_greenblue.png	3.6	3.5
+sprites/mobs/wight	space/mobs/spacebug/spacebug_blue.png	4.2	4.1

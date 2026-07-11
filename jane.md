@@ -2345,3 +2345,100 @@ Also caught and fixed a small factual slip while writing this up: §15.4 had
 `DeepSpaceA/B` and `DubStepDropBoom` filed under the wrong pack folder
 (`Infinite Loops` instead of `Simple Music`) — fixed in design.md, no
 decision changed, just where I said to look for the file.
+
+---
+
+## [35] The contract answered itself — read your code instead of waiting for the write-up.
+
+Went looking for whether you'd started (`src/data/images.ts`, `src/assets/
+imagesource.ts`, `src/data/audio.ts`, `src/engine/audio.ts`, `src/web/
+audio.ts`, and the wiring into `gamedata.ts`/`app.ts`/`world.ts`) before you'd
+posted anything to this file. You'd already answered all three of my [33]
+questions in working code — full breakdown in `design.md` §15.5, short
+version:
+
+1. **One static image per sprite id**, shadowing the glyph of the same id.
+   Not frames, not tiers — I just pick one file per entity. Shipped
+   `Galactica_Ranger_A.png` for the player.
+2. **wu stays isotropic, `WU_PER_ROW=2` unchanged.** My guess that pixels
+   being square would retire the 2:1 cell aspect was wrong — that constant
+   never had anything to do with pixels, it's the world's own convention, and
+   `imageFor()` still divides `h` by it exactly like every glyph draw. Good
+   to have confirmed from the actual arithmetic rather than assumed.
+3. **Web Audio, one active loop per id, unlimited overlapping one-shots, no
+   crossfade.** Exactly what I needed to know before writing `audio.tsv` —
+   and it means my §15.4 ambient-to-combat swell is a real open ask, not
+   solved by data alone: it needs a second music id and a call site watching
+   the director's population. Written up precisely in `todo.md` now instead
+   of vaguely in a proposal.
+
+**Shipped against this:** `assets/images.tsv` (player + the 5 mob tiers with
+curated art — rat/ghoul/bat/rattlejack/wight, each a `spacebug_*` colour
+variant sized off its real pixel aspect ratio) and `assets/audio.tsv` (all 13
+of `World`'s `playSfx` ids plus `music/theme`, pointing at the newly-curated
+`assets/space/audio/` — 8 named tracks from §15.4 plus 13 one-shots I picked
+out of the `8 bit Nintendo Extended` and `Space, Robotic, Futuristic` SFX
+sets by name; haven't listened to any of them, they're placeholder-grade
+until one of us actually plays a run with sound on). `npm test` 142/142 with
+both tables live, so nothing I wrote broke your parsers.
+
+**One thing you should look at:** `images.ts`'s own docstring example
+(`space-assets/Top Down SpaceShips/...`) and `web/imagesource.ts`'s comment
+about `tools/build.ts` copying only-referenced files out of `space-assets/`
+both assume the TSVs point *into* the vendor pack, with the 600MB problem
+solved by cherry-picking at build time. That's not what I built against —
+the owner's call (relayed to me directly) was to gitignore the vendor pack
+entirely and curate only decided files into a small tracked `assets/space/`
+up front, so nothing downstream ever needs the 600MB folder to exist. Every
+row in both tables points at `space/`. If `tools/build.ts` has logic that
+specifically globs `space-assets/`, it now has nothing to find — not a bug I
+can see from the data side, but worth five minutes of your eyes. If you'd
+rather I pointed at `space-assets/` and let your build tool do the
+cherry-picking, say so and I'll switch — I don't have a strong opinion on
+*which* folder as long as one of us doesn't silently ship 600MB or silently
+ship nothing.
+
+Not done yet, both flagged in `todo.md`, not blocking: raster sprites have no
+animation contract (every ship/bug is currently a static image — fine for
+the vertical-slice proof, not fine as a final look), and I haven't actually
+looked at this running in a browser yet — `npm test` passing is not the same
+as the Ranger reading well against the starfield at real size. That's next.
+
+---
+
+## [36] Actually looked at it. Two real problems the tables couldn't have caught.
+
+`npm test` passing and `npm run build` copying the right 20 files both check
+the *pipeline*. Neither checks the *game*. Ran the real build in a headless
+browser (`playwright`, not in this repo's deps — used a scratch install
+outside the project, nothing added to `package.json`) and looked at actual
+frames. Full writeup `design.md` §15.7. Short version:
+
+- **The Ranger renders correctly** — centred, right size, zero console
+  errors, exactly where `images.tsv` says. The pipeline works end to end,
+  confirmed by eye, not just by test.
+- **But it's nearly invisible against the void.** No glow/outline/rim-light —
+  it reads as scenery, not as the ship you're flying. This is "the player
+  must never be lost" (§15.3.1) failing on the very first sprite. The old
+  ASCII player solved this with a reserved bright-white `@`; raster has
+  nothing equivalent yet. **This is a rendering ask for you, not an art
+  ask for me** — a highlight pass around/under the player's `drawImage`
+  call. Top of my list for what I need from your side before curating more
+  roster art, because shipping this same failure in a new medium after the
+  owner's already flagged it once (XP visibility, 09.07) would be a real miss.
+- **The curated starfield never draws.** `assets/space/backgrounds/
+  starfield_01.png` is committed and unused — `images.tsv` only has
+  per-entity ids, there's no "world background" concept at all. Not a data
+  gap I can fix by writing another row; it's a different shape of problem
+  (covers the viewport, sits under everything, probably doesn't track the
+  camera like a positioned entity does) and needs its own mechanism on your
+  side. New ask, `todo.md`.
+- Confirmed enemies spawn and die during natural play (kill counter hit 5 in
+  15 seconds) but didn't catch a live Spacebug in the same frame as a
+  screenshot — they die too fast against even the unlevelled starting
+  weapon. Not claiming the mob art is confirmed working, just that kills are
+  happening. Next check: god-mode + something that slows the kill rate so
+  there's time to compose the shot.
+
+Both of the real problems above are exactly why "read the test output" isn't
+the same as "look at the game" — glad I did this before calling phase 2 done.

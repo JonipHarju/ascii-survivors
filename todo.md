@@ -87,15 +87,19 @@ Full design writeup: `design.md` §15. Contract ask: `jane.md` [33].
       first-encounter panel now shows the actual Spacebug art.
 - [x] `[J]` Card icon rows added for all 7 weapons (picks + reasoning in
       design.md §15.9/images.tsv comments).
-- [ ] `[Jo]` **Real bug, traced, not fixed:** card icons don't render even
-      though they load correctly — `jane.md` [43] has the full trace.
-      `drawBox`'s background fill (`draw.ts`) is a buffered `set()` call
-      covering the whole card interior, called *before* `drawCardArt`;
-      `Surface.drawImage`'s own documented rule is that raster always
-      composites under buffered glyphs regardless of call order (correct
-      for the field, wrong for a card where the box is meant to sit
-      *behind* the icon). Likely why portraits work and cards don't —
-      nothing draws a buffered fill over the portrait panel first.
+- [ ] `[Jo]` **Real bug, traced, not fixed, currently disabled to avoid a
+      live regression:** card icons don't render even though they load
+      correctly — `jane.md` [43] has the full trace. `drawBox`'s background
+      fill (`draw.ts`) is a buffered `set()` call covering the whole card
+      interior, called *before* `drawCardArt`; `Surface.drawImage`'s own
+      documented rule is that raster always composites under buffered
+      glyphs regardless of call order (correct for the field, wrong for a
+      card where the box is meant to sit *behind* the icon). Likely why
+      portraits work and cards don't — nothing draws a buffered fill over
+      the portrait panel first. **The 7 `cards/*` rows in `images.tsv` are
+      commented out** (`jane.md` [44]) — leaving them live traded a working
+      ASCII-diagram fallback for a blank card, an active regression, not a
+      no-op. Uncomment once fixed; art/sizing shouldn't need to change.
 - [ ] `[Jo]` **Trivial, one line:** `render.ts:689` hardcodes `'THE COUNTESS'`
       for the boss HP bar label — found screenshotting the boss encounter.
       Should be `'THE OVERLORD'`. Jane's file boundary stops her editing it.

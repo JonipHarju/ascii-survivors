@@ -155,6 +155,25 @@ describe('what a card says', () => {
     const chain = everyCard().find((c) => c.title === 'The Chain')!;
     assert.equal(chain.effect, '10 damage · 1.1s');
   });
+
+  it("borrows the weapon's level-1 sentence for a level with no note of its own, numbers demoted to detail", () => {
+    // Most levels are a pure number bump (weapons.tsv: chain has a note on
+    // 1/4/8/9 and blanks everywhere else) — a returning player levelling an
+    // owned weapon into a blank-note level must still see a sentence, per
+    // jane.md [22], not bare numbers with nothing telling them what the
+    // weapon does.
+    const NOVA = [
+      'nova\t1\tSanguine Nova\t*\tR\tbolt\t1.4\t8\t2\t2\t1\t1\t2\t1\t40\tA bolt seeks the nearest enemy.',
+      'nova\t2\tSanguine Nova\t*\tR\tbolt\t1.3\t9\t2\t2\t1\t1\t2\t1\t40\t',
+    ].join('\n');
+    const w = new World({ ...data, weapons: parseWeapons(NOVA) }, 1);
+    w.setViewport(180, 60);
+    w.weapons = [{ id: 'nova', level: 1, timer: 0, angle: 0, evolved: null }];
+
+    const card = generateCards(w, new Rng(1), 99).find((c) => c.title === 'Sanguine Nova' && !c.isNew)!;
+    assert.equal(card.effect, 'A bolt seeks the nearest enemy.', "the level-1 sentence, not level 2's blank note");
+    assert.equal(card.detail, '9 damage · 1.3s', "level 2's own numbers still show, just demoted");
+  });
 });
 
 describe('card effect text', () => {

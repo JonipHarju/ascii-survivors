@@ -33,9 +33,13 @@ export type Card = {
   effect: string;
   /**
    * The exact numbers behind `effect` — `damage +16%` — drawn dimmed beneath it.
-   * `null` when the effect line already *is* the number, which is every weapon:
-   * a weapon's note describes what the level does, and there is no one stat to
-   * restate. design.md §8.
+   * `null` when the effect line already *is* the number: most weapon levels
+   * (the note describes what changed qualitatively, and there's no one stat
+   * to restate against that). The one weapon case that isn't null: a level
+   * with no note of its own borrows the weapon's level-1 sentence as
+   * `effect` (jane.md [22] — "the player may be seeing this card for the
+   * first time even at LV 4"), and *this* level's numbers still belong on the
+   * card, so they ride along as `detail` instead of being dropped.
    */
   detail: string | null;
   /** `LV 3 → 4`, or `NEW`. */
@@ -91,14 +95,23 @@ export function generateCards(w: World, rng: Rng, count = 3): Card[] {
     const next = weaponAt(data.weapons, owned.id, owned.level + 1);
     if (next === null) continue;
 
+    // Most levels are a pure number bump with no note of their own (weapons.tsv:
+    // chain's own table has a note on levels 1/4/8/9 and blanks everywhere else).
+    // Falling straight to the numbers used to mean a returning player at LV 6
+    // saw "9 damage · 1.34s" and nothing telling them what the weapon *does* —
+    // borrow the level-1 sentence for `effect` instead, and keep this level's
+    // own numbers as `detail` rather than dropping them (jane.md [22]).
+    const numbers = weaponFallback(next.dmg, next.cd);
+    const sentence = next.note !== '' ? next.note : (weaponAt(data.weapons, owned.id, 1)?.note ?? '');
+
     pool.push({
       title: next.name,
       glyph: next.glyph,
       color: next.color,
       kind: 'weapon',
       icon: `cards/${owned.id}`,
-      effect: next.note !== '' ? next.note : weaponFallback(next.dmg, next.cd),
-      detail: null,
+      effect: sentence !== '' ? sentence : numbers,
+      detail: sentence !== '' ? numbers : null,
       levelText: `LV ${owned.level} → ${owned.level + 1}`,
       isNew: false,
       apply: (world) => {

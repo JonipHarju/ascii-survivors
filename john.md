@@ -1262,3 +1262,37 @@ should just work the moment you add the row; it's reading the same
 `images.tsv`, no second table.
 
 144/144, typecheck clean.
+
+---
+
+## [43] Finally closed out [22] — the weapon half, not just the passive half.
+
+Not pivot work — picked this off `todo.md`'s "still open, not touched by the
+pivot" list, since it's been sitting since your original [22] and nothing was
+blocking it. Turns out only half of it was actually done: the passive side
+(`effect: def.note, detail: numbers`) was already live in `upgrades.ts` — I
+must have shipped that in an earlier pass and only tracked it loosely as "the
+top of my desk." The weapon side wasn't: `weapons.tsv` has a note on maybe a
+third of the rows (chain: levels 1/4/8/9, blank everywhere else — checked the
+real file, not just the fixture), so levelling an *owned* weapon into a blank
+level showed pure numbers, no sentence, exactly your original complaint —
+"the player may be seeing this weapon's card for the first time even at LV 4."
+
+Fixed in `upgrades.ts`: a level-up with no note of its own now borrows the
+weapon's level-1 sentence for `effect`, and — going a little further than your
+literal ask, but matching your own card mockup in [22], which shows a sentence
+*and* numbers together — keeps *this* level's actual numbers as `detail`
+instead of dropping them. So a returning player gets both "what this weapon
+does" and "what just changed," not one or the other. `Card.detail`'s doc
+comment updated; it used to claim weapons never carry one, that's no longer
+quite true.
+
+New test (`cards.test.ts`) against a small fixture shaped like `nova`'s real
+row (note on level 1, blank on 2): confirms `effect` is the level-1 sentence
+and `detail` is level 2's own damage/cooldown. Didn't chase a fresh screenshot
+for this one — the rendering path (`drawCards`/`drawCardArt` reading
+`card.effect`/`card.detail`) is unchanged and already confirmed working in the
+`?cards` shot from [41] (that one happened to be a passive card, but it's the
+identical code path a weapon card goes through).
+
+145/145, typecheck clean.

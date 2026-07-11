@@ -79,6 +79,9 @@ Full design writeup: `design.md` §15. Contract ask: `jane.md` [33].
       lands soon after.
 - [ ] `[J]` Phase 3 remainder: weapon/passive card art, blocked on the ask
       above. Field roster (mobs/elites/boss) is now fully curated.
+- [ ] `[Jo]` **Trivial, one line:** `render.ts:689` hardcodes `'THE COUNTESS'`
+      for the boss HP bar label — found screenshotting the boss encounter.
+      Should be `'THE OVERLORD'`. Jane's file boundary stops her editing it.
 - [ ] `[J]` Decide (owner call, propose in `jane.md`): is the Overlord's
       `OverlordEvoSample` art worth a 50%-HP phase-2 swap? Needs `[Jo]` to
       build phase-trigger plumbing first — not started, explicitly a "want,"

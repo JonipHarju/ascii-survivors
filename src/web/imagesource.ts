@@ -1,6 +1,10 @@
 /**
- * Browser `ImageSource`: preloads every path `images.tsv` references as an
- * `<img>`, relative to `baseUrl`.
+ * Browser `ImageSource`: preloads a set of paths as `<img>` elements,
+ * relative to `baseUrl`. Takes plain paths, not `images.tsv`'s shape
+ * specifically — `boot.ts` hands it the union of every table that names a
+ * raster file (`images.tsv` *and* `backgrounds.tsv`, and whatever else
+ * grows this list later), so one cache serves every raster draw call
+ * (`GameView.imageFor` and `GameView.drawBackground` both read through it).
  *
  * Two layers keep this off the ~600MB vendor pack entirely: Jane curates
  * only decided files into the small, tracked `assets/space/` (a few MB —
@@ -13,26 +17,23 @@
  * for a few more frames.
  */
 
-import type { ImageTable } from '../data/images.ts';
 import type { ImageSource } from '../assets/imagesource.ts';
 
 export class WebImageSource implements ImageSource {
   private readonly images = new Map<string, HTMLImageElement>();
   private readonly failed = new Set<string>();
 
-  constructor(table: ImageTable, baseUrl: string) {
+  constructor(paths: Iterable<string>, baseUrl: string) {
     const base = baseUrl.replace(/\/$/, '');
-    const requested = new Set<string>();
 
-    for (const entry of table.byId.values()) {
-      if (requested.has(entry.path)) continue; // several ids can share one file
-      requested.add(entry.path);
+    for (const path of paths) {
+      if (this.images.has(path)) continue; // several ids/tables can share one file
 
       const img = new Image();
       img.decoding = 'async';
-      img.onerror = () => this.failed.add(entry.path);
-      img.src = `${base}/${entry.path.split('/').map(encodeURIComponent).join('/')}`;
-      this.images.set(entry.path, img);
+      img.onerror = () => this.failed.add(path);
+      img.src = `${base}/${path.split('/').map(encodeURIComponent).join('/')}`;
+      this.images.set(path, img);
     }
   }
 

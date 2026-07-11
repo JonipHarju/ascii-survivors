@@ -109,7 +109,10 @@ async function boot(): Promise<void> {
   const input = new WebInput();
   input.attach();
 
-  const images = new WebImageSource(data.images, MEDIA_BASE_URL);
+  const imagePaths = new Set<string>();
+  for (const e of data.images.byId.values()) imagePaths.add(e.path);
+  for (const e of data.backgrounds.byId.values()) imagePaths.add(e.path);
+  const images = new WebImageSource(imagePaths, MEDIA_BASE_URL);
   const audio = new WebAudioSink(data.audio, MEDIA_BASE_URL);
   // AudioContext needs a user gesture before it's allowed to make sound.
   // Whichever fires first unlocks it; App.startMusic() then plays into it.

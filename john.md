@@ -1132,3 +1132,43 @@ should show it — tell me if the density or drift feels wrong and I'll expose
 whatever else needs tuning.
 
 144/144 tests now, typecheck clean.
+
+---
+
+## [36] Your `backgrounds.tsv` row exposed a real bug — found it by actually looking, fixed it.
+
+You'd already written the real row (`field 0.15 40`, with a genuinely good
+rationale for `0.15` in the comment — agree with all three of your bullets,
+keeping the default) before I got to verify [35] in a browser. Good thing I did
+anyway: your row was correct and the starfield still didn't draw.
+
+**The bug:** `WebImageSource` (the thing that turns a path into a loaded pixel
+buffer) was only ever constructed from `data.images` — `images.tsv`'s manifest.
+It never knew `backgrounds.tsv` had a path to preload at all, so
+`GameView.imageFor`'s `this.images.get('space/backgrounds/starfield_01.png')`
+was permanently `undefined`, not "still decoding" — nothing had ever asked the
+browser to fetch it. `drawBackground` correctly fell back to the old scatter,
+exactly as designed, which is also exactly why this didn't throw or warn
+anywhere: a silent, correct-looking fallback is precisely what hid it. Only
+reason I caught it is I screenshotted after wiring the row, instead of trusting
+the unit tests (which pass a fake `ImageSource` that always resolves — they
+tested `drawBackground`'s tiling math, not the real loader wiring, and couldn't
+have caught this).
+
+**The fix:** `WebImageSource`'s constructor now takes a plain set of paths
+instead of `images.tsv`'s specific shape, and `boot.ts` hands it the union of
+every path `images.tsv` *and* `backgrounds.tsv` name. One cache, fed by however
+many tables end up naming raster files — adding a third later (elites art, a
+`dusk` background variant) won't need this fixed again.
+
+Screenshotted it for real this time (`?play&sim=200&god&debug`): the field is
+covered edge-to-edge in your starfield, the Ranger's halo and the ground clutter
+both still read fine on top of it, HUD untouched. `0.15` parallax reads exactly
+like you described — drifts enough to sell motion, stays inert enough to not
+compete with anything alive. One thing worth a look on your end when you play
+it, not a blocker: fps dropped from a steady 120 to ~66 in the same debug corner
+with the background on (more `drawImage` calls per frame, one per visible tile).
+Still comfortably above 60; flagging in case it matters more once the field is
+also full of raster mobs.
+
+144/144, typecheck clean, this is the fix on top of [35].

@@ -2572,3 +2572,20 @@ another lantern-bearer" — now "another pilot." Checked `dawn.txt` and
 alone rather than fixing what isn't broken.
 
 `npm test` 144/144 — pure `.txt` art, no code touched.
+
+---
+
+## [41] One more surface for the same question — portraits, not a new ask.
+
+Checked `drawPortrait` (render.ts ~606) while looking at what else still
+shows old gothic art against the new field: it's ASCII-only too, no
+`imageFor()` call, so the first-encounter panel (the "GHOUL" popup a player
+sees mid-run) is still the old bestiary art — mismatched against the
+Spacebug actually on the field now. Folded into [39] rather than opening a
+third thread. The reason I'm not just hand-redrawing all 9 portraits in
+ASCII the way I did the title screen: if a raster hook lands here, most of
+them are a **free reuse** of art I've already curated (`portraits/ghoul` →
+the same `spacebug_green.png` `sprites/mobs/ghoul` already points at) —
+hand-drawing 9 ASCII portraits now would likely be thrown away days later.
+Title screen was worth it because nothing raster could ever cover it (it's
+not a sprite id); portraits are the opposite case.

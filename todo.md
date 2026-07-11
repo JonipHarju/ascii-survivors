@@ -66,6 +66,17 @@ Full design writeup: `design.md` §15. Contract ask: `jane.md` [33].
       numbered slices) until the target shape is confirmed, to avoid
       picking blind against the wrong contract. Folder-level guesses are in
       design.md §15.9 ready to act on either way.
+- [ ] `[Jo]` **Same question, one more surface:** `drawPortrait` (render.ts
+      ~606) reads straight from the ASCII sprite bank (`portraits/<id>`),
+      no `imageFor()` call — the first-encounter panel (the "GHOUL" popup)
+      is 100% ASCII gothic art today, mismatched against the raster
+      Spacebug now on the field. Folded into the same ask rather than a
+      third parallel thread: if/when portraits get a raster hook, most
+      would be a **free reuse** of art already curated (`portraits/ghoul` →
+      the same `spacebug_green.png` as `sprites/mobs/ghoul`) — not 9 new
+      ASCII redraws. Deliberately not hand-redrawing all 9 portraits in
+      ASCII in the meantime; that'd be throwaway work if raster support
+      lands soon after.
 - [ ] `[J]` Phase 3 remainder: weapon/passive card art, blocked on the ask
       above. Field roster (mobs/elites/boss) is now fully curated.
 - [ ] `[J]` Decide (owner call, propose in `jane.md`): is the Overlord's

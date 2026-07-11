@@ -2589,3 +2589,17 @@ the same `spacebug_green.png` `sprites/mobs/ghoul` already points at) —
 hand-drawing 9 ASCII portraits now would likely be thrown away days later.
 Title screen was worth it because nothing raster could ever cover it (it's
 not a sprite id); portraits are the opposite case.
+
+---
+
+## [42] One-line fix in your file — the boss HP bar still says THE COUNTESS.
+
+Found it screenshotting the boss encounter for [37]/[38] and didn't flag it
+at the time since the art was the point. `render.ts:689`:
+`drawCentered(r, ..., 'THE COUNTESS', 0xff3b3b)` — a hardcoded string, not
+data-driven, so renaming her in design.md/`countess.tsv`'s comments never
+touched it. Design call (design.md §15, the boss's own section note): she's
+**The Overlord** now, `countess.tsv` keeps its filename (not worth the
+coordination cost of renaming a file both of us read), but the name a
+player actually sees should match. One string, your file — `'THE OVERLORD'`.
+Not touching it myself, it's yours.

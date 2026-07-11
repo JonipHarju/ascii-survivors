@@ -6,24 +6,81 @@ say so in `john.md` and I'll change it — I'd rather redraw than have you write
 parser you hate.*
 
 > ⚠️ **11.07, 00:03 — art direction pivoted to space, see `design.md` §15.**
-> Everything below this notice describes the **ASCII `.txt` glyph pipeline**,
-> which is superseded but still what the shipped build actually loads today —
-> don't rip it out until the new pipeline replaces it. `assets/space-assets/`
-> is the purchased pack this game is moving to; `design.md` §15.2 is the
-> current roster mapping (which vendor file is which game entity) and §15.5
-> is the open contract ask to John (sprite framing, coordinate system, audio
-> engine) that this file's folder/size table gets rewritten against once he's
-> answered it. Don't build new ASCII sprites against the rules below — the
-> next asset work is the space roster, not more of this.
+> **Two pipelines run at once, on purpose, and that's not a transitional
+> state to "finish migrating" — it's the permanent shape.** For any sprite
+> id, raster (below) draws if a row exists and the image has loaded;
+> otherwise the ASCII glyph pipeline (further down this file) draws instead,
+> automatically, with no error. That fallback is exactly how the game shipped
+> a half-drawn bestiary during the ASCII era too (`glyphs.tsv`'s `glyph`
+> column) — the space pivot didn't invent the pattern, it just added a second
+> rung above it. Don't delete ASCII art for an id the raster table doesn't
+> cover yet; it's load-bearing until it does.
 >
 > **`assets/space-assets/` is the raw ~600MB vendor pack and is gitignored —
 > never committed, never referenced from code.** `assets/space/` is the
 > curated, tracked subset: only files a real decision has landed on, copied
-> in and organised by roster category (`ships/`, `mobs/`, `backgrounds/`,
-> `audio/`, …). If it's not under `assets/space/`, it isn't decided yet —
-> check `design.md` §15.2 for what's picked versus still surveyed.
+> in and organised by roster category (`ships/`, `mobs/`, `elites/`, `boss/`,
+> `backgrounds/`, `audio/`). If it's not under `assets/space/`, it isn't
+> decided yet — check `design.md` §15.2 for what's picked versus still
+> surveyed.
 
 ---
+
+## The raster pipeline (`images.tsv`, `audio.tsv`, `backgrounds.tsv`)
+
+Three tables, three different shapes, because a positioned sprite, a sound
+event, and a full-field backdrop are three different *kinds* of thing —
+learned that the hard way when John pointed out a background isn't just an
+`images.tsv` row with a bigger box (design.md §15.7/§15.8). All three: John
+parses (`src/data/{images,audio,backgrounds}.ts`), Jane owns the content,
+same division as every `.tsv` in this repo.
+
+| File | Shape | What |
+|---|---|---|
+| `images.tsv` | `id / path / w / h` | One static raster image per **sprite id** — `sprites/player`, `sprites/mobs/<id>`, `sprites/elites/<id>`, `sprites/countess`. Same id space the ASCII loader already uses; a row here shadows that id's glyph. |
+| `audio.tsv` | `id / path / volume / loop` | One sound per **event id** — the fixed strings `World`/`App` push: `hit`, `kill`, `hurt`, `death`, `revive`, `win`, `boss_phase`, `pickup`, `gold`, `heal`, `evolve`, `chest`, `levelup`, plus three music beds (`music/ambient`, `music/combat`, `music/boss`) that `AudioSink.setMusic(weights)` crossfades continuously, not hard-cuts. |
+| `backgrounds.tsv` | `id / path / parallax / tileWu` | The field's own backdrop — tiles to cover the viewport, drifts at `parallax` (0 pinned, 1 scrolls like a ship). Only `field` is looked up today. |
+
+**No animation contract exists for raster yet.** `images.tsv` is one static
+image, full stop — no `# fps:`, no frame list, no spritesheet slicing.
+Everything raster (the Ranger, every Spacebug, the Gravewarden, the Overlord)
+is currently a still image. Real gap, tracked in `todo.md`, not this file's
+job to solve by itself.
+
+**Sizing (`images.tsv`'s `w`/`h`):** world units, isotropic, same convention
+as everything else in the sim (§5) — **not pixels, not cells.** Pick a width,
+then compute the height from the *source PNG's own pixel aspect ratio* so
+nothing looks stretched: `h = w * (pngHeight / pngWidth)`. `render.ts`
+converts `h` to cell-rows via `WU_PER_ROW` (=2) the same way every glyph
+sprite already is — the terminal-era "a cell is twice as tall as wide" fact
+(bottom of this file) never went away, it just moved from being about font
+cells to being the world's own coordinate convention.
+
+**Paths, always:** relative to `assets/`, always under `space/`. A row
+pointing at `space-assets/` is a bug — that folder is gitignored and won't
+exist on a fresh checkout or in a build.
+
+**The translated legibility laws** (design.md §15.3 has the full list; the
+two that actually bit us building this):
+
+- **The player must never be lost.** The old ASCII law reserved bright-white
+  `@` to the player alone. Raster's equivalent: `Surface.drawImage` takes an
+  optional `glow` colour; only the player's call passes one
+  (`PLAYER_COLOR`, bright white). Nothing else may.
+- **XP must outshine the ambient field.** Not yet enforced for raster —
+  flagged as *at risk* in design.md §15.3 point 5 until an XP pickup is
+  actually drawn as a sprite instead of the current ASCII mote glyph.
+
+## The ASCII glyph pipeline (the ground state everything else falls back to)
+
+Below this line describes the original `.txt` glyph pipeline. It is **not
+deprecated** — it's the fallback for every sprite id `images.tsv` doesn't
+cover, which as of this writing is most of the roster: weapon/passive card
+art, alt characters, all UI (title/dawn/death/crossroads), and anything on
+the field not yet curated into `assets/space/`. Don't build *new* ASCII field
+sprites for ids that are getting a raster pick soon (the mob/elite/boss
+roster is settled, design.md §15.2) — but everything else here is live and
+correct until it has a raster row of its own.
 
 ## Folders
 

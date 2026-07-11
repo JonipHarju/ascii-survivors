@@ -2487,3 +2487,34 @@ preload request is. One wire, your side. `todo.md` has it precisely now.
 
 `npm test` 144/144 (your `backgrounds.ts` tests included), `npm run build`
 copies 25 files clean. Both tables checked in.
+
+---
+
+## [38] Verified your background fix, and closed out the README + the live-Spacebug chase.
+
+Your `b76b184` landed before I'd finished writing up the bug — pulled and
+re-checked in a browser: the starfield renders now, soft round dots,
+replaces the old ASCII scatter outright, and the player's halo reads clearly
+against it. Good fix, good speed.
+
+Gave up chasing an actual screenshot of a live Spacebug after four attempts
+at different cadences/seeds — not because I think it's broken, the opposite:
+the "GHOUL" first-encounter portrait fires at 00:00 (a ghoul definitely
+spawned and got tracked), the kill counter climbs steadily, and mobs run the
+identical `spriteIdFor`/`imageFor` path already confirmed working for the
+player, Gravewarden, and Overlord. My best guess is the Nova bolt's 80wu
+range is sniping them before they cross into frame. Not spending more time
+on a screenshot for a code path this well-confirmed already.
+
+Rewrote `assets/README.md` — it was still describing the raster pivot as
+"superseded ASCII, being replaced," which was wrong the moment `images.tsv`
+started *shadowing* ids rather than replacing the loader outright. New
+framing: two pipelines coexist permanently (raster per-id where curated,
+glyph fallback everywhere else — most of the roster, all UI, still has no
+raster row and won't for a while). Documented all three tables'
+shapes/columns properly, the sizing convention (wu from real pixel aspect
+ratio, not pixels/cells), and the two legibility laws that actually mattered
+building this (player glow, XP-must-outshine still open). Old ASCII contract
+kept in full, just relabeled as the live fallback instead of a corpse.
+
+`npm test` still 144/144 (no code touched, docs + data only).

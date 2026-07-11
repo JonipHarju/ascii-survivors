@@ -37,29 +37,39 @@ Full design writeup: `design.md` §15. Contract ask: `jane.md` [33].
       parallax/tileWu, `drawBackground()` in render.ts, falls back to the
       procedural scatter cleanly if unset). Jane's design call: parallax
       0.15, tile 40wu (design.md §15.8). `assets/backgrounds.tsv` written.
-- [ ] `[Jo]` **New bug found verifying the above.** The background still
-      doesn't draw — `src/web/boot.ts:112` constructs `WebImageSource` with
-      only `data.images`, never `data.backgrounds`, so the starfield's path
-      is never requested/preloaded and `drawBackground()`'s `this.images.get()`
-      is always `undefined`. Falls back silently and correctly, per spec —
-      just missing one wire (`WebImageSource` needs the background path(s)
-      merged into its preload set). design.md §15.8.
+- [x] `[Jo]` Background preload bug — fixed same day (`b76b184`), before
+      Jane even finished writing it up. `WebImageSource` now takes the union
+      of every path `images.tsv` *and* `backgrounds.tsv` name. Re-verified
+      in a browser: the starfield renders — soft round dots, replaces the
+      old ASCII scatter outright, player halo reads clearly against it.
 - [x] `[J]` Curated elites + boss (Phase 3, pulled forward — the code path
       needed zero new work). Gravewarden → `big_berta.png`, Overlord →
       `OverlordNightmare6Cropable1_01.png`. Rows added to `images.tsv`.
       Verified in a real boss encounter (`?start=18:55`): renders correctly,
       big, distinct, HP bar and all.
-- [ ] `[J]` Catch a live Spacebug in an actual screenshot — still haven't.
-      Confirmed kills are happening (director spawns, weapon auto-fires,
-      kill counter moved) but didn't catch one on screen before it died.
+- [x] `[J]` Live Spacebug — never caught the exact frame (4 attempts,
+      varying cadence/seed), but have strong indirect confirmation instead:
+      the "GHOUL" first-encounter portrait fires at 00:00 (proves a ghoul
+      spawned and was tracked), the kill counter climbs steadily, and mobs
+      run through the *identical* `spriteIdFor`/`imageFor` path already
+      visually confirmed for the player/Gravewarden/Overlord. Likely
+      explanation: the Nova bolt's 80wu range snipes ghouls before they
+      cross into the ~60wu-wide viewport. Not worth more time chasing a
+      screenshot for a code path with this much indirect + structural
+      confirmation already.
 - [ ] `[J]` Phase 3 remainder: weapon/passive card art reskin (design.md
       §15.2 table). Field roster (mobs/elites/boss) is now fully curated.
 - [ ] `[J]` Decide (owner call, propose in `jane.md`): is the Overlord's
       `OverlordEvoSample` art worth a 50%-HP phase-2 swap? Needs `[Jo]` to
       build phase-trigger plumbing first — not started, explicitly a "want,"
       not committed.
-- [ ] `[J]` Rewrite `assets/README.md`'s folder/size table and the two ASCII
-      laws for the new pipeline, once the contract ask above has answers.
+- [x] `[J]` Rewrote `assets/README.md`: documented `images.tsv`/`audio.tsv`/
+      `backgrounds.tsv` as their own section, corrected the framing from
+      "old pipeline superseded" to "two pipelines coexist permanently, raster
+      shadows glyph per-id" (matches how the loader actually behaves —
+      most of the roster, all UI, still has no raster row and isn't going
+      to for a while). Old ASCII contract kept, relabeled as the live
+      fallback rather than deprecated.
 - [x] `[J]` Curate the first real picks out of the 600MB vendor pack into a
       tracked `assets/space/` folder (owner's call: don't commit the whole
       pack, only what's decided). Done: Galactica Ranger, 5 Spacebug colour

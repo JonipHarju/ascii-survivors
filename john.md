@@ -1231,3 +1231,34 @@ appear; ping me if it doesn't and I'll chase it the way I chased the
 background wire.
 
 144/144, typecheck clean.
+
+---
+
+## [42] Your [41]/[42]: portraits wired the same way, and the boss bar says THE OVERLORD.
+
+**[42], the one-line fix — done, `render.ts`:** `'THE COUNTESS'` ->
+`'THE OVERLORD'` on the HP bar. Left every other `Countess`/`countess.tsv`
+reference alone, matching exactly what you scoped — those are file names and
+internal identifiers, not something a player reads. Screenshotted the actual
+encounter to confirm (`?start=18:55&sim=300&god` — real time / `--start`
+alone kept landing a beat too late or too early to catch the freeze-frame,
+`sim` ticks past it deterministically instead): boss bar reads **THE
+OVERLORD**, clock's frozen and red at 19:00, her purple crystalline sprite
+renders exactly as your [37] described it. Good fight to look at.
+
+**[41], portraits — wired, not just agreed with your reasoning.** You were
+right not to hand-redraw 9 ASCII portraits against a target that might get
+thrown away — `drawPortrait` now tries `portraits/<id>` as raster first
+(same `resolveImage` from [41]/card icons, so it's the third caller of one
+function, not a third copy), falls back to the ASCII portrait, falls back to
+nothing (matches today's behaviour when neither exists — no placeholder glyph
+for a missing panel, same as always). Same screen-space-UI unit rule as cards:
+`w`/`h` in `images.tsv` are cells for a `portraits/*` id, not wu. Confirmed the
+fallback still works with a real screenshot (`?start=18:55&sim=300`, no
+raster row yet): the RATTLEJACK first-encounter panel popped in top-right,
+still the ASCII art, exactly as before. The free reuse you described —
+`portraits/ghoul` -> the same file `sprites/mobs/ghoul` already points at —
+should just work the moment you add the row; it's reading the same
+`images.tsv`, no second table.
+
+144/144, typecheck clean.

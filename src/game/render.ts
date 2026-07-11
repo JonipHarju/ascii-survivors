@@ -181,7 +181,7 @@ export class GameView {
       }
     }
 
-    if (this.portraitId !== null) this.drawPortrait(r, field, this.portraitId);
+    if (this.portraitId !== null) this.drawPortrait(r, w, field, this.portraitId);
     if (w.effects.some((fx) => fx.kind === 'flash')) this.drawWhiteFlash(r, field);
   }
 
@@ -603,9 +603,36 @@ export class GameView {
     }
   }
 
-  private drawPortrait(r: Surface, field: Rect, id: string): void {
-    const sprite = this.sprites.get(`portraits/${id}`);
-    if (sprite.placeholder) return; // Jane hasn't drawn this one yet.
+  /**
+   * jane.md [41]: raster first (`portraits/<id>` in `images.tsv` — a free
+   * reuse of art already curated for the field sprite, e.g. `portraits/ghoul`
+   * pointing at the same file `sprites/mobs/ghoul` does), then Jane's ASCII
+   * portrait, then nothing (no placeholder glyph — a missing first-encounter
+   * panel just doesn't show one, same as it always has). `portraits/*` is
+   * screen-space UI like `cards/*`: `w`/`h` are cells, not wu.
+   */
+  private drawPortrait(r: Surface, w: World, field: Rect, id: string): void {
+    const imgId = `portraits/${id}`;
+
+    if (r.caps.raster) {
+      const resolved = resolveImage(this.images, w.data.images, imgId);
+      if (resolved !== null) {
+        const { w: wCells, h: hCells } = resolved.entry;
+        const x = field.x + field.w - wCells - 2;
+        const y = field.y + 1;
+        const t = Math.min(1, (1.5 - this.portraitTimer) / 0.25);
+        const offset = Math.round((1 - t * t) * (wCells + 2));
+
+        r.drawImage(x + offset + wCells / 2, y + hCells / 2, resolved.img, wCells, hCells);
+        // No `# name:` header on a raster row — the entity id is the closest
+        // thing to a label; good enough for a first-encounter panel.
+        r.text(Math.round(x + offset), Math.round(y + hCells), id.toUpperCase(), ACCENT);
+        return;
+      }
+    }
+
+    const sprite = this.sprites.get(imgId);
+    if (sprite.placeholder) return; // Jane hasn't drawn this one yet, in either medium.
 
     const frame = sprite.frames[0]!;
     const x = field.x + field.w - frame.w - 2;
@@ -681,12 +708,12 @@ function weaponGlyph(w: World, id: string): string {
   return levels?.[0]?.glyph ?? '?';
 }
 
-/** The Countess gets the whole top of the field. */
+/** The boss gets the whole top of the field. */
 function drawBossBar(r: Surface, w: World): void {
   const y = 1;
   const width = Math.min(r.width - 20, 60);
   const x = Math.floor((r.width - width) / 2);
 
-  drawCentered(r, Math.floor(r.width / 2), y, 'THE COUNTESS', 0xff3b3b);
+  drawCentered(r, Math.floor(r.width / 2), y, 'THE OVERLORD', 0xff3b3b);
   drawBar(r, x, y + 1, width, w.bossHpFraction, 0xff3b3b, 0x3a1010, '─');
 }

@@ -1,8 +1,20 @@
 # assets/ — the art contract
 
+The assets used in this game are purchased from https://gamesupply.itch.io/ultimate-space-game-mega-asset-package
 *Owner: Jane. John reads this, never writes it. If the format fights your loader,
 say so in `john.md` and I'll change it — I'd rather redraw than have you write a
 parser you hate.*
+
+> ⚠️ **11.07, 00:03 — art direction pivoted to space, see `design.md` §15.**
+> Everything below this notice describes the **ASCII `.txt` glyph pipeline**,
+> which is superseded but still what the shipped build actually loads today —
+> don't rip it out until the new pipeline replaces it. `assets/space-assets/`
+> is the purchased pack this game is moving to; `design.md` §15.2 is the
+> current roster mapping (which vendor file is which game entity) and §15.5
+> is the open contract ask to John (sprite framing, coordinate system, audio
+> engine) that this file's folder/size table gets rewritten against once he's
+> answered it. Don't build new ASCII sprites against the rules below — the
+> next asset work is the space roster, not more of this.
 
 ---
 

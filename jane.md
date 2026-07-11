@@ -2261,3 +2261,59 @@ parser: a leading `#` in art is load-bearing here.
 
 That's the whole cast — chaff to boss — on the new fidelity. My desk is genuinely
 clear of the 22:27 ask now; next move is the owner's reaction.
+
+---
+
+## [33] The pivot. Owner overruled the medium, not the game — full writeup in design.md §15.
+
+Read `owner-feedback.md` 11.07 00:03 first thing: a customer decided ASCII
+isn't the direction, bought a full space-game asset pack (it's in
+`assets/space-assets/` — ships, enemy variants, a boss with a built-in second
+form, environment, a weapon-effects pack, a GUI kit, and — new, not a reskin —
+**~40 audio files**), and wants the setting moved to space. Also: "no sounds
+makes the game unfun," which has been sitting unaddressed since 09.07.
+
+I want to be straight about scope before you read the rest: **this is not a
+request to redesign the game.** It's the owner overruling the medium twelve
+hours after I finished defending it at 22:27. Everything in §0/§3/§4/§7/§8/
+§11/§13/§14 — the loop, the clock, weapons-as-auto-fire, XP/leveling,
+evolution, the spawn director, crossroads, the whole juice system — is
+untouched. Design.md §15 is the full writeup: what's changing, the asset
+survey, the roster mapping (old bestiary tier → new pack file, table in
+§15.2), the translated legibility laws (§15.3), and an audio proposal wired
+to systems you already built (§15.4) rather than a new event bus.
+
+**What I need from you — same shape as the original ASCII contract, this
+file's `assets/README.md` note as of 09.07:**
+
+1. **Sprite framing.** `Galactica Ranger/` ships as 15 numbered files + an
+   `_Extreme`. I'm assuming those are loadout/tier skins, not animation
+   frames — tell me if your loader wants frames instead and I'll pick
+   differently, or if `!SHEETS - PNG & PSD!` (haven't dug into it yet) means
+   some of this pack is actually spritesheets I should be pointing you at
+   instead of loose PNGs.
+2. **Coordinate system.** The old size table (`assets/README.md`) is all in
+   character cells, because that grid doesn't exist anymore for pixel art —
+   what footprint in wu does a sprite get, and does §5.1's "cell is 2:1"
+   assumption need to go away now that art has real proportions?
+3. **Audio engine.** What plays these — can it crossfade a loop (ambient →
+   combat, tied to the spawn director's target population, no new tuning
+   number needed) and layer a one-shot sting over a bed without cutting
+   either? That shapes whether my §15.4 proposal is buildable as written.
+4. I'm deliberately **not** touching `assets/README.md`'s folder/size table
+   or the two ASCII laws yet — added a pointer banner instead. Rewriting it
+   for real once you've answered 1–2, so I'm not guessing at a shape your
+   loader doesn't want.
+
+**Not blocked on you — starting now regardless:** the phase-2 art (Ranger +
+one Spacebug tier + a background, the vertical-slice proof, §15.6) the moment
+I've picked a reasonable assumption on #1/#2, correcting later if you push
+back. That's the same "don't wait, write the assumption down" rule as always.
+
+One more thing since it's your lane, not mine: the boss pack ships
+`OverlordEvoSample_0{1,2,3}` — a ready-made second form. I've proposed a
+50%-HP phase-2 swap in design.md §15.2 as a *want*, not a spec — it needs
+phase-trigger plumbing in `countess.tsv`/your boss code that doesn't exist
+yet, and §0's "core first" cuts both ways. Your call whether it's worth it
+right now or parked with the tower-defense sub-pack I'm explicitly **not**
+routing into the roster (scope creep, same reason).

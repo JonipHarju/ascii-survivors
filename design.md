@@ -1,7 +1,15 @@
 # THE LONG NIGHT
-### An ASCII survivors game. One night. Kill everything. See the sun.
+### A survivors game. One night. Kill everything. See the sun.
 
 *Owner: Jane. This file is the source of truth for design. If it's not written here, it isn't decided.*
+
+> ⚠️ **11.07, 00:03 — the setting and art direction pivoted to space. See §15.**
+> §1 and §6 below are updated in place. §9, §10, and §10.5 describe the ASCII
+> gothic skin and are **superseded** — kept as the historical record of the
+> legibility problems they solved, because §15 has to solve the same problems
+> again in a new medium and shouldn't re-litigate them from zero. The title
+> stays "The Long Night" (a fixed-length run that ends at dawn is genre-neutral);
+> everything under the title is the gothic flavor text and that's what's moving.
 
 ---
 
@@ -69,14 +77,17 @@ each one by hand.
 
 ## 1. The pitch
 
-You are a lantern-bearer stranded in a graveyard at midnight. Dawn is twenty
-minutes away. You cannot attack — your weapons swing themselves. All you do is
-**walk**. Everything else, you choose between waves.
+*Updated 11.07 — see §15 for why. The shape of this pitch is unchanged; only
+the world it's set in is.*
 
-The dead come in ones, then dozens, then in a tide that fills every cell of the
-screen. By minute fifteen you are a walking meat grinder wading through a carpet
-of your own kills. At 19:00 the Countess arrives and the clock **stops**. Kill
-her, and the sun comes up.
+You are a lone pilot dropped into a hostile debris sector. Extraction dawn is
+twenty minutes away. You cannot fire — your hardpoints fire themselves. All you
+do is **fly**. Everything else, you choose between waves.
+
+The swarm comes in ones, then dozens, then a tide that fills every cell of the
+screen. By minute fifteen you are a one-ship battlefleet wading through a field
+of your own kills. At 19:00 the Overlord translates in-system and the clock
+**stops**. Kill it, and extraction opens.
 
 ## 2. Why it's fun (the three things we protect)
 
@@ -86,9 +97,10 @@ her, and the sun comes up.
 2. **The power curve is obscene.** Minute 1: you kill one ghoul per second and
    it's scary. Minute 18: you delete a hundred enemies a second and you are bored
    of being a god. That gap *is* the game.
-3. **The floor remembers.** Every kill leaves gore on the ground that lingers.
-   By the end of a run the field is a visible record of the slaughter. This is
-   free in ASCII and it looks incredible. See §9.
+3. **The floor remembers.** Every kill leaves wreckage on the field that
+   lingers. By the end of a run the field is a visible record of the slaughter.
+   §9 describes how this worked in the ASCII gore layer; §15.3 is the same law
+   translated to a debris/scorch decal layer.
 
 ## 3. Core loop
 
@@ -107,12 +119,13 @@ weapons. Death → run summary → spend gold → run again, stronger.
 
 The HUD clock counts **up** from `00:00`. Dawn is at `20:00`.
 
-- At **19:00** the Countess spawns and **the clock freezes at 19:00**.
-- The sun does not rise on a schedule. It rises when she dies.
-- Kill her → `DAWN` → victory screen.
+- At **19:00** the Overlord spawns and **the clock freezes at 19:00**. (Was the
+  Countess — see §15.2 for the reskin. Same trigger, same freeze.)
+- Extraction does not open on a schedule. It opens when the boss dies.
+- Kill it → `DAWN` → victory screen.
 
 > **Decision:** the boss is a *fight*, not a survival timer. You cannot outlast
-> her. A 20-minute run that ends with "you stood in a corner for 60 seconds" is
+> it. A 20-minute run that ends with "you stood in a corner for 60 seconds" is
 > a bad ending, so we don't ship one.
 
 ## 5. Space, and the thing everyone gets wrong
@@ -176,10 +189,18 @@ overlay: one line top, one bottom. Everything else is the field.
 
 ## 6. The player
 
-The player is a **5×5 sprite** (`assets/sprites/player.txt`) — a hooded, cloaked
+*Visual description superseded 11.07 — the player is now the Ranger ship, not
+a hooded figure. See §15.2. Everything below the art description (hitbox,
+stats, pickup radius, the "you collect what you can see" law) is unchanged and
+still binding — it's stat tuning, not skin.*
+
+~~The player is a **5×5 sprite** (`assets/sprites/player.txt`) — a hooded, cloaked
 figure with a lantern that swings as he walks — whose face is the character
 **`@`**, in bright white. Nothing else in the game may use bright white. Whatever
-else is happening, the player's eye finds the `@` first.
+else is happening, the player's eye finds the `@` first.~~ The player is now the
+**Galactica Ranger** (`assets/space-assets/Galactica Ranger/`), reserved
+silhouette + colour per §15.3 — same "the player must never be lost" law, new
+enforcement mechanism since there's no `@` glyph to reserve anymore.
 
 *(Was 3×3, a literal stick figure `@ /|\ / \`. The owner named it — "stick
 figures ... I want it to look like an actual game," Effulgence RPG as the
@@ -470,6 +491,12 @@ had a second earlier. It has to be *felt*.
 
 ## 9. The Dark, and the Gore
 
+> ⚠️ **Superseded 11.07 — ASCII-specific, kept for the record.** The problems
+> this section solves (readability against a dark field, a floor that shows
+> its history) still exist in the space skin; §15.3 restates the laws for a
+> pixel decal layer instead of an ANSI glyph layer. Don't implement against the
+> glyph mechanics below for anything new.
+
 Two systems that exist because this is ASCII and would be expensive anywhere else.
 
 ### The Dark — *dim, not hidden*
@@ -574,6 +601,11 @@ ground should show you your own carpet. He's right; it's the whole point of §10
 Dusk phase.*
 
 ## 10. The bestiary
+
+> ⚠️ **Superseded 11.07 — the alphabet law (`@ / \ |`, and the shape-language
+> table) is ASCII-specific and does not apply to PNG sprites. §15.3 restates
+> "the player must never be lost" and "size is threat" as silhouette/colour
+> rules for the space roster. §15.2 is the current bestiary mapping.**
 
 Enemies are **multi-cell animated ASCII sprites**, sized by tier.
 
@@ -684,6 +716,13 @@ which is exactly how we ship a half-drawn bestiary without breaking the build.
 
 ### 10.5 Volume through shading — the Effulgence direction
 
+> ⚠️ **Superseded 11.07 — this whole reshade pass was the right fix for the
+> ASCII skin and is now moot: the space pack ships real illustrated sprites,
+> so "volume through glyph density" doesn't apply. Kept because the underlying
+> principle — a sprite needs to read as a body, not an outline, and the fix
+> should never come at the cost of legibility — is exactly the bar the space
+> roster has to clear too. See §15.**
+
 *Added 2026-07-10, from owner feedback 22:27: "characters currently look like
 stick figures ... I want it to look like an actual game. Take inspiration from
 Effulgence RPG." He's right, and I want to be exact about what the fix is and —
@@ -753,6 +792,13 @@ The whole character-facing surface is on the new fidelity; only the dawn/death/
 crossroads banners remain, and those are FIGlet, not figures.*
 
 ### The boss: THE COUNTESS
+
+*Renamed 11.07 to **THE OVERLORD** — see §15.2. This section's fight design
+(phases, attacks, telegraphs, the 19:00 trigger and clock-freeze) is mechanics,
+not skin, and stays exactly as written; only her name, art, and pronoun change.
+`countess.tsv` keeps its filename for now — renaming a data file both of us
+read is a coordination cost with zero gameplay upside, so it's staying put
+until John has a reason to touch it anyway.*
 
 *Data: `assets/countess.tsv`. Art: `assets/sprites/countess.txt` (**28×11**, 2
 frames @ 3fps — the wings flap; the body is column-locked so she doesn't wobble).*
@@ -1285,6 +1331,170 @@ Sprites larger than 5×3 are exempt, as always — the Countess keeps her `.` an
 - Play a whole run without meeting the Countess. **The screen never shakes.**
 
 ---
+
+## 15. THE SPACE PIVOT — 11.07, 00:03
+
+Owner directive, verbatim: *"A customer has just decided that ASCII art is not
+the way to move forwards. They have purchased a wide variety of space game
+assets ... and would want to redirect the art direction of the game to use
+these and move the setting to space."* Plus, same note: *"there are no sounds
+and that makes the game unfun to play."*
+
+This is a different order of change from 22:27's "stick figures, take
+inspiration from Effulgence" — that was a reshade within ASCII, and I did it
+(§10.5). This is the owner overruling the *medium* itself, twelve hours after
+I finished defending it. Read literally, it's a **reskin, not a redesign**:
+the licensed pack replaces the glyph art and adds audio; it does not touch
+whether the game is fun, and nothing about "move the setting to space" asks me
+to re-derive the loop.
+
+**What survives untouched:** §3 (core loop), §4 (the clock), §7 (weapons —
+their *shapes*, not their flavor names), §8 (XP/level/evolution), §11 (spawn
+director), §13 (crossroads), §14 (juice — hit flash, damage numbers, hitstop,
+shake are colour- and medium-agnostic; every value in there is already
+"seconds," not "ANSI cells"). Twelve days of tuning doesn't get thrown out
+because the paint changed color, and the owner hasn't asked for that.
+
+**What's changing:** the sprite layer (glyph `.txt` art → the purchased PNG
+pack), the world's dressing (graveyard/gothic → derelict debris sector), and —
+new, not a reskin — **sound exists now.**
+
+### 15.1 The new pitch
+
+See §1 (updated in place) and §6 (updated in place). Same beats, new coat:
+lone pilot, one automated ship, fixed 20-minute clock, boss fight at 19:00,
+extraction instead of dawn-on-the-calendar.
+
+### 15.2 The roster — asset survey and mapping
+
+I read the whole pack (`assets/space-assets/`, ~20 top-level folders: ships,
+towers/structures, asteroids, a weapon-effects pack, a GUI kit, and
+`!SFX + MUSIC!`). This is the mapping I'm building against. **Nothing is
+copied or renamed yet** — this points at the vendor files in place; John and I
+still owe each other the loading contract (§15.5) before anything gets
+consumed by the engine.
+
+| Old (ASCII/gothic) | New (space) | Source | Note |
+|---|---|---|---|
+| The Warden (player) | **The Ranger** | `Galactica Ranger/` (15 numbered variants + an `_Extreme`) | Numbered files read like a fit-out ladder, not animation frames — my working read is they're colour/loadout skins, not walk-cycle frames. Flagging as an assumption for John (§15.5); if his loader wants frames instead I'll pick differently. |
+| Ghoul / Wight / Grave Rat / Bat / Rattlejack (5 chaff tiers) | **Spacebug**, 5 colour variants | `ArtBoard Special Units/spacebug_{blue,purple,brown,green,greenblue}.png` | One base silhouette, five palette swaps — this *is* the old "same shape language, tier by colour" law, already built by the vendor. Cleanest 1:1 in the whole pack. |
+| Elites (Wight-tier armoured, Gravewarden) | **Crusader** (7 colour variants), **Iceblade** (5), **Battlecruiser** (5 "shiny" variants), **Big Berta**, **Missile Launcher** | `ArtBoard Special Units/` | More elite variety than the old bestiary had — I'm not using all of them at once; picking a subset per §15.6 phasing so the field doesn't turn into a toy box. |
+| The Countess (boss) | **The Overlord** | `OverLord_Nightmare/` — 3 base frames (`OverlordNightmare6Cropable1_0{1,2,3}`) + 3 `NightmareB_0{1,2,3}` + a `Samples/` set that includes `OverlordEvoSample_0{1,2,3}` | The `Evo` samples are a gift: a visual second form for the boss fight is already drawn. Proposing a **phase 2 at 50% HP** that swaps to the Evo art — mechanically a new beat, art-wise it's free. Written as a proposal, not yet in `countess.tsv` — that's John's file to add a phase trigger to, once he's built the phase-swap plumbing (or tells me it's not worth the complexity right now — §0's "polish the core first" cuts both ways). |
+| Gore/decal floor (§9) | Wreckage/scorch decals, plus asteroid clutter as terrain | `Asteroids, Meteors/` (28 stones × 2 render styles) | Same "floor remembers" law (§15.3), new sprite source. Asteroids double as passive field texture — not hazards unless we decide we want that later; that'd be a mechanics change and isn't in scope today. |
+| Player weapon fire (`*` bolt, Cinder `°`, Chain `═`) | Bullets / laser beams / beam-jet effects | `!WEAPON PACK!/Weapons/{Bullets, LaserBeams (for loop compatible), Beam Jet, Lunar, MainWeapons}/` | §7's weapon *shapes* (radial nova, chain, orbit, etc.) are unchanged; each gets a matching effect sprite from here. Full per-weapon table is phase 3 (§15.6), not today — seven weapons and their evolutions is real drawing-adjacent work and I'd rather do it right than fast. |
+| — (new) | Backgrounds | `50+ Repeat Space Backgrounds 200x200 PNG/` + `50+ Repeat More Backgrounds.../` | Tileable, for the field backdrop the ASCII game never had (it had `·`/void). |
+| — (new) | Menu/HUD chrome | `!GUI!/` (buttons, arrows, panel pieces) | For the level-up cards, crossroads shop, and title/death/dawn screens — replaces the FIGlet banners §10's rollout note left for later. |
+
+**Deliberately not routing into the core roster (yet):** the whole
+`!TOWER DEFENSE OPTIONS!` folder (walls, gates, power stations) — this is a
+tower-defense sub-pack bundled into the same purchase, not survivors-genre
+material, and pulling it in would be scope creep §0 explicitly told us to stop
+doing. Parking it; flag if the owner asks for base-building.
+
+### 15.3 The translated laws (§9/§10's principles, not their glyphs)
+
+1. **The player must never be lost.** Was: the only bright-white glyph, the
+   only `@`. Now: the Ranger gets a reserved silhouette + a colour treatment
+   (glow/outline) nothing else in the roster uses. Mechanism changes, law
+   doesn't — this is John's call on how a canvas draws an "always-on-top,
+   always-distinct" treatment; my ask is in §15.5.
+2. **Size is threat.** Still true, still free — the pack's own scale
+   differences (Spacebug small, Crusader/Battlecruiser bigger, Overlord huge)
+   already encode this without me doing anything.
+3. **Volume/mass reads as a body, not an outline.** Moot as stated (§10.5 was
+   solving a glyph-density problem) — the pack ships fully rendered sprites,
+   so this constraint is automatically satisfied. Nothing to enforce.
+4. **The floor remembers, and stays under the sprites' brightness.** Decal
+   layer (wreckage/scorch) must stay visually duller than any live sprite,
+   same as gore had to stay duller than a mob. Same law, new palette.
+5. **XP must outshine the ambient field.** Was the luminance ladder pinning
+   mob colour under an XP mote's brightness. Now: whatever the XP pickup
+   sprite/glow is, it needs to read louder than Spacebug-tier chaff at a
+   glance, at 220-on-screen density. This is the one law I'd call **at risk**
+   until I've actually picked/drawn an XP pickup — flagging it now so nobody
+   ships a swarm that buries it the way the owner already complained about
+   once (09.07 feedback: "XP is hard to see").
+6. **Damage numbers stay a reserved digit layer**, unaffected by the skin.
+
+### 15.4 Audio — new, not a reskin
+
+The pack's `!SFX + MUSIC!/Audio/` has three folders: `SFX/` (Space/Robotic/
+Futuristic, and two 8-bit sets), `Simple Music/` (7 short tracks, including
+three `DynamicFight_{1,2,3}`), and `Infinite Loops (Background Music)/`
+(~35 ambient loops, including `DeepSpaceA/B`, `dark`/`dark2`, and a
+`DubStepDropBoom` one-shot-feeling sting).
+
+Proposal — deliberately wired to systems that already exist, so this isn't a
+new tuning surface:
+
+- **Ambient bed:** `DeepSpaceA`/`DeepSpaceB` loop under the early game,
+  crossfading toward a `DynamicFight_*` track as the spawn director's target
+  population (§11) climbs. The music escalates on the same curve the horde
+  already does — no new director logic, just a second consumer of a number
+  that's already computed every frame.
+- **Boss beat:** `dark`/`dark2` takes over at 19:00 when the clock freezes;
+  `DubStepDropBoom` as the one-shot for the freeze-frame moment itself —
+  this is the audio half of the hitstop juice beat (§14) that already exists
+  for the player-hit case, reused for the boss-arrival case.
+- **SFX split, so combat and menu don't sound identical:** the Space/Robotic/
+  Futuristic set for weapon fire, hits, and deaths (fired from the same juice
+  hook points §14 already has: `hit_flash`, death pop, `levelup_flash`); the
+  8-bit sets reserved for UI — card flip, crossroads purchase, menu nav.
+- Every SFX one-shot should hang off an **existing** juice event, not a new
+  parallel event bus. If a moment needs a sound and doesn't have a juice hook
+  yet, that's a one-line addition to `juice.tsv`, not a new system.
+
+This is a proposal, not yet a spec John can implement against line-by-line —
+I don't own the audio engine choice (Web Audio vs an `<audio>` pool vs
+something else is squarely tech stack), so the concrete contract is part of
+the §15.5 ask.
+
+### 15.5 The one contract to settle first (again) — the ask for John
+
+Same shape as the original ASCII contract in `assets/README.md`: I own the
+art and the mapping, John owns how it loads. Posted in full in `john.md`, in
+short:
+
+1. **Sprite loading.** Are the numbered `Galactica Ranger` files frames or
+   loadout tiers (my assumption above, §15.2)? Single PNGs per entity, or does
+   the pack's `!SHEETS - PNG & PSD!` folder mean some of these are actually
+   spritesheets I haven't accounted for? What's the animation contract now
+   that there's no `# fps:` header on a PNG?
+2. **Coordinate system.** Sizes in `assets/README.md` are all in character
+   cells (`5×5`, `28×11`) because that was the ASCII grid. Pixels now — what
+   footprint (in wu, §5) does a Ranger/Spacebug/Overlord actually occupy, and
+   does that math change now that sprites have real proportions instead of a
+   fixed cell aspect (§5.1's "a terminal cell is twice as tall as wide" is
+   gone; pixels are square)?
+3. **Audio engine.** What plays `.mp3` — and can it crossfade (needed for
+   §15.4's ambient-to-combat swell) and layer a one-shot over a loop without
+   cutting either?
+4. Everything else in the old `assets/README.md` contract (the folder/size
+   table, the two ASCII laws) is superseded by this pivot; I'm rewriting that
+   file's contract section to point at the new roster once #1–2 above have an
+   answer, rather than guess at a shape John's loader doesn't want.
+
+### 15.6 Phasing — this is not a one-pass redo
+
+Twelve days of ASCII art doesn't get rebuilt as pixel art in one sitting, and
+§0's standing order is still "polish the core before new work" — a full-cast
+reskin done sloppily to hit a deadline would just be a new version of the
+stick-figure complaint. So:
+
+- **Phase 1 (now):** this section, the roster mapping, the contract ask to
+  John. No engine changes are mine to make.
+- **Phase 2:** once John answers §15.5, get one full vertical slice on
+  screen — Ranger + one Spacebug tier + one background — as the technical
+  proof, same way the original canvas migration (§5.0) proved itself on the
+  player and one ghoul before the full reshade.
+- **Phase 3:** the rest of the field roster (all 5 Spacebug tiers, elites,
+  the Overlord + its Evo phase-2 proposal), then weapon/passive card art.
+- **Phase 4:** audio wiring per §15.4.
+
+Nothing here is blocked on the other side finishing first — same rule as
+always. I start phase 2's art the moment I've made a reasonable assumption
+about #1/#2 above, whether or not John has answered yet, and correct it if
+he pushes back.
 
 ## Open questions / assumptions I'm running with
 

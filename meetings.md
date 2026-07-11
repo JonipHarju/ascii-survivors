@@ -1415,3 +1415,67 @@ sprite to smear into. So she drew both:
 So the **entire cast — chaff to boss — is now on the new fidelity.** Only the
 dawn/death/crossroads FIGlet banners remain, and those aren't figures. Jane's desk
 is clear of the 22:27 ask; next move is the owner's reaction.
+
+---
+
+## 11.07, 00:03 — the owner pivoted the game to space, and the reaction never came
+
+**Owner (`owner-feedback.md`, 11.07 00:03):** a customer decided ASCII art
+isn't the direction, bought a full space-game asset pack (now in
+`assets/space-assets/`), and wants the setting moved to space. Same note: the
+game has no sound and that makes it unfun — a complaint that's been sitting
+unaddressed since 09.07.
+
+**Jane:** so the hero-tier art from the previous entry above never got its
+owner reaction — this landed twelve hours after "the whole cast is on the new
+fidelity" instead. Read literally, it's a reskin, not a redesign: the loop,
+the clock, weapons, XP/leveling/evolution, the spawn director, crossroads, and
+the whole juice system are untouched. What moves is the sprite layer (ASCII
+`.txt` glyphs → the purchased PNG pack), the setting's dressing (graveyard →
+derelict debris sector), and — genuinely new — audio.
+
+Full writeup is `design.md` §15: an asset survey of the whole pack (ships,
+five enemy-tier colour variants, elites, a boss with a built-in second form,
+a weapon-effects pack, backgrounds, a GUI kit, and ~40 audio files), a roster
+mapping table (old bestiary tier → new pack file), the old ASCII legibility
+laws (§9/§10/§10.5) marked superseded but kept as the historical record —
+translated instead of deleted, since the space skin has to solve the same
+readability problems again. `design.md` §1 and §6 (the pitch and the player)
+are rewritten in place; the rest of the superseded sections got pointer
+banners rather than a full rewrite, on purpose — see the phasing note below.
+
+**The one thing genuinely new, not a reskin:** sound. Jane's audio proposal
+(§15.4) deliberately hangs every SFX cue off juice events John already built
+(`hit_flash`, death pop, `levelup_flash`, hitstop) rather than inventing a
+parallel system, and ties the ambient-to-combat music swell to the spawn
+director's existing target-population number — no new tuning surface either
+side has to build from scratch.
+
+**Jane → John, the contract ask (`jane.md` [33], mirroring the original
+09.07 ASCII contract):** three open questions before the new pipeline can be
+built — (1) are the `Galactica Ranger` ship's 15 numbered files loadout tiers
+or animation frames, (2) what footprint in world units does a sprite get now
+that there's no character-cell grid, and does the "cell is 2:1" rule go away,
+(3) what plays the audio, and can it crossfade a loop under a one-shot sting.
+Not blocking on the answer — Jane starts phase 2 (a vertical-slice proof:
+Ranger + one enemy tier + a background) on a reasonable assumption the moment
+she has one, same as always.
+
+**Explicitly parked, on the record:** the pack also bundles a full
+tower-defense sub-pack (walls, gates, turrets) — not routing that into the
+survivors roster; that's scope creep unless the owner asks for base-building
+specifically. And a proposed boss second-form (the pack ships ready-made
+"Evo" art for the Overlord) is written up as a want, not a commitment — it
+needs phase-trigger plumbing that doesn't exist yet, and today's `[0]` rule
+is still "polish the core first."
+
+**Phasing, so this doesn't become a redo-everything-badly scramble:** doc +
+mapping + contract ask (today) → one vertical slice as tech proof → full
+field roster + weapon/passive card art → audio wiring. Same shape as the
+original ASCII-to-canvas migration (§5.0), which proved itself on one sprite
+before the full reshade.
+
+| # | Owner ask, 11.07 00:03 | Status |
+|---|---|---|
+| a | Move art direction + setting to the purchased space pack | design.md §15 written; roster mapped; contract ask posted to John; no engine changes yet — that's phase 2, John's lane once the contract answers land |
+| b | Add sound, currently unfun without it | proposal written (§15.4), wired to existing juice/director hooks; needs John's audio-engine answer before it's buildable |

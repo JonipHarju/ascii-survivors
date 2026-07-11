@@ -1369,10 +1369,22 @@ extraction instead of dawn-on-the-calendar.
 
 I read the whole pack (`assets/space-assets/`, ~20 top-level folders: ships,
 towers/structures, asteroids, a weapon-effects pack, a GUI kit, and
-`!SFX + MUSIC!`). This is the mapping I'm building against. **Nothing is
-copied or renamed yet** — this points at the vendor files in place; John and I
-still owe each other the loading contract (§15.5) before anything gets
-consumed by the engine.
+`!SFX + MUSIC!`). This is the mapping I'm building against.
+
+**Curation convention (owner's call, 11.07):** the raw pack is ~600MB and
+stays out of git entirely (`.gitignore`) — it's a vendor drop, not something
+either of us edits. When a pick below is actually decided, not just surveyed,
+I copy *only that file* into `assets/space/`, which mirrors the roster
+categories (`ships/ranger/`, `mobs/spacebug/`, `backgrounds/`, `audio/`, more
+as phase 3/4 land) and **is** tracked. John: everything under `assets/space/`
+is real, decided, and safe to build a loader against; nothing under
+`assets/space-assets/` is — that folder won't exist on your checkout unless
+you also have the vendor pack locally, so never reference it from code.
+Picks curated so far, this pass: the full `Galactica Ranger` set, all 5
+`spacebug_*` colour variants, one starfield background, and the 8 named
+audio tracks from §15.4. Elites, the Overlord, weapon effects, and the GUI
+kit are surveyed below but **not yet curated** — real per-file decisions,
+phase 3/4 (§15.6).
 
 | Old (ASCII/gothic) | New (space) | Source | Note |
 |---|---|---|---|
@@ -1419,10 +1431,10 @@ doing. Parking it; flag if the owner asks for base-building.
 ### 15.4 Audio — new, not a reskin
 
 The pack's `!SFX + MUSIC!/Audio/` has three folders: `SFX/` (Space/Robotic/
-Futuristic, and two 8-bit sets), `Simple Music/` (7 short tracks, including
-three `DynamicFight_{1,2,3}`), and `Infinite Loops (Background Music)/`
-(~35 ambient loops, including `DeepSpaceA/B`, `dark`/`dark2`, and a
-`DubStepDropBoom` one-shot-feeling sting).
+Futuristic, and two 8-bit sets), `Simple Music/` (8 short tracks — `DeepSpaceA`/
+`DeepSpaceB`, three `DynamicFight_{1,2,3}`, `DubStepDropBoom`, two
+`RhytmicBounce{A,B}`), and `Infinite Loops (Background Music)/` (~35 ambient
+loops, including `dark`/`dark2` and ~30 numbered `bgm_*`).
 
 Proposal — deliberately wired to systems that already exist, so this isn't a
 new tuning surface:

@@ -27,6 +27,11 @@ Full design writeup: `design.md` §15. Contract ask: `jane.md` [33].
       not committed.
 - [ ] `[J]` Rewrite `assets/README.md`'s folder/size table and the two ASCII
       laws for the new pipeline, once the contract ask above has answers.
+- [x] `[J]` Curate the first real picks out of the 600MB vendor pack into a
+      tracked `assets/space/` folder (owner's call: don't commit the whole
+      pack, only what's decided). Done: Galactica Ranger, 5 Spacebug colour
+      variants, 1 background, 8 named audio tracks. `assets/space-assets/`
+      is gitignored — John, build against `assets/space/` only.
 - Parked, not forgotten: `!TOWER DEFENSE OPTIONS!` sub-pack (walls/gates/
   turrets) — not survivors-genre material, scope creep unless the owner
   explicitly asks for base-building.

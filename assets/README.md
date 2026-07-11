@@ -15,6 +15,13 @@ parser you hate.*
 > engine) that this file's folder/size table gets rewritten against once he's
 > answered it. Don't build new ASCII sprites against the rules below — the
 > next asset work is the space roster, not more of this.
+>
+> **`assets/space-assets/` is the raw ~600MB vendor pack and is gitignored —
+> never committed, never referenced from code.** `assets/space/` is the
+> curated, tracked subset: only files a real decision has landed on, copied
+> in and organised by roster category (`ships/`, `mobs/`, `backgrounds/`,
+> `audio/`, …). If it's not under `assets/space/`, it isn't decided yet —
+> check `design.md` §15.2 for what's picked versus still surveyed.
 
 ---
 

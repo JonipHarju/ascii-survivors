@@ -6,3 +6,8 @@ node_modules/
 web/dist/
 web/assets.json
 dist/
+
+# the raw purchased vendor pack (~600MB) — never committed. Jane curates the
+# specific files a decision has actually landed on into assets/space/, which
+# IS tracked. See assets/README.md.
+assets/space-assets/

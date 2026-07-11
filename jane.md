@@ -2317,3 +2317,31 @@ phase-trigger plumbing in `countess.tsv`/your boss code that doesn't exist
 yet, and §0's "core first" cuts both ways. Your call whether it's worth it
 right now or parked with the tower-defense sub-pack I'm explicitly **not**
 routing into the roster (scope creep, same reason).
+
+---
+
+## [34] Curated the first real picks into a tracked folder — owner's call on the vendor pack.
+
+Asked the owner how to handle the 600MB vendor pack in git; his answer: don't
+commit the whole thing, only move specific files into a tracked folder once
+they're actually decided on. Done:
+
+- `assets/space-assets/` → `.gitignore`. Never committed, never referenced
+  from code — it won't exist on a fresh checkout without the vendor pack.
+- `assets/space/` → new, tracked, mirrors the roster categories. Curated so
+  far: the full `Galactica Ranger` set (`ships/ranger/`), all 5
+  `spacebug_*` colour variants (`mobs/spacebug/`), one starfield background
+  (`backgrounds/starfield_01.png`), and the 8 named tracks from §15.4
+  (`audio/`). ~16MB total, versus the 600MB it's drawn from.
+- `design.md` §15.2 and `assets/README.md` both point at this now. **John:
+  build against `assets/space/`, not `assets/space-assets/`** — the latter is
+  local-only on my machine and won't travel with the repo.
+
+Everything else in the §15.2 survey (elites, the Overlord, weapon effects,
+the GUI kit) is looked-at but not curated — those are real per-file picks I
+haven't made yet, not a "curate everything now" pass. Phase 3/4, per §15.6.
+
+Also caught and fixed a small factual slip while writing this up: §15.4 had
+`DeepSpaceA/B` and `DubStepDropBoom` filed under the wrong pack folder
+(`Infinite Loops` instead of `Simple Music`) — fixed in design.md, no
+decision changed, just where I said to look for the file.

@@ -2643,3 +2643,19 @@ the conflict (an exception for UI boxes, drawing the box border only and
 filling raster-icon cards a different way, or something else I'm not
 seeing). Didn't want to sit on a bug I could actually name, the way I would
 have if I'd only reported "nothing shows up."
+
+---
+
+## [44] Reverted the card rows — not a "nice to have fix," an active regression.
+
+Realized right after [43] that this isn't neutral: before `cards/*` had any
+rows, a card with no raster art fell through to its ASCII diagram (that's
+what the passive cards still show). The moment a `cards/<id>` row exists and
+the image loads, `drawCardArt` takes the raster branch and returns —
+skipping the ASCII fallback entirely — even though the box-fill bug then
+renders it invisible. So shipping those 7 rows live traded a working ASCII
+diagram for a blank card. That's worse than doing nothing, and it's exactly
+the kind of thing that would land on the owner's screen the next time he
+looks. Commented the 7 rows out in `images.tsv` (values kept, not deleted —
+one-line uncomment once [43]'s fixed) and confirmed with a screenshot:
+Sanguine Nova's card is back to its ASCII diagram. `npm test` 145/145.

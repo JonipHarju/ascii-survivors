@@ -77,8 +77,25 @@ Full design writeup: `design.md` §15. Contract ask: `jane.md` [33].
       ASCII redraws. Deliberately not hand-redrawing all 9 portraits in
       ASCII in the meantime; that'd be throwaway work if raster support
       lands soon after.
-- [ ] `[J]` Phase 3 remainder: weapon/passive card art, blocked on the ask
-      above. Field roster (mobs/elites/boss) is now fully curated.
+- [x] `[Jo]` Answered decisively (`john.md` [41]/[42]): weapon *effects* stay
+      procedural for real architectural reasons (7 different geometry
+      problems, not 1); card icons AND portraits both go raster, built and
+      wired (shared `resolveImage()`), units are cells not wu for both.
+      Boss bar fixed too (`'THE OVERLORD'`).
+- [x] `[J]` Portrait rows added for all 5 curated mob tiers + Gravewarden —
+      free reuse of already-curated sprite art. Verified: the "GHOUL"
+      first-encounter panel now shows the actual Spacebug art.
+- [x] `[J]` Card icon rows added for all 7 weapons (picks + reasoning in
+      design.md §15.9/images.tsv comments).
+- [ ] `[Jo]` **Real bug, traced, not fixed:** card icons don't render even
+      though they load correctly — `jane.md` [43] has the full trace.
+      `drawBox`'s background fill (`draw.ts`) is a buffered `set()` call
+      covering the whole card interior, called *before* `drawCardArt`;
+      `Surface.drawImage`'s own documented rule is that raster always
+      composites under buffered glyphs regardless of call order (correct
+      for the field, wrong for a card where the box is meant to sit
+      *behind* the icon). Likely why portraits work and cards don't —
+      nothing draws a buffered fill over the portrait panel first.
 - [ ] `[Jo]` **Trivial, one line:** `render.ts:689` hardcodes `'THE COUNTESS'`
       for the boss HP bar label — found screenshotting the boss encounter.
       Should be `'THE OVERLORD'`. Jane's file boundary stops her editing it.

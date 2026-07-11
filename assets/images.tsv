@@ -45,3 +45,51 @@ sprites/mobs/rattlejack	space/mobs/spacebug/spacebug_greenblue.png	3.6	3.5
 sprites/mobs/wight	space/mobs/spacebug/spacebug_blue.png	4.2	4.1
 sprites/elites/gravewarden	space/elites/gravewarden.png	6.5	6.5
 sprites/countess	space/boss/overlord_01.png	16	14.4
+
+# portraits/<id> — John (john.md [42]): drawPortrait tries this as raster
+# first (same resolveImage() as everything else), falls back to the ASCII
+# portrait, falls back to nothing. UNITS DIFFER FROM THE ROWS ABOVE: a
+# portrait is screen-space UI, not a world entity — w/h here are CELLS,
+# not wu, no WU_PER_ROW division. Old ASCII budget was 20x8 cells; these
+# aim well inside that. Free reuse, not new art: every row below points at
+# the exact same file its sprites/ row above already uses — no separate
+# "portrait pose" exists in the pack, and a stat-card doesn't need one.
+# No portraits/countess row: no such ASCII file ever existed (the boss
+# doesn't use the first-encounter panel), so there's nothing to shadow.
+#
+# id	path	w	h
+portraits/ghoul	space/mobs/spacebug/spacebug_green.png	8	7.8
+portraits/rat	space/mobs/spacebug/spacebug_brown.png	8	7.8
+portraits/bat	space/mobs/spacebug/spacebug_purp.png	8	7.8
+portraits/rattlejack	space/mobs/spacebug/spacebug_greenblue.png	8	7.8
+portraits/wight	space/mobs/spacebug/spacebug_blue.png	8	7.8
+portraits/gravewarden	space/elites/gravewarden.png	8	8
+
+# cards/<weapon id> — John (john.md [41]): drawCardArt tries this as raster
+# first, same resolveImage() as everything else, screen-space UI so w/h are
+# CELLS too (old ASCII budget: sprite.ts's ['cards/', 12, 5]). I don't have
+# confirmation the UI grid's cell is the same non-square 1x2 shape as the
+# world's (design.md §5.1) — no drawImage caller exists yet that ISN'T
+# either wu-driven or told explicitly "cells, don't divide." Assuming it
+# is (same Surface, same drawImage, seems more likely than a second
+# convention) and halving height accordingly so round art doesn't come out
+# an oval. John: if the card box looks stretched, this is the assumption
+# to correct, not the images.
+#
+# §7's own words: weapon cards are "a diagram of each weapon's *shape*, not
+# a projectile" — the ASCII cards were never proportionally-accurate art,
+# they were legible diagrams. Kept that spirit for the three elongated beam
+# picks below (chain/silverrain/cinder are 9-18px wide by 90-120px tall
+# source images — rendered at true aspect they'd be an invisible sliver or
+# blow through the height budget); sized those for legibility inside the
+# box instead of pixel-exact proportion. The rounder icons (nova, censer,
+# lantern, gravesalt) ARE aspect-preserving, same math as every sprite row.
+#
+# id	path	w	h
+cards/nova	space/cards/nova.png	9.9	4.5
+cards/chain	space/cards/chain.png	2.5	5
+cards/censer	space/cards/censer.png	8	4.5
+cards/gravesalt	space/cards/gravesalt.png	4.1	4.5
+cards/lantern	space/cards/lantern.png	11	2.1
+cards/silverrain	space/cards/silverrain.png	2.2	5
+cards/cinder	space/cards/cinder.png	3.2	5

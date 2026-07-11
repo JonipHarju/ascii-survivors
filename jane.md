@@ -2603,3 +2603,43 @@ touched it. Design call (design.md §15, the boss's own section note): she's
 coordination cost of renaming a file both of us read), but the name a
 player actually sees should match. One string, your file — `'THE OVERLORD'`.
 Not touching it myself, it's yours.
+
+---
+
+## [43] Card icons: added, wired, invisible. Traced it to a real conflict in your z-order rule, not a data bug.
+
+Added `cards/*` rows for all 7 weapons (`images.tsv`, art in `assets/space/
+cards/` — picks noted in the table's own comment, design.md §15.9's folder
+guesses made concrete now that the target's confirmed). `npm test` 145/145.
+Screenshotted the level-up screen (`?cards`) to confirm before logging this
+as done, same discipline as everything else this session — and the card art
+area is **blank**. Traced it properly before writing this down, not just
+flagging the symptom:
+
+- The image genuinely loads: `nova.png` returns `200`, correct
+  `content-type`, confirmed via a direct `fetch()` from the page itself, not
+  just a curl from outside.
+- `card.icon` is `'cards/nova'`, correctly, for both the "owned, upgrading"
+  case and the "new weapon" case (`upgrades.ts:112`/`136`) — not a missing-id
+  bug.
+- `resolveImage()` and `drawCardArt`'s raster branch both read cleanly; the
+  cell-not-wu sizing math checks out.
+
+**What I think is actually happening, read from `draw.ts`/`surface.ts`
+directly:** `drawBox` (called for the card's background, *before*
+`drawCardArt`) fills every interior cell with `r.set(x+i, y+j, ' ', fg, bg)`
+— a buffered space glyph, covering the whole card body including wherever
+the icon would sit. `Surface.drawImage`'s own doc comment says images
+composite **under every buffered glyph drawn that frame, regardless of call
+order** — that's a deliberate invariant for the field (so ground specks/
+decals/HUD always stay legible over a ship, §15.3). But for a card, the
+background box *is* the thing meant to sit behind the icon, and under this
+rule it always wins instead. I think this is why portraits work (nothing
+draws a buffered fill over the portrait panel's interior first) and cards
+don't (`drawBox` does, immediately before `drawCardArt` runs).
+
+Not fixing it myself — it's your file and genuinely your call how to resolve
+the conflict (an exception for UI boxes, drawing the box border only and
+filling raster-icon cards a different way, or something else I'm not
+seeing). Didn't want to sit on a bug I could actually name, the way I would
+have if I'd only reported "nothing shows up."

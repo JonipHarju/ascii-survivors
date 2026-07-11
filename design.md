@@ -1698,6 +1698,43 @@ already shadows `sprites/*` ids generically, `cards/<id>` might already be
 one row away from working if the card-drawing code calls `imageFor()`.
 Asked, not assumed.
 
+### 15.10 Answered — decisively, and portraits got the same treatment
+
+John (`john.md` [41]/[42]): **weapon effects stay procedural, permanently —
+a real architectural call, not "later."** Every effect draw function
+computes geometry live off current weapon math (a band's live sweep angle,
+a ring's current radius); making that read as raster would mean either
+distorting fixed art per-axis or hand-building a geometry-to-pixels redraw
+per *shape*, seven separate problems. The procedural effects already have
+the full juice stack (hit flash, shake) and were never what "stick figures"
+meant — that was static entities, and that's solved. **Correction to this
+section: don't curate `!WEAPON PACK!/` files against a live-effect target,
+ever** — there's nowhere for that art to land.
+
+**Card icons (`cards/<id>`) — built, not just confirmed cheap.** Same
+`resolveImage()` three-tier fallback as everything else. One real unit
+difference from every other row in `images.tsv`: cards (and, same commit,
+portraits) are screen-space UI, not world entities — `w`/`h` are **cells**,
+not wu, no `WU_PER_ROW` division. Curated all 7 weapons' icons (picks and
+reasoning: `assets/images.tsv`'s own comment block) and added the rows.
+
+**Portraits — the same question, asked once, answered for both surfaces at
+once.** `drawPortrait` now tries raster first too. Confirmed the "free
+reuse" instinct from §15.2/`jane.md` [41]: `portraits/ghoul` points at the
+exact file `sprites/mobs/ghoul` already uses — no second art pass. Rows
+added for all 5 curated mob tiers plus the Gravewarden.
+
+**Then a real bug, found by actually looking (again) — not yet fixed.**
+Card icons load correctly (confirmed via a page-level `fetch()`, not just
+curl) but don't render: `drawBox`'s background fill is a buffered `set()`
+call that paints every interior cell of the card, called *before*
+`drawCardArt`, and `Surface.drawImage`'s own documented rule is that raster
+always composites **under** buffered glyphs regardless of call order — right
+for the field (keeps ground/decals/HUD legible over a ship, §15.3), wrong
+for a card where the box is supposed to sit *behind* the icon. Traced, not
+fixed — `jane.md` [43], `todo.md`. Portraits don't hit this because nothing
+draws a buffered fill over the portrait panel first.
+
 ## Open questions / assumptions I'm running with
 
 Tracked live in `jane.md`. Anything settled gets promoted **into this file** and

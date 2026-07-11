@@ -1086,3 +1086,49 @@ split from [33], for the crossfade. Everything else in that table is ready to
 go as-is.
 
 142/142 still, typecheck clean, this commit is just the halo fix on top of [33].
+
+---
+
+## [35] The background mechanism (§15.7 point 2) — built, needs one row from you.
+
+Didn't wait on the feel call — built the mechanism with a default and you can
+retune the one number that's actually taste. New table, `assets/backgrounds.tsv`
+(your file, I don't write it), separate from `images.tsv` exactly because you're
+right that it's a different shape:
+
+```
+# id      path                    parallax  tileWu
+field     space/backgrounds/starfield_01.png  0.5   40
+```
+
+- **`id`** — only `field` is looked up today. Room for e.g. a `dusk` id later
+  (the boss's phase-3 blackout) without a new table, if that's ever worth doing.
+- **`parallax`** (0..1) — **this is your feel call**, I picked `0.5` as the
+  starting guess (drifts at half world-speed, reads as "distant" without feeling
+  static). `0` pins it to the screen and it never moves; `1` scrolls exactly
+  with the world like a positioned ship. Pure number, safe to retune without
+  touching anything else.
+- **`tileWu`** — the image's edge length in world units; it repeats at that
+  spacing to cover the field regardless of window size. `40` is a guess for
+  `starfield_01.png` (haven't seen how dense that PNG's own stars are at that
+  scale) — if it reads too sparse or too busy, this is the knob, not a redraw.
+
+Mechanically: it's a tiled raster blit, own draw pass, sitting exactly where the
+old procedural `"`/`,`/`` ` `` scatter used to (replaces it outright when a
+`field` row resolves to a loaded image; falls back to the old scatter untouched
+if the row or the image isn't there yet — same "never block on the other side"
+shape as everything else in this pipeline). The lantern darkness still applies
+correctly on top of it for free — `paintLight()` is a full-canvas overlay drawn
+last, it doesn't care whether what's under it is glyphs or pixels.
+
+Covered by two new tests (`world.test.ts`, "tiles a mapped background..."/"falls
+back to the procedural scatter...") against a fake raster surface, since a real
+`CanvasSurface` needs a DOM `node --test` doesn't have — same reason
+`canvas.test.ts` stubs its context instead of using a real canvas. Didn't get a
+browser screenshot of this one specifically: doing that honestly needs a real
+`backgrounds.tsv` row, which is your file to add, not mine to fake temporarily.
+Once you add the row above (or your own numbers), `?play&sim=200&god&debug`
+should show it — tell me if the density or drift feels wrong and I'll expose
+whatever else needs tuning.
+
+144/144 tests now, typecheck clean.

@@ -20,16 +20,19 @@ import { dirname, join } from 'node:path';
 import { readTableSources } from '../data/gamedata.node.ts';
 import { parseImageTable } from '../data/images.ts';
 import { parseAudioTable } from '../data/audio.ts';
+import { parseBackgroundTable } from '../data/backgrounds.ts';
 
-/** Copy every file `images.tsv`/`audio.tsv` reference from `assetsDir` into `outDir`. Returns the count copied. */
+/** Copy every file `images.tsv`/`audio.tsv`/`backgrounds.tsv` reference from `assetsDir` into `outDir`. Returns the count copied. */
 export async function copyReferencedMedia(assetsDir: string, outDir: string): Promise<{ copied: number; failed: string[] }> {
   const tables = await readTableSources(assetsDir);
   const images = parseImageTable(tables.images);
   const audio = parseAudioTable(tables.audio);
+  const backgrounds = parseBackgroundTable(tables.backgrounds);
 
   const paths = new Set<string>();
   for (const e of images.byId.values()) paths.add(e.path);
   for (const e of audio.byId.values()) paths.add(e.path);
+  for (const e of backgrounds.byId.values()) paths.add(e.path);
 
   let copied = 0;
   const failed: string[] = [];

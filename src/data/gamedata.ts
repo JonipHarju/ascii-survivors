@@ -20,6 +20,7 @@ import { parseCountess, fallbackCountess, type CountessTable } from './countess.
 import { parseJuice, fallbackJuice, type JuiceTable } from './juice.ts';
 import { parseImageTable, emptyImageTable, type ImageTable } from './images.ts';
 import { parseAudioTable, emptyAudioTable, type AudioTable } from './audio.ts';
+import { parseBackgroundTable, emptyBackgroundTable, type BackgroundTable } from './backgrounds.ts';
 
 export type GameData = {
   readonly glyphs: GlyphTable;
@@ -35,6 +36,8 @@ export type GameData = {
   readonly images: ImageTable;
   /** Sound contract. Empty until `assets/audio.tsv` exists. */
   readonly audio: AudioTable;
+  /** The field's backdrop (design.md §15.7). Empty until `assets/backgrounds.tsv` exists. */
+  readonly backgrounds: BackgroundTable;
   readonly warnings: readonly string[];
 };
 
@@ -51,6 +54,7 @@ export type TableSources = {
   juice: string;
   images: string;
   audio: string;
+  backgrounds: string;
 };
 
 export const TABLE_FILES = [
@@ -65,6 +69,7 @@ export const TABLE_FILES = [
   'juice',
   'images',
   'audio',
+  'backgrounds',
 ] as const;
 
 export function buildGameData(src: TableSources): GameData {
@@ -79,6 +84,7 @@ export function buildGameData(src: TableSources): GameData {
   const juice = src.juice === '' ? fallbackJuice() : parseJuice(src.juice);
   const images = src.images === '' ? emptyImageTable() : parseImageTable(src.images);
   const audio = src.audio === '' ? emptyAudioTable() : parseAudioTable(src.audio);
+  const backgrounds = src.backgrounds === '' ? emptyBackgroundTable() : parseBackgroundTable(src.backgrounds);
 
   const warnings = [
     ...glyphs.warnings,
@@ -92,6 +98,7 @@ export function buildGameData(src: TableSources): GameData {
     ...juice.warnings,
     ...images.warnings,
     ...audio.warnings,
+    ...backgrounds.warnings,
   ];
 
   if (weapons.byId.size === 0) warnings.push('weapons.tsv missing or empty — the player will start unarmed');
@@ -108,6 +115,7 @@ export function buildGameData(src: TableSources): GameData {
     juice,
     images,
     audio,
+    backgrounds,
     warnings,
   };
 }

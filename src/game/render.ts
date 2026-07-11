@@ -132,7 +132,7 @@ export class GameView {
     // Hand the lantern to backends that can render a real falloff.
     if (dark && soft) r.setLight(p.colF(w.x), p.rowF(w.y), radius);
 
-    this.drawGround(r, w, field, dark && !soft, radius);
+    if (!this.drawBackground(r, w, field)) this.drawGround(r, w, field, dark && !soft, radius);
     // Sparks are the bottom of the juice stack: drawn before the gore even, so
     // nothing that matters ever loses a cell to one (juice.tsv: the rat wins).
     this.drawSparks(r, w, p);
@@ -182,6 +182,55 @@ export class GameView {
 
     if (this.portraitId !== null) this.drawPortrait(r, field, this.portraitId);
     if (w.effects.some((fx) => fx.kind === 'flash')) this.drawWhiteFlash(r, field);
+  }
+
+  /** Tiles this many world units past the visible edge never draw — a sane ceiling if `tileWu` is set absurdly small. */
+  private static readonly MAX_BG_TILES = 400;
+
+  /**
+   * The field's backdrop (design.md §15.7 point 2, `backgrounds.tsv`) — a
+   * different shape of problem from every other draw call in this file: it
+   * has to cover the whole viewport regardless of size, tiling to do it, and
+   * it can drift slower than the world scrolls under it (`parallax`) rather
+   * than sitting at one world position like every positioned sprite here.
+   * Returns false (drawing nothing) the instant any link is missing — no row,
+   * no loaded image, no raster backend — so `render()` falls back to the old
+   * procedural scatter exactly as if this method didn't exist.
+   */
+  private drawBackground(r: Surface, w: World, field: Rect): boolean {
+    if (!r.caps.raster) return false;
+    const entry = w.data.backgrounds.byId.get('field');
+    if (entry === undefined) return false;
+    const img = this.images.get(entry.path);
+    if (img === undefined) return false;
+
+    const tile = entry.tileWu;
+    const halfWWu = field.w / 2;
+    const halfHWu = (field.h / 2) * WU_PER_ROW;
+    const camX = w.x * entry.parallax;
+    const camY = w.y * entry.parallax;
+
+    const minTx = Math.floor((camX - halfWWu) / tile) - 1;
+    const maxTx = Math.ceil((camX + halfWWu) / tile) + 1;
+    const minTy = Math.floor((camY - halfHWu) / tile) - 1;
+    const maxTy = Math.ceil((camY + halfHWu) / tile) + 1;
+
+    const cols = maxTx - minTx + 1;
+    const rows = maxTy - minTy + 1;
+    if (cols * rows > GameView.MAX_BG_TILES) return false; // tileWu is set too small for this field; fall back rather than stall a frame
+
+    const wCells = tile;
+    const hCells = tile / WU_PER_ROW;
+    for (let ty = minTy; ty <= maxTy; ty++) {
+      for (let tx = minTx; tx <= maxTx; tx++) {
+        const worldX = tx * tile + tile / 2;
+        const worldY = ty * tile + tile / 2;
+        const sx = field.x + field.w / 2 + (worldX - camX);
+        const sy = field.y + field.h / 2 + (worldY - camY) / WU_PER_ROW;
+        r.drawImage(sx, sy, img, wCells, hCells);
+      }
+    }
+    return true;
   }
 
   /**

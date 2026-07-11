@@ -15,6 +15,9 @@ import { describe, it } from 'node:test';
 import { detectDepth } from '../engine/color.ts';
 import { Renderer } from '../engine/renderer.ts';
 import { TICK_DT } from '../engine/loop.ts';
+import type { Surface } from '../engine/surface.ts';
+import type { Rect } from '../engine/draw.ts';
+import type { ImageSource } from '../assets/imagesource.ts';
 import { parseGlyphTable } from '../data/entities.ts';
 import { parseWeapons } from '../data/weapons.ts';
 import { parsePassives } from '../data/passives.ts';
@@ -26,6 +29,7 @@ import { parseCountess } from '../data/countess.ts';
 import { fallbackJuice } from '../data/juice.ts';
 import { emptyImageTable } from '../data/images.ts';
 import { emptyAudioTable } from '../data/audio.ts';
+import { emptyBackgroundTable, parseBackgroundTable } from '../data/backgrounds.ts';
 import type { GameData } from '../data/gamedata.ts';
 import { GameView } from '../game/render.ts';
 import { SpriteLoader } from '../assets/loader.ts';
@@ -137,6 +141,7 @@ function makeData(directorSrc: string = DIRECTOR_QUIET): GameData {
     juice: fallbackJuice(),
     images: emptyImageTable(),
     audio: emptyAudioTable(),
+    backgrounds: emptyBackgroundTable(),
     warnings: [],
   };
 }
@@ -922,5 +927,76 @@ describe('rendering the world', () => {
       view.render(r, w, { x: 0, y: 1, w: 100, h: 32 }, { dark: true, debug: false });
       r.flush();
     });
+  });
+
+  /** A minimal `Surface` that records what it was asked to draw, for the raster-only paths a `Renderer` (caps.raster=false) never exercises. */
+  class FakeRasterSurface implements Surface {
+    readonly caps = { smoothLight: true, subCell: true, raster: true };
+    readonly width = 100;
+    readonly height = 34;
+    drawImages: { cx: number; cy: number; w: number; h: number }[] = [];
+    sets: { x: number; y: number; ch: string }[] = [];
+    clear(): void {}
+    set(x: number, y: number, ch: string): void {
+      this.sets.push({ x, y, ch });
+    }
+    setF(x: number, y: number, ch: string): void {
+      this.sets.push({ x, y, ch });
+    }
+    tint(): void {}
+    getChar(): string {
+      return ' ';
+    }
+    text(): number {
+      return 0;
+    }
+    fillRect(): void {}
+    inBounds(): boolean {
+      return true;
+    }
+    invalidate(): void {}
+    setLight(): void {}
+    drawImage(cx: number, cy: number, _img: CanvasImageSource, w: number, h: number): void {
+      this.drawImages.push({ cx, cy, w, h });
+    }
+    flush(): number {
+      return 0;
+    }
+  }
+
+  const FAKE_IMG = {} as unknown as CanvasImageSource;
+  const FIELD: Rect = { x: 0, y: 1, w: 100, h: 32 };
+
+  it('tiles a mapped background across the field instead of the procedural scatter', () => {
+    const bgData: GameData = {
+      ...data,
+      backgrounds: parseBackgroundTable('field\tspace/backgrounds/starfield_01.png\t0.5\t40'),
+    };
+    const w = new World(bgData, 1);
+    const images: ImageSource = { get: (path) => (path === 'space/backgrounds/starfield_01.png' ? FAKE_IMG : undefined) };
+    const view = new GameView(new SpriteLoader('/nonexistent'), images);
+    const r = new FakeRasterSurface();
+
+    view.render(r, w, FIELD, { dark: false, debug: false });
+
+    assert.ok(r.drawImages.length > 0, 'background tiles were drawn');
+    // The procedural `"`/`,`/`` ` `` scatter must not also draw — the image replaces it, not layers under it.
+    assert.equal(r.sets.filter((s) => s.ch === '"' || s.ch === ',' || s.ch === '`').length, 0);
+  });
+
+  it('falls back to the procedural scatter when no background image has loaded yet', () => {
+    const bgData: GameData = {
+      ...data,
+      backgrounds: parseBackgroundTable('field\tspace/backgrounds/starfield_01.png\t0.5\t40'),
+    };
+    const w = new World(bgData, 1);
+    // ImageSource that never resolves anything — same as a still-decoding fetch.
+    const view = new GameView(new SpriteLoader('/nonexistent'), { get: () => undefined });
+    const r = new FakeRasterSurface();
+
+    view.render(r, w, FIELD, { dark: false, debug: false });
+
+    assert.equal(r.drawImages.length, 0);
+    assert.ok(r.sets.some((s) => s.ch === '"' || s.ch === ',' || s.ch === '`'), 'the old ground scatter still drew');
   });
 });

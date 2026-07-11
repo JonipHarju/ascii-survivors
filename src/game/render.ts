@@ -159,7 +159,11 @@ export class GameView {
     const playerId = w.character?.sprite ?? 'sprites/player';
     const playerImg = this.imageFor(r, w, playerId);
     if (playerImg !== null) {
-      r.drawImage(p.colF(w.x), p.rowF(w.y), playerImg.img, playerImg.wCells, playerImg.hCells);
+      // design.md §15.7: a bare raster blit reads as part of the void — the
+      // reserved-bright-white-player law needs a code answer on this medium
+      // too. `PLAYER_COLOR` (0xffffff) haloes the ship the same way it used to
+      // be the one glyph nothing else could draw in.
+      r.drawImage(p.colF(w.x), p.rowF(w.y), playerImg.img, playerImg.wCells, playerImg.hCells, 0, PLAYER_COLOR);
       // The level-up flash still needs to read on a raster ship; a white full-field
       // flash effect already exists below (`drawWhiteFlash`) for bigger moments, so
       // this one frame of colour just isn't drawn on raster yet — a placeholder

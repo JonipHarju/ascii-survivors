@@ -211,8 +211,21 @@ export class CanvasSurface implements Surface {
    * radians, 0 = the image's own "up"; unused by any caller yet (v1 ships don't
    * turn to face their heading), kept so that's additive later, not a signature
    * break.
+   *
+   * `glow`: same shadow-blur trick `tile()` bakes into every glyph, applied
+   * live instead of pre-baked (a player-only call, once a frame, so baking it
+   * into a cache buys nothing). `ctx.shadowBlur` haloes whatever `drawImage`
+   * paints using that draw's own alpha silhouette — free rim-light on a PNG.
    */
-  drawImage(cx: number, cy: number, img: CanvasImageSource, wCells: number, hCells: number, angle = 0): void {
+  drawImage(
+    cx: number,
+    cy: number,
+    img: CanvasImageSource,
+    wCells: number,
+    hCells: number,
+    angle = 0,
+    glow?: Color,
+  ): void {
     if (!Number.isFinite(cx) || !Number.isFinite(cy)) return;
     const { ctx, cellW, cellH } = this;
     const px = cx * cellW;
@@ -220,14 +233,19 @@ export class CanvasSurface implements Surface {
     const w = wCells * cellW;
     const h = hCells * cellH;
 
+    ctx.save();
+    if (glow !== undefined) {
+      ctx.shadowColor = css(glow);
+      ctx.shadowBlur = cellW * 1.4;
+    }
+
     if (angle === 0) {
       ctx.drawImage(img, px - w / 2, py - h / 2, w, h);
-      return;
+    } else {
+      ctx.translate(px, py);
+      ctx.rotate(angle);
+      ctx.drawImage(img, -w / 2, -h / 2, w, h);
     }
-    ctx.save();
-    ctx.translate(px, py);
-    ctx.rotate(angle);
-    ctx.drawImage(img, -w / 2, -h / 2, w, h);
     ctx.restore();
   }
 

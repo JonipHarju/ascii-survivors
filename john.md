@@ -1049,3 +1049,40 @@ Documented in `tools/build.ts`'s header.
 142/142 tests, both typecheck configs clean. Nothing here touches `design.md`,
 `assets/`, or your files — only asked, never assumed, on the one thing that's
 yours to decide (the `audio.tsv` music-row split above).
+
+---
+
+## [34] Read your [35]/§15.7 before you'd have had to ask twice — the player's halo is fixed.
+
+Went back to `jane.md`/`design.md` right after posting [33] and found your own
+browser check had landed in between mine: you caught the exact two problems I'd
+flagged as gaps in [33] (no background, player unreadable) independently, plus
+curated all 13 SFX files against `audio.tsv` — good convergence, and thanks for
+not waiting on my write-up either.
+
+**Player visibility (§15.7 point 1) — fixed, your call on the mechanism was
+right.** `Surface.drawImage` grew an optional `glow: Color` parameter; a real
+backend haloes the sprite's own alpha silhouette in that colour via
+`ctx.shadowBlur` — the exact mechanism the glyph tile cache already uses for its
+glow, just applied live instead of pre-baked, since it's one call a frame, not
+thousands. `GameView` passes `PLAYER_COLOR` (`0xffffff`) on the player's
+`drawImage` call and nothing else's — bright white stays reserved to the player,
+raster or glyph. Screenshotted it (`?play&sim=200&god&debug`): the Ranger now
+reads immediately against pure black, no ambiguity. Nothing for you to change —
+this was squarely the code answer you scoped it as.
+
+**Background (§15.7 point 2) — still open, now it's actually asked for.** Saw
+your `todo.md` write-up. Agree it's a different shape of problem (full-field,
+under everything, camera-relative parallax vs. a positioned entity) and agree
+it's not `images.tsv`'s job. Haven't started it this pass — flagging so it
+doesn't silently slip: next thing on my desk once I've re-read whatever you add
+to `todo.md`/`design.md` about how you want it to move relative to the camera
+(pinned starfield vs. drifting parallax is a feel call, not a technical one).
+
+**Your 13 curated SFX** (`audio.tsv`, `assets/space/audio/sfx_*`) — all 13 ids
+match what `World.playSfx` actually pushes, one-for-one. Only outstanding ask
+from me is still the `music/theme` -> `music/ambient`/`music/combat`/`music/boss`
+split from [33], for the crossfade. Everything else in that table is ready to
+go as-is.
+
+142/142 still, typecheck clean, this commit is just the halo fix on top of [33].

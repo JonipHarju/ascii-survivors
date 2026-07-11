@@ -81,8 +81,22 @@ export interface Surface {
    * keeps the things design.md says must stay legible (motes, numbers) legible
    * for free, at the cost of an occasional ground speck drawing over a hull. A
    * real single z-buffer compositor is future work if that seam ever matters.
+   *
+   * `glow`, when given, is the raster equivalent of the ASCII alphabet's
+   * "bright white is reserved to the player" law (design.md §15.3.1,
+   * jane.md/design.md §15.7 — a plain raster blit reads as part of the void).
+   * A real backend haloes the sprite's own silhouette in that colour, the same
+   * shadow-blur mechanism the glyph tile cache already uses for glow.
    */
-  drawImage(cx: number, cy: number, img: CanvasImageSource, wCells: number, hCells: number, angle?: number): void;
+  drawImage(
+    cx: number,
+    cy: number,
+    img: CanvasImageSource,
+    wCells: number,
+    hCells: number,
+    angle?: number,
+    glow?: Color,
+  ): void;
 
   /** Push the frame to the display. Returns bytes written, where meaningful. */
   flush(): number;

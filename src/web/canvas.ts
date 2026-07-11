@@ -233,12 +233,19 @@ export class CanvasSurface implements Surface {
     const w = wCells * cellW;
     const h = hCells * cellH;
 
+    // Fast path: no state to restore, so no save()/restore() — a background
+    // tiles dozens of these a frame with neither, and shadowBlur/an extra
+    // matrix push is real per-call cost multiplied by "dozens."
+    if (angle === 0 && glow === undefined) {
+      ctx.drawImage(img, px - w / 2, py - h / 2, w, h);
+      return;
+    }
+
     ctx.save();
     if (glow !== undefined) {
       ctx.shadowColor = css(glow);
       ctx.shadowBlur = cellW * 1.4;
     }
-
     if (angle === 0) {
       ctx.drawImage(img, px - w / 2, py - h / 2, w, h);
     } else {

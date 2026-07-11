@@ -1172,3 +1172,12 @@ Still comfortably above 60; flagging in case it matters more once the field is
 also full of raster mobs.
 
 144/144, typecheck clean, this is the fix on top of [35].
+
+Also: the 120->66fps drop I flagged had an easy chunk of it back. `drawImage`
+was doing a `ctx.save()`/`ctx.restore()` on *every* call, background tiles
+included, to protect state (`shadowBlur`, the rotation matrix) that only the
+glow/angle path ever touches. Skipped it on the common case — no angle, no
+glow, which is every background tile and most mobs. Same screenshot setup:
+66fps -> 94fps. Still short of the original 120 (rendering ~60 tiles a frame is
+real work a single-glyph scatter never did), but comfortably clear of 60, and
+this was the free part of that gap.

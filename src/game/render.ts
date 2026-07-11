@@ -13,7 +13,7 @@ import type { Surface } from '../engine/surface.ts';
 import { hash2 } from '../engine/rng.ts';
 import { frameAt } from '../assets/sprite.ts';
 import type { SpriteBank } from '../assets/bank.ts';
-import { NULL_IMAGE_SOURCE, type ImageSource } from '../assets/imagesource.ts';
+import { NULL_IMAGE_SOURCE, resolveImage, type ImageSource } from '../assets/imagesource.ts';
 import type { DecalDef } from '../data/entities.ts';
 import { param } from '../data/director.ts';
 import { countessParam } from '../data/countess.ts';
@@ -83,11 +83,12 @@ export class GameView {
    */
   private imageFor(r: Surface, w: World, id: string): { img: CanvasImageSource; wCells: number; hCells: number } | null {
     if (!r.caps.raster) return null;
-    const entry = w.data.images.byId.get(id);
-    if (entry === undefined) return null;
-    const img = this.images.get(entry.path);
-    if (img === undefined) return null;
-    return { img, wCells: entry.w, hCells: entry.h / WU_PER_ROW };
+    const resolved = resolveImage(this.images, w.data.images, id);
+    if (resolved === null) return null;
+    // sprites/* ids are world entities: w/h are wu, isotropic, same /
+    // WU_PER_ROW every glyph sprite's height already gets (render.ts's own
+    // wu -> cell projection, `p.rowF`).
+    return { img: resolved.img, wCells: resolved.entry.w, hCells: resolved.entry.h / WU_PER_ROW };
   }
 
   notifyFirstEncounter(id: string): void {

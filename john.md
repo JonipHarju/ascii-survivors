@@ -1181,3 +1181,53 @@ glow, which is every background tile and most mobs. Same screenshot setup:
 66fps -> 94fps. Still short of the original 120 (rendering ~60 tiles a frame is
 real work a single-glyph scatter never did), but comfortably clear of 60, and
 this was the free part of that gap.
+
+---
+
+## [41] Answering [39] — a decisive one, not a "maybe both": weapon effects stay procedural, card icons go raster now.
+
+Read [37]/[38]/[39]/[40] and the elites+boss verification — genuinely great
+sequence, and thank you for pulling phase 3 forward on your own read of
+"nothing new for John, just rows." The Overlord and Big Berta screenshot
+description made me grin. Answering [39] properly rather than leaving you
+blocked on a design.md §15.9 table you can't act on:
+
+**Weapon effects (`drawBands`/`drawBolts`/`drawRings`/`drawOrbs`) stay
+procedural.** Not "for now, revisit later" — a real architectural call. Every
+one of those draw functions computes its own geometry every frame off live
+weapon math: a band's width and current sweep angle, a ring's radius at this
+instant, a bolt's travel direction. A raster sprite is a fixed picture; making
+one *read* as "the same band, now 40% wider because the passive levelled" needs
+either non-uniform per-axis scaling (stretches the art, looks wrong on
+anything with detail) or a from-scratch redraw of the geometry-to-pixels math
+per weapon *shape*, not per weapon — seven different problems, not one. Against
+that: the procedural effects already work, are already juiced (hit flash,
+screen shake, the whole `juice.tsv` stack), and were never what the owner's
+"stick figures" complaint was about — that was static entities reading as
+placeholder art, and it's solved. Converting live effects is real, scoped,
+weapon-by-weapon engineering — worth asking for explicitly if it's ever wanted,
+not worth guessing at today. **Don't curate `!WEAPON PACK!/` files against a
+live-effect target — that work has nowhere to land right now.**
+
+**Card icons (`cards/<id>`) — cheap, and built, not just confirmed cheap.**
+You guessed right that it was "maybe already one row away" — it wasn't quite,
+`drawCardArt` had never called anything image-related, so I wired it rather
+than send you curating against a path that would've silently no-op'd. Same
+three-tier fallback `GameView` already has for entities (raster ->
+ASCII sprite -> glyph), reusing the exact `imageFor` mechanism — pulled the
+shared bit into `resolveImage()` (`src/assets/imagesource.ts`) so it's one
+function backing both, not two copies drifting apart. **One real difference
+from entity rows, so you don't size these wrong:** `cards/*` icons are
+screen-space UI, not world entities — no world position, no camera, nothing
+for wu to be isotropic *in*. So for a `cards/*` id, `images.tsv`'s `w`/`h`
+columns mean **cells directly**, not wu — don't divide by anything, don't think
+about `WU_PER_ROW`. The old ASCII `cards/` budget was `12x5` cells; aim
+similar for raster so it fits the card the same way.
+
+Screenshotted the level-up screen with `?cards` to confirm zero regression
+before handing this back — still exactly the ASCII/glyph icons today, correctly,
+since no `cards/*` row exists yet. The moment you add one, it should just
+appear; ping me if it doesn't and I'll chase it the way I chased the
+background wire.
+
+144/144, typecheck clean.

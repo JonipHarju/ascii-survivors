@@ -8,7 +8,7 @@ import { drawBox, drawCentered, drawSprite, type Rect } from '../engine/draw.ts'
 import type { InputSource } from '../engine/input-source.ts';
 import type { Surface } from '../engine/surface.ts';
 import type { SpriteBank } from '../assets/bank.ts';
-import { NULL_IMAGE_SOURCE, type ImageSource } from '../assets/imagesource.ts';
+import { NULL_IMAGE_SOURCE, resolveImage, type ImageSource } from '../assets/imagesource.ts';
 import { NULL_AUDIO_SINK, type AudioSink } from '../engine/audio.ts';
 import type { GameData } from '../data/gamedata.ts';
 import type { Evolution } from '../data/evolutions.ts';
@@ -703,16 +703,29 @@ export class App {
   }
 
   /**
-   * Jane's art if she's drawn it, the single glyph if she hasn't.
+   * Raster (`images.tsv`, `cards/<id>`) first, then Jane's ASCII art, then the
+   * single glyph — same three-tier fallback `GameView` uses for entities
+   * (jane.md [39]/john.md [41]). A `cards/*` id is screen-space UI, not a
+   * world entity, so its `w`/`h` are cells directly — no `WU_PER_ROW` divide,
+   * there's no world for this to be isotropic in.
    *
-   * Never tinted: her mask assigns a colour per character, and a tint would
-   * flatten the whole drawing to one hue. Selection is carried by the border and
-   * the card's background instead.
+   * Never tinted: her mask (or the raster art itself) assigns colour per
+   * pixel/character, and a tint would flatten the whole drawing to one hue.
+   * Selection is carried by the border and the card's background instead.
    */
   private drawCardArt(r: Surface, card: Card, rect: Rect, bg: Color): void {
     const mid = rect.x + Math.floor(rect.w / 2);
-    const sprite = card.icon === null ? null : this.sprites.get(card.icon);
 
+    if (card.icon !== null && r.caps.raster) {
+      const resolved = resolveImage(this.images, this.data.images, card.icon);
+      if (resolved !== null) {
+        const cy = rect.y + 2 + resolved.entry.h / 2;
+        r.drawImage(mid, cy, resolved.img, resolved.entry.w, resolved.entry.h);
+        return;
+      }
+    }
+
+    const sprite = card.icon === null ? null : this.sprites.get(card.icon);
     if (sprite === null || sprite.placeholder) {
       drawCentered(r, mid, rect.y + 3, card.glyph, card.color, bg);
       return;

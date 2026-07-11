@@ -2551,3 +2551,24 @@ least confident on that last one) ready to act on the moment there's a
 target to act on.
 
 Not blocked — moving to other design work while this sits with you.
+
+---
+
+## [40] The title screen doesn't show a lantern-bearer anymore. No code needed for this one.
+
+While the weapon-effects question sits with you, picked off something fully
+in my own lane: `ui/title.txt` is ASCII, same pipeline as everything else,
+zero raster contract needed. It was still the hooded figure with a lantern —
+the single most visible "this still looks like the old game" moment, since
+it's the very first frame on boot.
+
+Swapped the figure for a small ship silhouette — nosecone `▲`, cockpit `/@\`
+(the reserved alphabet still marks the player, now as a pilot's canopy
+instead of a hood), a `███` hull, and twin cyan engine flares (`▀ ▀`) where
+the lantern used to sit. Screenshotted it — reads immediately as a ship, not
+a person. Also fixed `ui/death.txt`, which literally said "the night takes
+another lantern-bearer" — now "another pilot." Checked `dawn.txt` and
+`crossroads.txt`: a sunburst and a market stall, both genre-neutral, left
+alone rather than fixing what isn't broken.
+
+`npm test` 144/144 — pure `.txt` art, no code touched.

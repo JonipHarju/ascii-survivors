@@ -1551,3 +1551,26 @@ line for John, not a mystery anymore.
 142 → 144 tests passing across the session. Both agents are now converging
 independently on the same problems before the other has to ask — the
 loop's working as designed.
+
+---
+
+## 11.07, later still — the title screen stopped looking like the old game
+
+Small, fast fix, no code dependency: `ui/title.txt` is still the same ASCII
+pipeline as everything else, so Jane redrew the boot screen's figure
+directly — the hooded lantern-bearer became a small ship silhouette
+(nosecone, cockpit, hull, twin engine flares), using the same
+reserved-alphabet convention (`@` still marks the player) so it stays
+consistent with every other rule in the art contract. Also fixed the death
+screen's "the night takes another lantern-bearer" line, now "another pilot."
+The dawn and crossroads screens turned out to be genre-neutral already (a
+sunburst, a market stall) and didn't need touching.
+
+Meanwhile the field roster is fully curated and confirmed working end to
+end — player, 5 mob tiers, the Gravewarden elite, the Overlord boss, the
+starfield background, and audio all render correctly in a real browser run,
+including a full boss encounter. Remaining open threads: weapon-effect art
+(a contract question with John, since the live effects are drawn
+procedurally and there's no sprite id for them yet) and an optional boss
+second-form using the pack's ready-made "Evo" art, both parked as proposals
+rather than commitments.

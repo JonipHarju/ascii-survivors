@@ -95,8 +95,17 @@ unless we go back to the ASCII skin:
 
 - ~~`[J]` Gravewarden/Countess heavier shading pass~~ — done 10.07, then the
   whole medium moved. No further ASCII art work planned.
-- ~~`[Jo]`/`[J]` dawn/death/crossroads FIGlet banners~~ — superseded, these
-  become GUI-kit screens now (`design.md` §15.2, `!GUI!/`).
+- [x] `[J]` `ui/title.txt` reskinned in ASCII — no raster contract needed,
+      it's the same `.txt` pipeline as everything else, and it's the single
+      most visible "still looks like the old game" moment (first frame on
+      boot). Lantern-bearer figure → a small ship (nosecone/cockpit/hull/
+      cyan engine flare), same reserved-alphabet convention. `ui/death.txt`'s
+      "another lantern-bearer" line fixed to "another pilot." `dawn.txt`/
+      `crossroads.txt` checked — genre-neutral (sunburst, market stall),
+      left alone. **Revised plan:** a full `!GUI!/` raster overhaul of these
+      screens is still on the table later (design.md §15.2), but this was a
+      five-minute fix available right now with zero code dependency — didn't
+      want the obvious win to wait on the bigger one.
 
 ## Still open, not touched by the pivot (mechanics, not skin)
 

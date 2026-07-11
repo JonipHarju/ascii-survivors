@@ -18,6 +18,8 @@ import { parseCharacters, fallbackCharacters, type CharacterTable } from './char
 import { parseCrossroads, fallbackCrossroads, type CrossroadsTable } from './crossroads.ts';
 import { parseCountess, fallbackCountess, type CountessTable } from './countess.ts';
 import { parseJuice, fallbackJuice, type JuiceTable } from './juice.ts';
+import { parseImageTable, emptyImageTable, type ImageTable } from './images.ts';
+import { parseAudioTable, emptyAudioTable, type AudioTable } from './audio.ts';
 
 export type GameData = {
   readonly glyphs: GlyphTable;
@@ -29,6 +31,10 @@ export type GameData = {
   readonly crossroads: CrossroadsTable;
   readonly countess: CountessTable;
   readonly juice: JuiceTable;
+  /** Raster-art contract (the space pivot). Empty until `assets/images.tsv` exists. */
+  readonly images: ImageTable;
+  /** Sound contract. Empty until `assets/audio.tsv` exists. */
+  readonly audio: AudioTable;
   readonly warnings: readonly string[];
 };
 
@@ -43,6 +49,8 @@ export type TableSources = {
   crossroads: string;
   countess: string;
   juice: string;
+  images: string;
+  audio: string;
 };
 
 export const TABLE_FILES = [
@@ -55,6 +63,8 @@ export const TABLE_FILES = [
   'crossroads',
   'countess',
   'juice',
+  'images',
+  'audio',
 ] as const;
 
 export function buildGameData(src: TableSources): GameData {
@@ -67,6 +77,8 @@ export function buildGameData(src: TableSources): GameData {
   const crossroads = src.crossroads === '' ? fallbackCrossroads() : parseCrossroads(src.crossroads);
   const countess = src.countess === '' ? fallbackCountess() : parseCountess(src.countess);
   const juice = src.juice === '' ? fallbackJuice() : parseJuice(src.juice);
+  const images = src.images === '' ? emptyImageTable() : parseImageTable(src.images);
+  const audio = src.audio === '' ? emptyAudioTable() : parseAudioTable(src.audio);
 
   const warnings = [
     ...glyphs.warnings,
@@ -78,9 +90,24 @@ export function buildGameData(src: TableSources): GameData {
     ...crossroads.warnings,
     ...countess.warnings,
     ...juice.warnings,
+    ...images.warnings,
+    ...audio.warnings,
   ];
 
   if (weapons.byId.size === 0) warnings.push('weapons.tsv missing or empty — the player will start unarmed');
 
-  return { glyphs, weapons, passives, director, evolutions, characters, crossroads, countess, juice, warnings };
+  return {
+    glyphs,
+    weapons,
+    passives,
+    director,
+    evolutions,
+    characters,
+    crossroads,
+    countess,
+    juice,
+    images,
+    audio,
+    warnings,
+  };
 }

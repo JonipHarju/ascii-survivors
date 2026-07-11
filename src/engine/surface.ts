@@ -21,6 +21,14 @@ export type Capabilities = {
   readonly smoothLight: boolean;
   /** True when glyphs can be drawn at fractional cell offsets. */
   readonly subCell: boolean;
+  /**
+   * True when the backend can blit a raster image (`drawImage`), not just
+   * glyph cells. The space pivot (owner 11.07 00:03): the terminal can never do
+   * this, so callers must always have a glyph/placeholder fallback ready —
+   * `drawImage` on a backend without this capability is a documented no-op,
+   * not an error.
+   */
+  readonly raster: boolean;
 };
 
 export interface Surface {
@@ -61,6 +69,20 @@ export interface Surface {
    * render a real falloff; others ignore it. Cleared implicitly by `clear()`.
    */
   setLight(cx: number, cy: number, radius: number): void;
+
+  /**
+   * Blit a raster image centered at fractional cell (cx, cy), sized
+   * `wCells` x `hCells` (same cell-unit space as everything else — see
+   * `render.ts`'s wu -> cell projection). No-op where `caps.raster` is false.
+   *
+   * Drawn as its own layer, under every glyph (`set`/`setF`/`text`) drawn this
+   * frame — ground texture, decals, XP motes, damage numbers, the HUD all sit
+   * on top of ship art regardless of call order. That's deliberate for v1: it
+   * keeps the things design.md says must stay legible (motes, numbers) legible
+   * for free, at the cost of an occasional ground speck drawing over a hull. A
+   * real single z-buffer compositor is future work if that seam ever matters.
+   */
+  drawImage(cx: number, cy: number, img: CanvasImageSource, wCells: number, hCells: number, angle?: number): void;
 
   /** Push the frame to the display. Returns bytes written, where meaningful. */
   flush(): number;

@@ -17,8 +17,20 @@ import { buildGameData, type TableSources } from '../data/gamedata.ts';
 import { App } from '../game/app.ts';
 import { CanvasSurface } from './canvas.ts';
 import { WebInput } from './input.ts';
+import { WebImageSource } from './imagesource.ts';
+import { WebAudioSink } from './audio.ts';
 import { localStore } from './save.web.ts';
 import { emptyProfile, memoryStore, saveProfile, type SaveStore } from '../game/save.ts';
+
+/**
+ * Binary media (ship art, SFX, music) live beside the page as ordinary static
+ * files, not inlined — john.md: the purchased pack is 620MB, nowhere near
+ * base64-inlinable. `tools/build.ts` copies only the files `images.tsv`/
+ * `audio.tsv` actually reference into `dist/assets/`; the dev server
+ * (`serve.ts`) serves the same relative path straight off `assets/` on disk.
+ * Same URL scheme both places, so this is the only line that has to know it.
+ */
+const MEDIA_BASE_URL = 'assets';
 
 /** The shape `src/tools/pack.ts` writes and this file reads. */
 type AssetBundle = {
@@ -97,6 +109,13 @@ async function boot(): Promise<void> {
   const input = new WebInput();
   input.attach();
 
+  const images = new WebImageSource(data.images, MEDIA_BASE_URL);
+  const audio = new WebAudioSink(data.audio, MEDIA_BASE_URL);
+  // AudioContext needs a user gesture before it's allowed to make sound.
+  // Whichever fires first unlocks it; App.startMusic() then plays into it.
+  addEventListener('keydown', () => audio.resume(), { once: true });
+  addEventListener('pointerdown', () => audio.resume(), { once: true });
+
   const app = new App(data, sprites, input, {
     dark: !flag('nodark'),
     debug: flag('debug'),
@@ -108,6 +127,8 @@ async function boot(): Promise<void> {
     store: pickStore(),
     openShop: flag('shop'),
     openCards: flag('cards'),
+    images,
+    audio,
     // `npm run dev` injects window.__DEV__; `?dev` forces it on any build.
     dev: flag('dev') || (globalThis as { __DEV__?: boolean }).__DEV__ === true,
   });

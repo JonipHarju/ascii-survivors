@@ -76,7 +76,7 @@ function css(c: Color): string {
 }
 
 export class CanvasSurface implements Surface {
-  readonly caps: Capabilities = { smoothLight: true, subCell: true };
+  readonly caps: Capabilities = { smoothLight: true, subCell: true, raster: true };
 
   width = 0;
   height = 0;
@@ -194,6 +194,41 @@ export class CanvasSurface implements Surface {
     this.ox.fill(0);
     this.oy.fill(0);
     this.light = null;
+
+    // Paint the flat backdrop immediately, not in flush(). drawImage() below is
+    // an immediate draw too — GameView calls it between clear() and flush(), and
+    // if flush() re-painted the backdrop it would erase every ship drawn this
+    // frame. Everything drawn via set()/setF() stays double-buffered and is
+    // flushed on top of the images, same as always (see drawImage's doc comment
+    // on Surface — that ordering is deliberate).
+    this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    this.ctx.fillStyle = css(this.opts.background);
+    this.ctx.fillRect(0, 0, this.width * this.cellW, this.height * this.cellH);
+  }
+
+  /**
+   * Blit a raster image. Immediate, not buffered — see `clear()`. `angle` is
+   * radians, 0 = the image's own "up"; unused by any caller yet (v1 ships don't
+   * turn to face their heading), kept so that's additive later, not a signature
+   * break.
+   */
+  drawImage(cx: number, cy: number, img: CanvasImageSource, wCells: number, hCells: number, angle = 0): void {
+    if (!Number.isFinite(cx) || !Number.isFinite(cy)) return;
+    const { ctx, cellW, cellH } = this;
+    const px = cx * cellW;
+    const py = cy * cellH;
+    const w = wCells * cellW;
+    const h = hCells * cellH;
+
+    if (angle === 0) {
+      ctx.drawImage(img, px - w / 2, py - h / 2, w, h);
+      return;
+    }
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(angle);
+    ctx.drawImage(img, -w / 2, -h / 2, w, h);
+    ctx.restore();
   }
 
   inBounds(x: number, y: number): boolean {
@@ -293,9 +328,8 @@ export class CanvasSurface implements Surface {
   flush(): number {
     const { ctx, width, height, cellW, cellH } = this;
 
-    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-    ctx.fillStyle = css(this.opts.background);
-    ctx.fillRect(0, 0, width * cellW, height * cellH);
+    // The flat backdrop is already on the canvas — clear() paints it immediately
+    // so drawImage() calls made during render() land on top of it, not under it.
 
     // Backgrounds first, coalesced into horizontal runs of one colour.
     for (let y = 0; y < height; y++) {

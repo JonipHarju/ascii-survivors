@@ -29,6 +29,10 @@ class StubContext {
 
   setTransform(): void {}
   scale(): void {}
+  save(): void {}
+  restore(): void {}
+  translate(): void {}
+  rotate(): void {}
   fillText(s: string): void {
     this.texts.push(s);
   }
@@ -112,7 +116,37 @@ describe('CanvasSurface', () => {
 
   it('advertises the capabilities the game branches on', () => {
     const { surface } = makeSurface();
-    assert.deepEqual(surface.caps, { smoothLight: true, subCell: true });
+    assert.deepEqual(surface.caps, { smoothLight: true, subCell: true, raster: true });
+  });
+
+  it('blits a raster image centered on a fractional cell, immediately (not buffered)', () => {
+    const { surface, ctx } = makeSurface();
+    surface.clear();
+    ctx.drawImages.length = 0; // clear()'s own backdrop fill doesn't call drawImage
+    surface.drawImage(4, 2, {} as unknown as CanvasImageSource, 3, 2);
+    // set()/setF() calls stay buffered until flush(); drawImage() must not.
+    assert.equal(ctx.drawImages.length, 1, 'drawImage draws before flush() runs');
+
+    const call = ctx.drawImages[0]!;
+    // Center (4,2) in cells, 3x2 cells wide/tall, cell = 10x20px: top-left is
+    // (4*10 - 3*10/2, 2*20 - 2*20/2) = (25, 20), size (30, 40).
+    assert.deepEqual(call, { x: 25, y: 20, w: 30, h: 40 });
+  });
+
+  it('backdrop-fills on clear(), not flush() — an image drawn between them survives', () => {
+    const { surface, ctx } = makeSurface();
+    surface.clear();
+    assert.equal(ctx.fillRects.length, 1, 'clear() paints the one full-canvas backdrop fill');
+    assert.deepEqual(
+      { w: ctx.fillRects[0]!.w, h: ctx.fillRects[0]!.h },
+      { w: surface.width * surface.cellW, h: surface.height * surface.cellH },
+    );
+
+    surface.drawImage(0, 0, {} as unknown as CanvasImageSource, 1, 1);
+    surface.flush();
+    // No per-cell backgrounds were set, so flush() draws no further fillRects —
+    // in particular it must not repaint the backdrop over the image just drawn.
+    assert.equal(ctx.fillRects.length, 1, 'flush() does not repaint the backdrop');
   });
 
   it('draws one tile per non-blank cell, at that cell', () => {

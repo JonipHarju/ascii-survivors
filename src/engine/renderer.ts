@@ -24,8 +24,8 @@ export class Renderer implements Surface {
   readonly width: number;
   readonly height: number;
 
-  /** A terminal has neither: the dark is faked per-cell, glyphs snap to cells. */
-  readonly caps: Capabilities = { smoothLight: false, subCell: false };
+  /** A terminal has none of these: the dark is faked per-cell, glyphs snap to cells. */
+  readonly caps: Capabilities = { smoothLight: false, subCell: false, raster: false };
 
   private readonly size: number;
   private readonly out: NodeJS.WritableStream;
@@ -102,6 +102,9 @@ export class Renderer implements Surface {
 
   /** Terminals can't do a light falloff; GameView dims each cell instead. */
   setLight(): void {}
+
+  /** `caps.raster` is false — callers always have a glyph fallback ready. */
+  drawImage(): void {}
 
   /** Recolor a cell without touching its glyph. Used for flashes and tinting. */
   tint(x: number, y: number, fg: Color): void {

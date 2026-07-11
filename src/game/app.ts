@@ -8,6 +8,8 @@ import { drawBox, drawCentered, drawSprite, type Rect } from '../engine/draw.ts'
 import type { InputSource } from '../engine/input-source.ts';
 import type { Surface } from '../engine/surface.ts';
 import type { SpriteBank } from '../assets/bank.ts';
+import { NULL_IMAGE_SOURCE, type ImageSource } from '../assets/imagesource.ts';
+import { NULL_AUDIO_SINK, type AudioSink } from '../engine/audio.ts';
 import type { GameData } from '../data/gamedata.ts';
 import type { Evolution } from '../data/evolutions.ts';
 import { GameView, drawHud, type ViewOptions } from './render.ts';
@@ -54,6 +56,10 @@ export type AppOptions = ViewOptions & {
   god?: boolean | undefined;
   /** Where gold and unlocks live. Defaults to an in-memory (non-persistent) store. */
   store?: SaveStore | undefined;
+  /** Raster art (images.tsv). Defaults to "nothing ever loads" — the terminal's case. */
+  images?: ImageSource | undefined;
+  /** Sound (audio.tsv). Defaults to silence — the terminal's case, and tests'. */
+  audio?: AudioSink | undefined;
   /** Open straight on The Crossroads. Dev deep-link. */
   openShop?: boolean | undefined;
   /** Open straight on a level-up hand, so Jane can look at her card art. */
@@ -83,11 +89,16 @@ export class App {
   private readonly hitRadius: (id: string) => number;
 
   private readonly store: SaveStore;
+  private readonly images: ImageSource;
+  private readonly audio: AudioSink;
   private profile: Profile;
   private saveWarning: string | null;
   /** Selected row on the Crossroads screen. */
   private shopIndex = 0;
   private shopMessage = '';
+
+  /** `updateMusic` runs on a slow tick — the crossfade itself takes 0.6s, so scheduling it at 60Hz would just spam the audio graph for no audible gain. */
+  private musicUpdateCd = 0;
 
   /** Dev cheat panel visibility, and a transient line echoing the last cheat. */
   private devPanel = false;
@@ -102,13 +113,15 @@ export class App {
     this.opts = opts;
     this.hitRadius = makeHitRadius(sprites);
     this.store = opts.store ?? memoryStore();
+    this.images = opts.images ?? NULL_IMAGE_SOURCE;
+    this.audio = opts.audio ?? NULL_AUDIO_SINK;
 
     const loaded = loadProfile(this.store);
     this.profile = loaded.profile;
     this.saveWarning = loaded.warning;
 
     this.world = this.newWorld();
-    this.view = new GameView(sprites);
+    this.view = new GameView(sprites, this.images);
     if (opts.openCards === true) this.openCards();
     else if (opts.skipTitle === true) this.state = 'playing';
     else if (opts.openShop === true) this.state = 'crossroads';
@@ -140,8 +153,26 @@ export class App {
 
   private restart(): void {
     this.world = this.newWorld();
-    this.view = new GameView(this.sprites);
+    this.view = new GameView(this.sprites, this.images);
     this.state = 'playing';
+  }
+
+  /**
+   * design.md §15.4: a continuous crossfade, not a track switch — `World`
+   * only ever exposes a 0..1 "how hot is this" number (`musicIntensity`) and
+   * never an audio id, so the fixed ids (`music/ambient`, `music/combat`,
+   * `music/boss` — the audio.tsv contract, `john.md`) live here, the one place
+   * that's allowed to know about sound at all. Calling this with unchanged
+   * boss state is cheap: a real `AudioSink` only re-schedules a gain ramp, it
+   * doesn't restart anything.
+   */
+  private updateMusic(): void {
+    const w = this.world;
+    this.audio.setMusic(
+      w.bossActive
+        ? { 'music/ambient': 0, 'music/combat': 0, 'music/boss': 1 }
+        : { 'music/ambient': 1 - w.musicIntensity, 'music/combat': w.musicIntensity, 'music/boss': 0 },
+    );
   }
 
   // ---------------------------------------------------------------- update
@@ -208,6 +239,17 @@ export class App {
 
     this.world.update(dt, this.readMovement());
     this.view.tick(dt);
+
+    if (this.world.sfx.length > 0) {
+      for (const id of this.world.sfx) this.audio.play(id);
+      this.world.sfx.length = 0;
+    }
+
+    this.musicUpdateCd -= dt;
+    if (this.musicUpdateCd <= 0) {
+      this.musicUpdateCd = 0.25;
+      this.updateMusic();
+    }
 
     if (this.world.justSeen !== null) {
       this.view.notifyFirstEncounter(this.world.justSeen);

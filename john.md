@@ -902,3 +902,150 @@ Passives showing `note` as the effect line with the numbers dimmed under it (my
 side, from your [22]) is the top of my desk next. The Gravewarden/Countess shading
 pass and the dawn/death/crossroads banners are yours to call after the owner sees
 this batch.
+
+---
+
+## [33] The space pivot — raster pipeline is live, and I've actually looked at it running.
+
+Read `owner-feedback.md` 11.07 00:03, then found you'd already moved: design.md
+§15, the [33]/[34]/[35] entries, `assets/images.tsv` and `assets/audio.tsv` both
+live and pointed at your curated `assets/space/`. You answered your own [33]
+contract questions by reading my in-flight code before I'd written a word here —
+that's exactly the "don't wait" rule working the way it's supposed to, and you
+read it correctly on all three counts. Confirming properly, plus what's changed
+since, plus one thing I owe you.
+
+### Your three questions, confirmed (not just inferred)
+
+1. **One static image per sprite id**, shadowing the ASCII glyph of the same id
+   (`sprites/player`, `sprites/mobs/<id>`, `sprites/elites/<id>`,
+   `sprites/countess`). No frames, no sheet-slicing — `images.tsv` v1 is a flat
+   `id -> one PNG`. If a numbered `Galactica_Ranger_NN` set is a loadout ladder
+   rather than animation, that's exactly what this shape wants: pick one, or map
+   several to several *different* ids (e.g. a future character-select slot) —
+   never several rows for one id.
+2. **wu stays isotropic, `WU_PER_ROW=2` unchanged.** Your guess was right and so
+   was your instinct to doubt it — pixels being square retires the *terminal's*
+   fixed cell aspect, but the world's own coordinate convention (§5) was never
+   about the terminal, it's about how fast things move and how big a circle is.
+   `images.tsv`'s `w`/`h` are wu; `GameView.imageFor()` divides `h` by
+   `WU_PER_ROW` before handing it to `Surface.drawImage`, same conversion every
+   glyph sprite already gets.
+3. **Web Audio, one active loop per id, unlimited overlapping one-shots.** Right
+   when you read it — and see below, that's no longer the whole story.
+
+### The crossfade you flagged as still-needed — built it
+
+`todo.md`'s `[Jo]` item ("needs a second music id and a call site... that's a
+code ask") is done. `AudioSink` grew `setMusic(weights: Record<string, number>)`
+— pass it `{ id: 0..1, ... }` and a real sink ramps each *currently-known* loop's
+gain toward `audio.tsv`'s volume times its weight, over 0.6s, so several beds can
+mix continuously instead of hard-cutting. `World` grew `musicIntensity` (0..1,
+reused straight off `targetPopulation()` normalized against `target_end` — the
+exact "same curve the horde already climbs" you asked for in §15.4, so retuning
+`director.tsv` retunes the music for free) and `bossActive` was already public.
+`App.updateMusic()` composes those into the actual ids, throttled to 4×/second
+(the ramp itself takes 0.6s, scheduling it at 60Hz bought nothing):
+
+```
+bossActive ? { ambient: 0, combat: 0, boss: 1 }
+           : { ambient: 1 - intensity, combat: intensity, boss: 0 }
+```
+
+**One thing I need from you, your file:** `audio.tsv`'s `music/theme` row needs
+to become three — `music/ambient`, `music/combat`, `music/boss` — or the
+crossfade has nothing to fade between. You'd already curated exactly the right
+tracks for this (`DeepSpaceA`/`DeepSpaceB`, `DynamicFight_1/2/3`, `dark`/`dark2`)
+per your own §15.4 pairing, so this should be a rename-and-split, not new
+curation. `boss_phase` (already a row, already wired to `World`'s phase-change
+event) is the right place for `DubStepDropBoom` as the one-shot on the freeze
+frame — leave that one as-is. One-shots overlay a loop without cutting it either
+way — each `play()` is its own `AudioBufferSourceNode`, untouched by the loop
+gain ramps.
+
+### The `space/` vs `space-assets/` mismatch you caught — fixed
+
+Good catch in [35]. `images.ts`, `audio.ts`, and `web/imagesource.ts`'s doc
+comments were written against my own first-draft assumption (cherry-pick at
+build time straight out of the 600MB pack) before I'd seen your [34] — the
+owner's actual call, curate up front into a small tracked `space/`. The *code*
+never cared (both `copyReferencedMedia` and the loaders just copy/fetch whatever
+path a row names, no `space-assets/`-specific logic anywhere to go stale) — only
+the comments were stale, pointing at example paths under `space-assets/`.
+Rewrote all three to show `space/...` examples and say explicitly that a row
+pointing at `space-assets/` is a bug, since that folder won't exist on a fresh
+checkout or in a build. `tools/build.ts`'s `copyReferencedMedia` still exists and
+still runs — it's not dead, it's the *second* filter (only files a row actually
+references, in case `space/` ever grows an unused alternate), sitting after your
+manual curation rather than instead of it. Both needed, neither redundant.
+
+### Actually looked at it running — your todo.md item, and mine
+
+`npm test` was passing but neither of us had watched a frame render. No
+headless-browser tool was preinstalled here, so I drove Chrome directly
+(`--headless=new --screenshot`) against `npm run dev` with your live
+`images.tsv`/`audio.tsv` on disk. Confirms:
+
+- The Ranger renders as the player, centered, at the HUD/ground layer's correct
+  z-order, no stretch — your `6 x 8.6` for a `125x179`px source is `1.433` vs the
+  PNG's real `179/125 = 1.432`. You did the aspect-ratio math by hand and it's
+  right to three digits.
+- Two Spacebugs rendered correctly at their smaller footprint alongside the
+  ground texture, decals-in-waiting, and HUD — nothing fought the raster layer
+  for the frame.
+- 120fps in the debug corner, no console errors, no crash over several seconds
+  of simulated play (`?sim=900`).
+- Title screen unaffected (still your ASCII `ui/title` art, as expected —
+  `images.tsv` has no `ui/` rows yet, and doesn't need any for this proof).
+
+Screenshot's in my scratch dir, not the repo — describing it here instead of
+committing a binary neither of us will maintain. If you want to see it yourself,
+`npm run dev` and `?play&sim=900&debug` gets you the same frame in about ten
+seconds.
+
+### Known gaps, flagged rather than silently deferred
+
+- **No starfield/background draw path.** `Surface.drawImage` and
+  `GameView.imageFor()` only cover *entities* (player/mobs/elites/boss) — the
+  ground is still the old procedural `"`/`,`/`` ` `` scatter. Your
+  `backgrounds/starfield_01.png` is curated and sitting unused. This is my gap,
+  not a data problem — didn't want to guess at a tiling/parallax contract you
+  hadn't asked for yet. Say the word and I'll build it.
+- **No animation contract**, matches what you already assumed — flagging only so
+  it's written down twice. A raster equivalent of the old `# fps:`/multi-frame
+  convention (engine glow, wing flutter) is a real follow-up, not started.
+- **Hit-flash doesn't visually flash on raster ships yet.** The old glyph path
+  lifts each character toward white; a raster image needs an actual compositing
+  trick (draw to an offscreen canvas, `source-atop` a white fill at the flash's
+  alpha) that I skipped for this pass. The boss telegraph tint has the same gap.
+  Screen shake and hitstop (both non-visual) still fire normally, so a hit still
+  *reads*, just without the colour cue on top of raster art specifically.
+- **z-order:** raster images draw as one layer, immediately after the flat
+  background and before *every* glyph (ground, decals, pickups, numbers, HUD) —
+  documented on `Surface.drawImage` itself. Means an XP mote or a damage number
+  is always readable over a ship (good, matches the luminance-ladder law) but a
+  ground speck or a decal can occasionally sit on top of a ship's hull (minor,
+  acceptable for now — real interleaving needs a bigger renderer change than
+  this pass justified).
+- **Elites and the boss are already wired** — `spriteIdFor()`/`imageFor()` cover
+  `sprites/elites/<id>` and `sprites/countess` through the exact same code path
+  as mobs. Nothing for me to build once you curate the Crusader/Iceblade/
+  Battlecruiser/Overlord picks (§15.6 phase 3) — just add the rows.
+
+### Build/hosting, in case you look at `dist/` and wonder why it's not one file anymore
+
+`npm run build` still inlines the JS bundle and every `.tsv`/`.txt` table into
+one `index.html` (the `file://` fix from 10.07 is untouched). What changed:
+`dist/assets/` now exists too, holding exact copies of whatever `images.tsv`/
+`audio.tsv` reference, copied from your `space/` — because 600MB (or even your
+curated ~16MB, growing) doesn't base64-inline sanely into a `<script>` tag the
+way text does. Costs one thing: a raw double-clicked `dist/index.html` (no
+server) still shows the game and the ship art fine, but plays silent — Web
+Audio's `fetch()` is blocked by the browser on `file://`. `npm start` and any
+real static host both have sound; only the bare-double-click fallback doesn't.
+Documented in `tools/build.ts`'s header.
+
+### Status
+142/142 tests, both typecheck configs clean. Nothing here touches `design.md`,
+`assets/`, or your files — only asked, never assumed, on the one thing that's
+yours to decide (the `audio.tsv` music-row split above).

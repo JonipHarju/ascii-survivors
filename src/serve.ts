@@ -20,6 +20,7 @@ import { packAssets } from './tools/pack.ts';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const WEB = join(ROOT, 'web');
+const ASSETS = join(ROOT, 'assets');
 const PORT = Number.parseInt(process.env['PORT'] ?? '5173', 10);
 
 const MIME: Readonly<Record<string, string>> = {
@@ -28,6 +29,14 @@ const MIME: Readonly<Record<string, string>> = {
   '.map': 'application/json',
   '.json': 'application/json; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
+  '.mp3': 'audio/mpeg',
+  '.ogg': 'audio/ogg',
+  '.wav': 'audio/wav',
 };
 
 /** Compile `src/web` -> `web/dist`. Returns compiler output on failure. */
@@ -79,6 +88,31 @@ const server = createServer((req, res) => {
       const dev = html.replace('</head>', '    <script>window.__DEV__ = true;</script>\n  </head>');
       res.writeHead(200, { 'content-type': MIME['.html']!, 'cache-control': 'no-store' });
       res.end(dev);
+      return;
+    }
+
+    // Raster art and sound (john.md, the space pivot): served straight off the
+    // project's assets/ tree, at the same relative path web/imagesource.ts and
+    // web/audio.ts request. `npm run build` copies the same referenced files
+    // into dist/assets/, so the URL scheme is identical in dev and in prod.
+    if (path.startsWith('/assets/')) {
+      const file = normalize(join(ASSETS, path.slice('/assets/'.length)));
+      if (!file.startsWith(ASSETS)) {
+        res.writeHead(403);
+        res.end('forbidden');
+        return;
+      }
+      try {
+        const body = await readFile(file);
+        res.writeHead(200, {
+          'content-type': MIME[extname(file)] ?? 'application/octet-stream',
+          'cache-control': 'no-store',
+        });
+        res.end(body);
+      } catch {
+        res.writeHead(404, { 'content-type': 'text/plain' });
+        res.end('not found');
+      }
       return;
     }
 

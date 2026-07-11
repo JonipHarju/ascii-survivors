@@ -17,6 +17,8 @@ import { parseCharacters } from '../data/characters.ts';
 import { parseCrossroads } from '../data/crossroads.ts';
 import { parseCountess } from '../data/countess.ts';
 import { fallbackJuice } from '../data/juice.ts';
+import { emptyImageTable } from '../data/images.ts';
+import { emptyAudioTable } from '../data/audio.ts';
 import type { GameData } from '../data/gamedata.ts';
 import { generateCards } from '../game/upgrades.ts';
 import { wrap } from '../game/app.ts';
@@ -52,6 +54,8 @@ const data: GameData = {
   crossroads: parseCrossroads(''),
   countess: parseCountess(''),
   juice: fallbackJuice(),
+  images: emptyImageTable(),
+  audio: emptyAudioTable(),
   warnings: [],
 };
 

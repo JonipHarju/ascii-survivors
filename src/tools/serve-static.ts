@@ -27,6 +27,14 @@ const MIME: Readonly<Record<string, string>> = {
   '.json': 'application/json; charset=utf-8',
   '.map': 'application/json',
   '.css': 'text/css; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
+  '.mp3': 'audio/mpeg',
+  '.ogg': 'audio/ogg',
+  '.wav': 'audio/wav',
 };
 
 createServer((req, res) => {

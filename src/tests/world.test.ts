@@ -24,6 +24,8 @@ import { parseCharacters } from '../data/characters.ts';
 import { parseCrossroads } from '../data/crossroads.ts';
 import { parseCountess } from '../data/countess.ts';
 import { fallbackJuice } from '../data/juice.ts';
+import { emptyImageTable } from '../data/images.ts';
+import { emptyAudioTable } from '../data/audio.ts';
 import type { GameData } from '../data/gamedata.ts';
 import { GameView } from '../game/render.ts';
 import { SpriteLoader } from '../assets/loader.ts';
@@ -133,6 +135,8 @@ function makeData(directorSrc: string = DIRECTOR_QUIET): GameData {
     crossroads: parseCrossroads(CROSSROADS),
     countess: parseCountess(COUNTESS),
     juice: fallbackJuice(),
+    images: emptyImageTable(),
+    audio: emptyAudioTable(),
     warnings: [],
   };
 }

@@ -326,6 +326,25 @@ export class World {
   /** Set for one frame when a weapon evolves, so the UI can slam a card up. */
   justEvolved: Evolution | null = null;
 
+  /**
+   * Sound event ids raised this tick, drained by `App` into whatever
+   * `AudioSink` it holds (`engine/audio.ts`). `World` never imports audio
+   * itself — same reason it never imports the DOM — so this is a queue of
+   * plain strings, not a call. `playSfx` below rate-limits each id so 40
+   * simultaneous hits at 250 enemies don't queue 40 overlapping `hit` sounds.
+   */
+  sfx: string[] = [];
+  private sfxCooldownUntil = new Map<string, number>();
+
+  private playSfx(id: string, cooldown = 0): void {
+    if (cooldown > 0) {
+      const until = this.sfxCooldownUntil.get(id) ?? 0;
+      if (this.time < until) return;
+      this.sfxCooldownUntil.set(id, this.time + cooldown);
+    }
+    this.sfx.push(id);
+  }
+
   pendingLevelUps = 0;
   pendingChests = 0;
 
@@ -546,6 +565,20 @@ export class World {
 
   get bossHpFraction(): number {
     return this.boss === null ? 0 : Math.max(0, this.boss.hp / this.boss.maxHp);
+  }
+
+  /**
+   * 0..1, how "hot" the fight is right now — design.md §15.4: the ambient bed
+   * should crossfade toward combat music on the *same curve the horde already
+   * climbs*, not a second tuning surface. Reuses the spawn director's own
+   * `targetPopulation`, normalized against its own late-game ceiling
+   * (`target_end`), so retuning the difficulty curve retunes the music for
+   * free. `App` is the one that turns this into actual track ids/gains —
+   * World only ever exposes the number, never an audio id.
+   */
+  get musicIntensity(): number {
+    const ceiling = Math.max(1, param(this.data.director, 'target_end'));
+    return Math.max(0, Math.min(1, targetPopulation(this.data.director, this.time) / ceiling));
   }
 
   // ---------------------------------------------------------------- tick
@@ -1164,6 +1197,7 @@ export class World {
     e.hp -= amount;
     e.flash = this.j('hit_flash');
     e.flashMax = e.flash;
+    this.playSfx('hit', 0.03);
 
     // The corpse is the number. Skip the digits on a killing blow.
     if (e.hp > 0) this.addDamageNumber(e, amount);
@@ -1195,6 +1229,7 @@ export class World {
     this.kills++;
     this.killsThisMinute++;
     this.addDecal(e.x, e.y);
+    this.playSfx('kill', 0.02);
 
     // The corpse is the number: retire any number this enemy was still carrying.
     if (e.num !== null) e.num.dead = true;
@@ -1208,6 +1243,7 @@ export class World {
     if (e.boss) {
       this.boss = null;
       this.won = true; // kill her and the sun comes up
+      this.playSfx('win');
       this.gold += Math.round(crossroadsParam(this.data.crossroads, 'gold_countess') * this.goldMultiplier);
       return;
     }
@@ -1253,6 +1289,7 @@ export class World {
     if (this.godMode) return;
     const reduced = Math.max(1, amount - this.stats().flat_reduce);
     this.hp -= reduced;
+    this.playSfx('hurt', 0.15);
 
     if (hitstop && this.hitstopCd <= 0) {
       this.hitstopT = Math.max(this.hitstopT, this.j('hitstop'));
@@ -1268,12 +1305,14 @@ export class World {
       this.hp = this.maxHp * 0.5;
       this.effects.push({ kind: 'flash', age: 0 });
       this.shake('player_revive');
+      this.playSfx('revive');
       return;
     }
 
     this.hp = 0;
     this.dead = true;
     this.shake('player_death');
+    this.playSfx('death');
     this.bestMinute = Math.max(this.bestMinute, this.killsThisMinute);
   }
 
@@ -1310,6 +1349,7 @@ export class World {
       this.bossState = 'idle';
       this.bossTimer = 0;
       this.effects.push({ kind: 'flash', age: 0 });
+      this.playSfx('boss_phase');
     }
     // Dusk collapses the world to the lantern, whatever --no-dark says: the one
     // moment the darkness is the mechanic rather than the mood.
@@ -1870,12 +1910,15 @@ export class World {
   private collect(p: Pickup): void {
     switch (p.kind) {
       case 'mote':
+        this.playSfx('pickup', 0.03);
         return this.gainXp(p.value);
       case 'gold':
         this.gold += p.value;
+        this.playSfx('gold', 0.05);
         return;
       case 'heal':
         this.hp = Math.min(this.maxHp, this.hp + p.value);
+        this.playSfx('heal');
         return;
       case 'chest':
         this.openChest();
@@ -1895,11 +1938,13 @@ export class World {
         w.evolved = evo;
         this.justEvolved = evo;
         this.effects.push({ kind: 'flash', age: 0 });
+        this.playSfx('evolve');
         this.gold += Math.round(crossroadsParam(this.data.crossroads, 'gold_per_chest') * this.goldMultiplier);
         return;
       }
     }
     this.pendingChests++;
+    this.playSfx('chest');
     this.gold += Math.round(crossroadsParam(this.data.crossroads, 'gold_per_chest') * this.goldMultiplier);
   }
 
@@ -1970,6 +2015,9 @@ export class World {
       // The pause *is* the reward, and the card is about to fill the screen.
       this.playerFlash = this.j('levelup_flash');
       this.hitstopT = Math.max(this.hitstopT, this.j('levelup_hitstop'));
+      // A cooldown, not a dedupe: it also throttles two real level-ups landing
+      // in the same tick down to one sound, matching the one visual flash.
+      this.playSfx('levelup', 0.5);
     }
   }
 

@@ -13,6 +13,7 @@ import type { Surface } from '../engine/surface.ts';
 import { hash2 } from '../engine/rng.ts';
 import { frameAt } from '../assets/sprite.ts';
 import type { SpriteBank } from '../assets/bank.ts';
+import { NULL_IMAGE_SOURCE, type ImageSource } from '../assets/imagesource.ts';
 import type { DecalDef } from '../data/entities.ts';
 import { param } from '../data/director.ts';
 import { countessParam } from '../data/countess.ts';
@@ -62,13 +63,31 @@ type Proj = {
 
 export class GameView {
   private readonly sprites: SpriteBank;
+  private readonly images: ImageSource;
   private portraitId: string | null = null;
   private portraitTimer = 0;
   /** Reused each frame so the z-sort doesn't allocate at 220 enemies x 60fps. */
   private zOrder: Enemy[] = [];
 
-  constructor(sprites: SpriteBank) {
+  constructor(sprites: SpriteBank, images: ImageSource = NULL_IMAGE_SOURCE) {
     this.sprites = sprites;
+    this.images = images;
+  }
+
+  /**
+   * The raster art contract (john.md, the space pivot): `images.tsv` maps a
+   * sprite id to a loaded picture. Returns null the instant any link in that
+   * chain is missing — no row, no loaded pixels yet, or a backend that can't
+   * blit (`caps.raster`) — and every call site falls back to the glyph/ASCII
+   * path it already had. Nothing here can make a frame worse than before.
+   */
+  private imageFor(r: Surface, w: World, id: string): { img: CanvasImageSource; wCells: number; hCells: number } | null {
+    if (!r.caps.raster) return null;
+    const entry = w.data.images.byId.get(id);
+    if (entry === undefined) return null;
+    const img = this.images.get(entry.path);
+    if (img === undefined) return null;
+    return { img, wCells: entry.w, hCells: entry.h / WU_PER_ROW };
   }
 
   notifyFirstEncounter(id: string): void {
@@ -137,14 +156,24 @@ export class GameView {
     // new glyph, just the one you already are, lit. The card is about to fill the
     // screen anyway (juice.tsv §5).
     const goldFlash = w.playerFlash > 0 ? ACCENT : null;
-    const playerSprite = this.sprites.get(w.character?.sprite ?? 'sprites/player');
-    if (!playerSprite.placeholder) {
-      // An opaque player carries her own background, so the horde parts around
-      // her outline instead of a ghoul's `(` sitting between her boots.
-      const fill = playerSprite.opaque ? OPAQUE_BG : null;
-      drawSprite(r, frameAt(playerSprite, w.timeAlive), p.col(w.x), p.row(w.y), field, goldFlash, DEFAULT, fill);
+    const playerId = w.character?.sprite ?? 'sprites/player';
+    const playerImg = this.imageFor(r, w, playerId);
+    if (playerImg !== null) {
+      r.drawImage(p.colF(w.x), p.rowF(w.y), playerImg.img, playerImg.wCells, playerImg.hCells);
+      // The level-up flash still needs to read on a raster ship; a white full-field
+      // flash effect already exists below (`drawWhiteFlash`) for bigger moments, so
+      // this one frame of colour just isn't drawn on raster yet — a placeholder
+      // glyph-only nicety, not a correctness gap.
     } else {
-      r.setF(p.colF(w.x), p.rowF(w.y), w.playerDef.glyph, goldFlash ?? PLAYER_COLOR);
+      const playerSprite = this.sprites.get(playerId);
+      if (!playerSprite.placeholder) {
+        // An opaque player carries her own background, so the horde parts around
+        // her outline instead of a ghoul's `(` sitting between her boots.
+        const fill = playerSprite.opaque ? OPAQUE_BG : null;
+        drawSprite(r, frameAt(playerSprite, w.timeAlive), p.col(w.x), p.row(w.y), field, goldFlash, DEFAULT, fill);
+      } else {
+        r.setF(p.colF(w.x), p.rowF(w.y), w.playerDef.glyph, goldFlash ?? PLAYER_COLOR);
+      }
     }
 
     if (this.portraitId !== null) this.drawPortrait(r, field, this.portraitId);
@@ -400,13 +429,20 @@ export class GameView {
       if (!inLight && !e.elite && !r.caps.smoothLight) color = DARK_COLOR;
       if (lift > 0) color = mix(color, FLASH_COLOR, lift);
 
-      // Sprite by convention (jane.md), falling back to the `glyph` column in
-      // glyphs.tsv. That fallback is how we ship a half-drawn bestiary.
-      const sprite = this.sprites.get(spriteIdFor(e));
-      if (!sprite.placeholder) {
-        drawSprite(r, frameAt(sprite, e.age, e.phase), sx, sy, field, null, DEFAULT, null, lift);
+      // Raster art by convention first (images.tsv, same id namespace), then
+      // Jane's ASCII sprite (jane.md), then the bare `glyph` column in
+      // glyphs.tsv. Each fallback is how we ship a half-drawn bestiary.
+      const id = spriteIdFor(e);
+      const img = this.imageFor(r, w, id);
+      if (img !== null) {
+        r.drawImage(p.colF(e.x), p.rowF(e.y), img.img, img.wCells, img.hCells);
       } else {
-        r.setF(p.colF(e.x), p.rowF(e.y), e.def.glyph, color);
+        const sprite = this.sprites.get(id);
+        if (!sprite.placeholder) {
+          drawSprite(r, frameAt(sprite, e.age, e.phase), sx, sy, field, null, DEFAULT, null, lift);
+        } else {
+          r.setF(p.colF(e.x), p.rowF(e.y), e.def.glyph, color);
+        }
       }
 
       if (e.elite) this.drawEliteBar(r, e, sx, sy, field);
@@ -426,6 +462,15 @@ export class GameView {
   }
 
   private drawBoss(r: Surface, w: World, e: Enemy, sx: number, sy: number, field: Rect): void {
+    const img = this.imageFor(r, w, 'sprites/countess');
+    if (img !== null) {
+      // The telegraph tint (below) needs per-pixel recolouring to apply to a
+      // raster image; skipped for v1 — the boss bar and the screen shake
+      // already carry the charge warning. Tracked in john.md as a follow-up.
+      r.drawImage(sx, sy, img.img, img.wCells, img.hCells);
+      return;
+    }
+
     const sprite = this.sprites.get('sprites/countess', 'C', e.def.color);
     const frame = frameAt(sprite, w.timeAlive);
 

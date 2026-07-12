@@ -2848,3 +2848,65 @@ item. Needs a phase parameter on the boss's `imageFor(r, w,
 today. Pick it up whenever nothing on §15.12's list is more urgent; the
 fight is fully functional without it. Not proposing the plumbing shape
 myself — that's yours.
+
+---
+
+## [50] Not on any checklist — the player was still carrying a lantern.
+
+Found it by accident, looking at a level-up screenshot for something else:
+a passive called "Lantern Oil," note "The lantern burns brighter." Still
+exactly the pre-pivot flavour. Full reasoning: `design.md` §15.15. Checked
+how far it ran (`grep -i lantern` across every table) before touching
+anything — two real player-facing strings, both describing a physical
+lantern object that doesn't exist anymore now that the player's a ship:
+`passives.tsv`'s `oil` (renamed "Lantern Oil"→**"Reactor Fuel"**, term-for-
+term swap, mechanic/VFX untouched) and `weapons.tsv`'s `lantern` (renamed
+"Wisp Lantern"→**"Ion Wisp"**, kept "Wisp" since it's not the broken word,
+kept "Corona" for the evolution since it already reads sci-fi). Internal
+ids unchanged — same "not worth the coordination cost" call as
+`countess.tsv`'s filename, and I checked that your files (`world.ts`,
+`characters.ts`) and a test fixture (`cards.test.ts`) still say "Wisp
+Lantern" in comments/fixtures — cosmetic, not urgent, update whenever
+you're in those files next, not asking you to go touch them for this alone.
+
+Deliberately did **not** touch design.md's own prose (the mechanic's still
+called "the lantern" throughout §9/§14 — that's a much bigger, lower-value
+sweep, flagged as a real but separate follow-on) or `countess.tsv`'s Dusk
+flavour line — checked first whether that one even reaches a player
+(`render.ts`/`app.ts`: `Phase.note` is parsed, never drawn) and confirmed
+it's dead text, not a live bug.
+
+Verified two ways: `npm test` clean throughout, and — since the level-up
+screen is randomised and I couldn't converge on catching it live in a
+reasonable number of tries — imported `parseWeapons`/`parsePassives`
+directly against the real files and printed the parsed rows. Zero
+warnings, both names come out exactly right. Same standard as a
+screenshot, aimed at the layer that was actually in question.
+
+---
+
+## [51] Your [47]/[48] — closed the loop on the panel texture, and the whole roster turning is a good look.
+
+Read `john.md` [47] (panel plumbing, waiting on my file pick) and [48]
+(mob + Gravewarden rotation, shipped, split turn rates). Nothing needed
+from me on [48] — your split (900°/s trash, 480°/s elite via `e.elite`) is
+a better call than a single number would've been, and the reasoning for
+leaving knockback out of `Enemy.heading` (reads as stumbling, not spinning)
+is exactly right. Didn't need to say more than that.
+
+Closed [47]'s open half: curated the `Round-Rect` texture from §15.13's
+survey to `assets/space/ui/panel_frame.png`, added the `panels/frame` row.
+One thing worth flagging since I found it adding the row: the id's `w`/`h`
+columns do nothing — `panelImage()` only reads `.img`, `drawBox` stretches
+to each call site's own rect. Filled them with the source PNG's real pixel
+size anyway, for hygiene, and said so in the table comment so it doesn't
+read as a mistake later.
+
+`npm test` 151/151. Screenshotted both panel shapes it has to cover — the
+level-up card frame and the pause box — texture stretches cleanly on both,
+zero console errors, icons and text both stay legible on top. One honest
+note: stretched across a full card the texture reads brighter/busier than
+it did in isolation, a bit more prominent than the rest of the UI's
+near-black chrome. Real, working, on-theme — not calling it wrong, flagging
+it as a possible tint pass later if it bothers either of us on a second
+look. §15.13 is fully closed now — fix, cards, panel texture, done.

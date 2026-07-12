@@ -55,10 +55,33 @@ checklist). Contract asks: `jane.md` [45], [46].
       anyway — a recolor nobody would see). Pick: `OverlordEvoSample_03`
       (olive/black/deep-blue, reads more venomous than the current
       purple), curated to `assets/space/boss/overlord_hunt.png`.
-- [ ] `[Jo]` Needs a phase parameter on the boss's `imageFor(r, w,
+- [~] `[Jo]` Needs a phase parameter on the boss's `imageFor(r, w,
       'sprites/countess')` call (`render.ts:519`) — resolves one fixed id
-      today. Want, not a blocker; pick up whenever nothing else on this
-      list is more urgent. `jane.md` [49].
+      today. Want, not a blocker. `jane.md` [49]. **In progress**: caught
+      a `sprites/countess/hunt` row already added to `images.tsv` pointing
+      at the curated art — John's building this.
+- [x] `[Jo]` Rotation extended to the whole mob roster + Gravewarden
+      (`john.md` [48]): `Enemy.heading`, same mechanism as the player. Two
+      turn rates, his split: 900°/s trash mobs (erratic swarm), 480°/s
+      elites via `e.elite` (heavy craft, same as the player). Verified in a
+      real browser, both tiers. Boss untouched, matches Jane's read that a
+      radially-symmetric sprite has nothing to visibly turn.
+- [x] `[Jo]` §15.13 phase-3 plumbing built ahead of the art pick
+      (`john.md` [47]): `drawBox` grew `panelImg`, one shared id
+      `panels/frame` wired into all four panel screens, zero regression
+      with no row present.
+- [x] `[J]` Closed [47]'s open half: picked the `Round-Rect` texture,
+      curated to `assets/space/ui/panel_frame.png`, added the `panels/frame`
+      row. `npm test` 151/151; screenshotted the level-up card frame and
+      the pause panel — texture stretches cleanly on both, zero console
+      errors. `design.md` §15.16, `jane.md` [51]. §15.13 is fully closed.
+- [x] `[J]` Found and fixed a continuity break nobody had flagged: two
+      player-facing strings still described a physical lantern that
+      stopped existing at the pivot. `passives.tsv`'s `oil`: "Lantern
+      Oil"→**"Reactor Fuel"**. `weapons.tsv`'s `lantern`: "Wisp
+      Lantern"→**"Ion Wisp"**. Internal ids unchanged. Verified via the
+      real parser (zero warnings) since the level-up draw is randomised.
+      `design.md` §15.15, `jane.md` [50].
 - [ ] `[J]` Remaining `design.md` §15.12 item: thrust/flare concept.
 
 ## 11.07 — THE SPACE PIVOT (owner, 00:03)

@@ -103,3 +103,16 @@ cards/gravesalt	space/cards/gravesalt.png	4.1	4.5
 cards/lantern	space/cards/lantern.png	11	2.1
 cards/silverrain	space/cards/silverrain.png	2.2	5
 cards/cinder	space/cards/cinder.png	3.2	5
+
+# panels/frame — design.md §15.13's GUI-overhaul plumbing (john.md [47]).
+# One shared backdrop for every drawBox screen (pause, level-up card, evo,
+# death) — `panelImage()` (app.ts) only reads this row's `.img`; `drawBox`
+# stretches it to each box's own rect (draw.ts:139), so w/h below are NOT
+# consulted at runtime. Filled in with the source PNG's real pixel size
+# (64x64, square) for hygiene, not because anything reads them.
+# Pick: `!GUI!/GUI Items/GUI_Items_0000_Round-Rect...png` — dark brushed-
+# metal/glass texture, on-theme with the Ranger/starfield already shipped,
+# no baked-in text or icon (design.md §15.13's folder survey).
+#
+# id	path	w	h
+panels/frame	space/ui/panel_frame.png	64	64

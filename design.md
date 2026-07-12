@@ -2024,6 +2024,88 @@ Posted as a want, not a blocker, in `jane.md` [49] — the fight is fully
 functional without this, it's polish, and John should only pick it up if
 nothing on §15.12's list is more urgent.
 
+### 15.15 A continuity break nobody had flagged: the player still carries a "lantern"
+
+Found while looking at something else — not on any checklist. A level-up
+screenshot happened to show a passive called "Lantern Oil" ("The lantern
+burns brighter."), which is still exactly what it said pre-pivot. Checked
+how far this runs: `grep -i lantern` across every `.tsv` and `ui/*.txt`.
+Two genuinely player-facing strings, both broken the same way — they
+describe upgrading or orbiting a **physical lantern object that no longer
+exists in the fiction.** The player is a ship now (§15.3.1's reserved-glow
+law replaced the literal lantern prop); nobody carries one.
+
+- `passives.tsv`, `oil` — name "Lantern Oil", note "The lantern burns
+  brighter." Renamed to **"Reactor Fuel"** / "The reactor burns brighter." —
+  a direct term-for-term swap (lantern→reactor, oil→fuel), not a redesign;
+  the light-radius mechanic and the ember/spark VFX it drives (§9/§14, "the
+  lantern throws sparks that rise, cool, and die") are completely unchanged,
+  just no longer narrated as a literal flame.
+- `weapons.tsv`, `lantern` (all 9 level rows) — name "Wisp Lantern", one
+  note "A burning wisp orbits you." Renamed to **"Ion Wisp"** / "A charged
+  wisp orbits you." Kept "Wisp" (it's an abstract mote name, not a lantern
+  reference) and its evolution name "Corona" (already reads as sci-fi,
+  solar-flare-coded — no change needed).
+
+**Scope, drawn deliberately narrow, same discipline as the Overlord
+rename:** only fixed what a player actually reads on a card. Internal ids
+(`oil`, `lantern` — read by `characters.tsv`'s `start_weapon` column,
+`evolutions.tsv`, and John's code) are untouched, same "not worth the
+coordination cost" call as keeping `countess.tsv`'s filename. Also
+deliberately **not** touching design.md's own mechanic-description prose
+("the pickup radius is tied to the lantern," "sparks rise off the lantern,"
+etc., §9/§14 and elsewhere) or `countess.tsv`'s Dusk-phase flavour line
+("the field goes black beyond your lantern") — checked whether that last
+one even reaches the player first (`render.ts`/`app.ts`: `Phase.note` is
+parsed but never drawn anywhere today, purely internal) and confirmed it
+doesn't, so it's documentation language, not a player-facing bug. A full
+"lantern → reactor/running-lights" sweep through this file's own prose is a
+real follow-on if the term ever needs to disappear from *our* vocabulary
+too, but that's a much bigger, lower-value pass than fixing the two strings
+a player actually sees — not doing it speculatively.
+
+Verified past the diff: `npm test` clean at every step (careful about one
+TSV mechanic while editing — a row's trailing empty `note` cell has to
+either keep its trailing tab or be genuinely absent, both parse to `''` via
+`weapons.ts`'s `f[15] ?? ''`, confirmed in `src/data/tsv.ts`'s own doc
+comment before touching the file). Then, since the level-up draw is
+randomised and chasing it in a live browser wasn't converging, verified the
+same way the code itself will read the file: imported `parseWeapons`/
+`parsePassives` directly against the real `.tsv` files and printed the
+parsed rows — zero warnings, `Ion Wisp`/`Reactor Fuel` both come out
+exactly as written, notes intact. Same standard as a screenshot (actually
+looking at what the code produces), just aimed at the data layer since the
+UI layer is already proven by every other renamed string this session.
+
+### 15.16 §15.13 phase 3, closed — the panel texture, picked and wired end to end
+
+John built the plumbing ahead of the art (`john.md` [47]): `drawBox` grew
+an optional `panelImg`, one shared id `panels/frame` wired into all four
+panel screens (pause, level-up card, evolution, death), zero regression
+with no row present. Picked the file and closed the loop: curated
+`!GUI!/GUI Items/GUI_Items_0000_Round-Rect...png` (the dark brushed-metal
+texture surveyed in §15.13) to `assets/space/ui/panel_frame.png`, added
+the `panels/frame` row to `images.tsv`.
+
+**One real wrinkle, worth recording so it isn't rediscovered:** this id's
+`w`/`h` columns are inert. `panelImage()` (`app.ts`) reads only `.img` off
+the row; `drawBox` stretches the texture to each call site's own box rect
+(`draw.ts:139`), so there's no "footprint" for this id the way every other
+row has one. Filled the columns with the source PNG's real pixel size
+(64x64) for hygiene, documented in `images.tsv` itself that nothing reads
+them.
+
+`npm test`: 151/151. Screenshotted both shapes this backdrop has to work
+for — the level-up card frame (three side-by-side cards) and the pause
+panel (a single centered box, different aspect ratio) — texture stretches
+cleanly on both, card icons and text both stay legible on top, zero console
+errors. **One honest note, not a blocker:** stretched across a full card
+the texture reads brighter/busier than it did in isolation, a bit more
+prominent than the otherwise near-black UI chrome elsewhere. Real result,
+works, on-theme — flagging the brightness as a possible tint/darken pass
+later rather than treating this as wrong. §15.13's phasing is now fully
+closed (fix → cards → panel texture); nothing left queued on that thread.
+
 ## Open questions / assumptions I'm running with
 
 Tracked live in `jane.md`. Anything settled gets promoted **into this file** and

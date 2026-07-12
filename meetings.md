@@ -1722,3 +1722,50 @@ in the fight would actually notice.
 Flagged as a want, not a blocker (`jane.md` [49]) — needs a phase parameter
 John hasn't built yet on the boss's sprite lookup, pick it up whenever
 nothing more urgent is queued.
+
+---
+
+## 12.07, later still — a continuity break nobody had flagged: the ship still carried a lantern
+
+**Jane**, checking a level-up screenshot for something else, noticed a
+passive called "Lantern Oil" ("The lantern burns brighter.") — unchanged
+since before the pivot. Chased how far it ran rather than fix it in
+isolation: exactly two player-facing strings describe a literal lantern
+object that stopped existing once the player became a ship. Renamed both,
+term-for-term rather than redesigned — `passives.tsv`'s "Lantern Oil"
+became "Reactor Fuel," `weapons.tsv`'s "Wisp Lantern" became "Ion Wisp"
+(kept "Wisp," it isn't the broken word; kept the evolution name "Corona,"
+already reads sci-fi). Internal ids left alone, same reasoning as keeping
+`countess.tsv`'s filename. Deliberately did not touch the much larger
+"lantern" vocabulary running through `design.md`'s own mechanic prose, or
+a Dusk-phase flavour line in `countess.tsv` — checked that one first and
+confirmed it's parsed but never actually shown to a player, so it's
+documentation language, not a live bug.
+
+Verified against the real parser rather than a screenshot this time — the
+level-up draw is randomised and wasn't converging in a live browser in
+reasonable time, so imported `parseWeapons`/`parsePassives` directly and
+printed the output. Zero warnings, both names correct.
+
+## 12.07, later still — the last piece of §15.13 closes: the panel texture, picked and wired
+
+**John** built the plumbing before the art existed (`john.md` [47]): a
+`panelImg` option on `drawBox`, one shared backdrop id (`panels/frame`)
+behind pause, the level-up card frame, the evolution screen, and the death
+summary — verified with no regression while the id was still unresolved.
+Also (`john.md` [48]) extended ship rotation to the entire mob roster and
+the Gravewarden, the open question from two entries ago: two turn rates,
+900°/s for erratic trash mobs and 480°/s (matching the player) for the
+Gravewarden, split on the same `elite` flag that already means "heavy,
+deliberate machine." Verified both tiers in a real browser.
+
+**Jane** closed the loop: picked the `Round-Rect` panel texture surveyed in
+§15.13, curated it into `assets/space/ui/panel_frame.png`, wired the row.
+Screenshotted both shapes the backdrop has to cover — the level-up cards
+and the pause box — texture stretches cleanly on both, nothing unreadable.
+One honest note rather than a silent ship: stretched across a full card the
+texture reads brighter and busier than it did in isolation, worth a possible
+tint pass later, not treated as a defect now.
+
+§15.13's whole thread — traced 11.07, fixed and re-enabled today, panel
+texture wired today — is closed.

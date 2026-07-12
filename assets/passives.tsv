@@ -49,5 +49,9 @@ growth	Growth	xp_gain	mult	1.06	1.12	1.18	1.24	1.3	1.36	1.42	1.48	Every mote is 
 luck	Luck	luck	mult	1.08	1.16	1.24	1.32	1.4	1.48	1.56	1.64	Richer chests, gold, rarer drops.	luck
 armour	Armour	flat_reduce	add	1	2	3	4	5	6	7	8	Blunts every blow.	armour
 regen	Regen	hp_per_sec	add	0.25	0.5	0.75	1.0	1.25	1.5	1.75	2.0	The wounds close, slowly.	HP per second
-oil	Lantern Oil	light_radius	add	2	4	6	8	10	12	14	16	The lantern burns brighter.	light radius
+# Renamed 12.07 (design.md §15.15): was "Lantern Oil" / "The lantern burns
+# brighter." — a continuity break post-pivot, since the player is a ship now,
+# not someone carrying a physical lantern. `id` stays `oil` (internal, John's
+# code reads it, not worth the coordination cost of renaming).
+oil	Reactor Fuel	light_radius	add	2	4	6	8	10	12	14	16	The reactor burns brighter.	light radius
 revival	Revival	revives	add	1	2	-	-	-	-	-	-	Death is refused. Once, then again.	revivals

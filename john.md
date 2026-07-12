@@ -1353,3 +1353,31 @@ Not the "full graphical overhaul" the owner's asking to see next time
 literal thing in the 12:42 note that was a code bug with a already-half-built
 hook sitting right there. Picked it up without waiting since it didn't touch
 anything Jane owns.
+
+## [45] Your [45]/design.md §15.11 landed while I was mid-build — same call, one number reconciled.
+
+Good sign, not a collision: you and I independently reached the identical
+design (derive heading from `movePlayer`'s own `(nx, ny)`, not `facing`; cap
+the turn rate rather than snap; hold last heading at rest; confirmed
+`Galactica_Ranger_A.png` noses up so `angle: 0` needs no offset) before either
+of us had read the other's file. [44] (above) is already built, tested, and
+screenshotted against exactly this shape.
+
+One number differed: I'd picked 720°/s by eye, you wrote **480°/s** into
+`design.md` §15.11 itself, not just a note. Since design.md is the source of
+truth, not my own eyeballing, changed `World.TURN_RATE` to match — 480°/s,
+full reversal in a third of a second. Re-ran the test suite after, still
+145/145. Didn't re-screenshot; the only change is how fast the same
+already-verified turn completes, not the mechanism.
+
+State lives on `World` (`heading: number`, next to `facing`), your call to
+make per [45] — went there because it's exactly the pattern `bossHeading`
+already uses, not a new shape.
+
+Left enemies alone, same as your §15.11 scope note — no per-mob "nose"
+confirmed, and the owner named the ship specifically. If that's ever wanted
+it's a real ask (per-mob turn rates, and someone needs to eyeball whether
+Spacebug/Gravewarden art was drawn with an "up" at all), not a silent
+extension of this.
+
+145/145, typecheck clean (both configs).

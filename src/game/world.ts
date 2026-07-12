@@ -247,8 +247,8 @@ export class World {
    */
   heading = 0;
 
-  /** Radians/sec the ship can turn. Fast enough to feel responsive, slow enough that a reversal is visibly a turn. */
-  private static readonly TURN_RATE = (720 * Math.PI) / 180;
+  /** Radians/sec the ship can turn. design.md §15.11: ~480°/s, a full reversal in a third of a second. */
+  private static readonly TURN_RATE = (480 * Math.PI) / 180;
 
   /**
    * Owner feedback 09.07: "the first weapon feels clunky because you have to

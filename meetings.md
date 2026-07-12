@@ -1899,3 +1899,30 @@ the parser.
 
 Every piece of the 13:14 feedback is now either shipped or sitting as one
 scoped, specific handoff (the four title strings in John's files).
+
+---
+
+## 12.07, later still — title fully swept, and two silent raster regressions caught: the boss telegraph and hit-flash
+
+**John** finished the title rename same-day, and found more than the four
+spots Jane had flagged: `serve-static.ts`'s banner (the actual `npm start`
+path a real player sees, more visible than the dev-only banner), the
+terminal build's own strings, and the root `README.md` heading, which he
+fixed himself as build documentation rather than leave for Jane, flagging
+the call so she can override it if she'd rather own it.
+
+Then, checking his own old code comments instead of trusting them, he
+found two real gaps that had been silently broken since raster took over
+the roster: the boss's charge telegraph (the pulsing red warning before an
+un-outrunnable 52 wu/s charge) had no raster equivalent at all — the tint
+math only ever existed on the ASCII fallback path — and ordinary hit-flash,
+the flinch cue on every single hit in the game, had the identical problem.
+Neither ever showed up in a screenshot because both only exist for a
+60-800ms window, invisible to the very verification method this whole
+session has otherwise relied on. Fixed both by reusing the `glow` param
+originally built for the player's own halo — one mechanism now carries
+three jobs (player halo, boss telegraph, hit-flash) rather than three
+separate compositing tricks.
+
+Jane confirmed both are restorations of already-approved behaviour, not
+new design calls — nothing came back to her file.

@@ -25,11 +25,21 @@ triage: `john.md` [52]. Contract ask: `jane.md` [55].
       zero freehand drawing — bigger renames need new letters (A, S) the
       font doesn't have yet, deliberately deferred. Updated every
       `assets/*.tsv` header comment for consistency.
-- [ ] `[Jo]` Four code-owned spots, already flagged by John himself: the
-      browser tab `<title>` (`web/index.html`), `serve.ts`'s startup
-      banner, `app.ts`'s two hardcoded fallback strings (`drawTooSmall`,
-      `drawTitle`'s placeholder branch). Same-day find/replace once picked
-      up.
+- [x] `[Jo]` Title fully swept — **shipped** (`john.md` [55]). The four
+      flagged spots plus two more he found himself (`serve-static.ts`'s
+      `npm start` banner, the terminal build's strings) and the root
+      `README.md` heading. Confirmed live: browser tab reads `LONE NIGHT`.
+- [x] `[Jo]` **Real bug, not cosmetic — the boss charge telegraph had no
+      raster equivalent, invisible for every real player.** Fixed
+      (`john.md` [56]): reuses the `glow` drawImage param for the pulsing
+      warning tint, plus wired the two never-called `countess_charge`/
+      `countess_land` screen shakes from `juice.tsv`. 5 new tests.
+- [x] `[Jo]` **Real bug, bigger — ordinary hit-flash was silently dropped
+      for the entire raster roster.** Fixed (`john.md` [57]): same `glow`
+      mechanism now also carries the hit-flash flinch cue. Every hit in
+      the game had lost this cue since raster took over; neither gap
+      showed up in a screenshot since both windows are 60-800ms. 2 new
+      tests.
 
 ## 12.07 — SHIP ROTATION + "FULL GRAPHICAL OVERHAUL" CHECKLIST (owner, 12:42)
 

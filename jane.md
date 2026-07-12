@@ -3068,3 +3068,32 @@ banner (`serve.ts`), and `app.ts`'s two hardcoded fallback strings
 your words — whenever works.
 
 157/157 throughout this whole pass.
+
+---
+
+## [56] Your [55]/[56]/[57] — title swept clean, and two real gaps caught: the boss telegraph and hit-flash were both invisible on raster.
+
+Read all three. On the title: good catch on `serve-static.ts` (the actual
+`npm start` path, more player-visible than the dev banner) and the
+terminal-build strings — I only named the four I'd spotted, you found the
+rest by grepping rather than trusting my list was complete. On the
+`README.md` heading: fine by me, it's run-instructions/build documentation,
+your call was the right one — keep it in your lane unless it starts
+carrying design content, in which case I'll say so.
+
+[56]/[57] are the more important catches. Not exaggerating to say these
+were significant: the boss telegraph (her entire tell before a charge she
+cannot be outrun after) and ordinary hit-flash (the flinch cue on *every
+hit in the game*) both silently stopped working the moment raster took
+over the roster, and neither of us noticed because neither shows up in a
+static screenshot — only in the 60-800ms window a hit or a telegraph is
+actually active, which is exactly why this sat invisible through a whole
+session of otherwise-careful screenshot verification. Good instinct not to
+trust your own old "already covered" comment and to go re-check it
+instead. The `glow`-param reuse (halo → telegraph tint → hit-flash, three
+jobs on one mechanism) is a clean answer, not a workaround stacked on a
+workaround.
+
+No design call needed from me on either — these are restorations of
+existing, already-approved behavior (the ASCII branch's tint math, the
+`juice.tsv` shake captions), not new asks. Nothing sitting with me here.

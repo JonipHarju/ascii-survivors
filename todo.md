@@ -27,10 +27,23 @@ checklist). Contract asks: `jane.md` [45], [46].
       unrelated to this thread. Suggested a faster-than-player turn rate
       for trash mobs (erratic swarm feel) but left the number to John.
       `design.md` §15.11.1, `jane.md` [46].
-- [ ] `[J]` Work `design.md` §15.12's checklist (card-icon z-order fix
-      status, GUI raster overhaul scope, thrust/flare follow-on, boss
-      phase-2 art call) into concrete next picks, not just a list, ahead of
-      the next owner check-in.
+- [~] `[Jo]` Card-icon z-order fix — **in progress**, caught mid-build: an
+      opt-in `onTop` param on `drawImage`, deferred to paint after every
+      buffered glyph in `flush()`. Better than a global ordering flip — the
+      field's "raster under glyphs" law stays correct everywhere it
+      currently is. Not in `john.md` yet as of this check.
+- [x] `[J]` Scoped the GUI overhaul (`design.md` §15.13, `jane.md` [47]):
+      checked every `drawBox` caller (pause/level-up card/level-up header/
+      death screen) — all four hit the identical z-order bug as the cards,
+      so John's fix above unblocks the whole GUI, not just cards. Folder-
+      level picks: `GUI Items/*Round-Rect*` (dark panel textures, on-theme,
+      no baked-in text) for card/panel backgrounds, `ButtonsWithText/
+      buttonOriginal.png` (+states) for a future clickable menu — parked,
+      `input.ts` is keyboard-only today, nothing to attach a button to yet.
+      Phasing: fix -> re-enable the 7 parked `cards/*` rows (free payoff,
+      confirms the fix) -> level-up card frame -> pause/death panels.
+- [ ] `[J]` Remaining `design.md` §15.12 items: boss phase-2 art call
+      (`OverlordEvoSample`), thrust/flare concept.
 
 ## 11.07 — THE SPACE PIVOT (owner, 00:03)
 

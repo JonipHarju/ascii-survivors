@@ -1896,6 +1896,85 @@ Not a commitment to do all six before the next visit — a shared map of what
 "finished" covers, so whichever subset gets done, both of us (and the
 owner) are working off the same picture of what's left.
 
+### 15.13 Scoping the GUI overhaul — a real prerequisite found, plus a folder-level proposal
+
+Working `todo.md`'s open item: "the GUI is still 100% ASCII... the largest
+remaining 'still looks like the old game' surface." Same discipline as
+§15.9's weapon-effect pass — scope it properly before picking files, don't
+guess blind.
+
+**Every raster panel in this game is one bug away from repeating the card
+fiasco.** Checked every `drawBox` caller (`app.ts`), since that's the
+function whose buffered fill caused §15.10's card-icon bug: the pause
+overlay (647), the level-up card frame (681), the level-up header (755),
+and the death screen (768) *all* call it. `drawBox`'s background fill is a
+buffered `set()` over the whole interior, and `Surface.drawImage`'s
+documented rule is that raster always composites under buffered glyphs —
+so any of these four panels that gets a raster background or icon today
+would render invisible, exactly like the cards did, for the identical
+reason. **This means the z-order fix John's already sitting on (`jane.md`
+[43]/[44], `todo.md`) isn't just a card-icon fix — it's the one blocker for
+the entire GUI overhaul.** Worth saying plainly so it doesn't get
+re-discovered panel by panel.
+
+**Update, same session — he's already on it, and it's the right shape.**
+Checked his working tree while writing this up (not yet in `john.md`, still
+mid-build): an opt-in `onTop` param on `drawImage`, deferred to paint after
+every buffered glyph/fill in `flush()`, rather than flipping the global
+ordering rule. That's the better fix — the field's "raster sits under
+glyphs" law (§15.3, keeps ground/decals/HUD legible over a ship) stays
+exactly as it is everywhere it's currently correct, and only UI callers that
+explicitly ask for front-of-panel compositing get it. One blocker, one
+surgical fix, not a redesign of the whole draw order.
+
+**What's actually in the vendor pack, checked rather than assumed
+(`!GUI!/`, 162+ files in `GUI Items/` alone):** same numbered-slice problem
+as the weapon pack (`GUI_Items_0032_Package---.png`, no content in the
+name) for most of it, but three named, checked-by-eye exceptions are
+immediately usable:
+
+- **`GUI Items/*Round-Rect*`** — dark brushed-metal/glass panel textures,
+  no text or icon baked in. Sampled one directly: reads as a proper sci-fi
+  console panel, on-theme with the Ranger/starfield already shipped. Good
+  candidate for the level-up card frame and the pause/death panel
+  backgrounds — replaces `drawBox`'s flat fill, not the box-drawing
+  border/title logic, which stays ASCII (design.md's whole "raster shadows
+  glyph" law, §15.2's README framing).
+- **`ButtonsWithText/buttonOriginal.png` (+ `buttonHoovered`/
+  `buttonPressed`)** — a clean 3-state button shape, also no baked-in text.
+  Confirmed by eye. This matters for the z-order fix specifically: since
+  there's no text on the art itself, a button's label stays a code-drawn
+  string on top, same as everything else — no new "raster panel with
+  unreadable baked-in text" failure mode to design around.
+- **`Arrows/`** — not opened yet; flagged as the likely pick for level-up
+  card pagination/selection cursor if that ever gets a visual upgrade, not
+  scoped further this pass.
+
+**What I'm deliberately not doing yet:** picking exact numbered files out
+of the other 150+ `GUI Items/Package`/`Path`/`Text` entries. Same call as
+§15.9's weapon pack — opening dozens of anonymously-numbered slices before
+there's a confirmed rendering target (i.e. before the z-order fix lands) is
+picking blind against a contract that might not match what gets built.
+
+**Proposed phasing, cheapest-and-most-visible first:**
+
+1. Root-cause z-order fix (John's, already traced, unblocks everything
+   below).
+2. Re-enable the 7 already-picked `cards/*` rows (`images.tsv`, commented
+   out) — zero new curation, immediate payoff, confirms the fix.
+3. Level-up card frame background → a `Round-Rect` panel texture behind the
+   existing ASCII border/title (same "raster shadows glyph" pattern as
+   every entity row, not a rebuild).
+4. Pause and death-screen panels → same treatment, lower priority (seen far
+   less often than the level-up screen, which fires every single level).
+5. Buttons — only relevant once there's an actual clickable menu (there
+   isn't one yet; input is keyboard-driven per `input.ts`). Parked, not
+   forgotten — flagging the asset exists for whenever John/the input model
+   supports it.
+
+Posted to `jane.md` [47] as a proposal, not a spec — same as §15.9, John
+confirms what's actually buildable against the fix once it lands.
+
 ## Open questions / assumptions I'm running with
 
 Tracked live in `jane.md`. Anything settled gets promoted **into this file** and

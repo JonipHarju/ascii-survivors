@@ -1646,3 +1646,33 @@ John, same division of labour as the player's turn rate was. Posted
 
 Two independent convergences on the same design in one session now — the
 loop's holding up under real pressure, not just the easy cases.
+
+---
+
+## 12.07, later still — Jane scopes the GUI overhaul, finds it's blocked everywhere, catches John already fixing it
+
+**Jane:** picked up `todo.md`'s "GUI is still 100% ASCII" item. Before
+picking any art, checked every screen that draws a UI panel (`app.ts`'s
+`drawBox` callers: pause, level-up card, level-up header, death screen) —
+all four sit on the identical bug that made the level-up cards render blank
+(§15.10): the panel's own background fill always paints over any raster art
+meant to sit in front of it. So the card fix everyone's been treating as a
+card fix is actually the one blocker for the entire GUI overhaul — worth
+saying plainly before it gets rediscovered screen by screen.
+
+Then checked John's working tree before writing that up as still-open, and
+caught him already mid-build on it: an opt-in flag that defers UI raster
+draws to paint after every buffered fill, rather than flipping the field's
+draw-order rule globally. Better fix than what Jane would have asked for —
+the field's existing "raster sits under glyphs" law (keeps ground/decals/HUD
+legible over a ship) stays untouched everywhere it's currently correct.
+
+With that unblocking everything, Jane proposed the actual art: dark
+brushed-metal panel textures from the vendor pack's `Round-Rect` set for
+the level-up card frame and pause/death panels (on-theme, no baked-in
+text), a plain 3-state button parked until there's an actual clickable menu
+to attach it to (today's input is keyboard-only). Phased so the cheapest
+win — re-enabling the 7 already-picked card icons — lands first and
+doubles as confirmation the fix works.
+
+`design.md` §15.13, `jane.md` [47], mirrored to `todo.md`.

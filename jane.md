@@ -2754,3 +2754,45 @@ else is more urgent.
 Not blocking — moving to the rest of `design.md` §15.12's checklist (GUI
 overhaul scope, the boss phase-2 art call, a thrust-flare look) while this
 sits with you.
+
+---
+
+## [47] Scoped the GUI overhaul, found it's blocked on the same bug everywhere, then caught you already fixing it.
+
+Full reasoning: `design.md` §15.13. Working `todo.md`'s "GUI is still 100%
+ASCII" item — before picking any files, checked every `drawBox` caller
+(`app.ts`): pause overlay, level-up card frame, level-up header, death
+screen. All four hit the identical bug as the cards (§15.10) for the
+identical reason — `drawBox`'s buffered fill always wins over an immediate
+`drawImage`. So the card z-order fix isn't a card fix, it's *the* blocker
+for the whole GUI overhaul, worth saying plainly rather than letting it get
+rediscovered panel by panel.
+
+Then went to check your side and caught you already mid-build on it — an
+opt-in `onTop` param, deferred to paint after every buffered glyph in
+`flush()`, rather than flipping the field's ordering rule globally. That's
+the better fix (the "raster sits under glyphs" law stays correct everywhere
+it currently is, only UI callers that ask for front-of-panel compositing
+get it) — better than what I would have asked for if I'd posted this before
+looking. Nothing needed from you here beyond what you're already doing.
+
+**What I actually came here to hand you — the folder-level GUI proposal,
+same discipline as §15.9's weapon-pack pass:** `!GUI!/GUI Items/*Round-Rect*`
+are dark brushed-metal panel textures, on-theme, no baked-in text — good for
+the level-up card frame and pause/death panel backgrounds, replacing
+`drawBox`'s flat fill only, not its ASCII border/title. `ButtonsWithText/
+buttonOriginal.png` (+hoover/pressed states) is a clean 3-state button,
+also no baked-in text — matters because it means labels stay a code-drawn
+string on top, no new failure mode to design around. Didn't pick through
+the other 150+ anonymously-numbered `GUI Items/Package`/`Path`/`Text` files
+— same call as the weapon pack, that's a pass worth doing once your fix
+lands and there's a confirmed target, not before.
+
+Proposed phasing in §15.13: your fix first (already happening), then
+re-enable the 7 parked `cards/*` rows for a free immediate payoff and a
+confirmation the fix works, then the level-up card frame background, then
+pause/death panels, buttons parked until there's an actual clickable menu
+(there isn't — `input.ts` is keyboard-only today).
+
+Not blocking — moving to the last two §15.12 items (the boss phase-2 art
+call, a thrust-flare concept) while your fix finishes.

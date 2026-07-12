@@ -233,6 +233,24 @@ export class World {
   facing: 1 | -1 = 1;
 
   /**
+   * Owner feedback 12.07: "space ships turn and move and do epic stuff, this
+   * gameplay is now weird for a space game" — the raster ship rendered with a
+   * hardcoded `angle: 0` (render.ts), so it never turned to face its own
+   * heading; it only ever flipped via `facing` (which stays, unchanged — the
+   * Chain's aim mechanic above is a design call, not a rendering one).
+   *
+   * Radians, 0 = the ship art's own "up" (drawImage's convention). Turns
+   * toward the current movement direction at a bounded rate rather than
+   * snapping, so a hard reversal reads as a bank, not a teleporting flip.
+   * Holds its last value while idle — a coasting ship keeps its nose where
+   * it was pointed, it doesn't reset.
+   */
+  heading = 0;
+
+  /** Radians/sec the ship can turn. Fast enough to feel responsive, slow enough that a reversal is visibly a turn. */
+  private static readonly TURN_RATE = (720 * Math.PI) / 180;
+
+  /**
    * Owner feedback 09.07: "the first weapon feels clunky because you have to
    * [walk] towards enemies to aim it, meaning that you easily walk to the
    * enemies when trying to damage them."
@@ -664,6 +682,13 @@ export class World {
     }
 
     if (len === 0) return;
+
+    // World x/y are isotropic wu (design.md §15.5), so a heading computed here
+    // carries straight over to screen angle with no aspect correction needed.
+    // atan2(nx, -ny): the ship art's "up" is -y (north), matching `up`/`w`.
+    const target = Math.atan2(nx, -ny);
+    this.heading = this.turnToward(this.heading, target, World.TURN_RATE * dt);
+
     const speed = this.playerDef.speed * stats.move_speed;
     this.x += nx * speed * dt;
     this.y += ny * speed * dt;

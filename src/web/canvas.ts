@@ -208,9 +208,8 @@ export class CanvasSurface implements Surface {
 
   /**
    * Blit a raster image. Immediate, not buffered — see `clear()`. `angle` is
-   * radians, 0 = the image's own "up"; unused by any caller yet (v1 ships don't
-   * turn to face their heading), kept so that's additive later, not a signature
-   * break.
+   * radians, 0 = the image's own "up". The player ship is the one caller today
+   * (`World.heading`, owner feedback 12.07); other entities still pass 0.
    *
    * `glow`: same shadow-blur trick `tile()` bakes into every glyph, applied
    * live instead of pre-baked (a player-only call, once a frame, so baking it

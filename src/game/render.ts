@@ -164,7 +164,7 @@ export class GameView {
       // reserved-bright-white-player law needs a code answer on this medium
       // too. `PLAYER_COLOR` (0xffffff) haloes the ship the same way it used to
       // be the one glyph nothing else could draw in.
-      r.drawImage(p.colF(w.x), p.rowF(w.y), playerImg.img, playerImg.wCells, playerImg.hCells, 0, PLAYER_COLOR);
+      r.drawImage(p.colF(w.x), p.rowF(w.y), playerImg.img, playerImg.wCells, playerImg.hCells, w.heading, PLAYER_COLOR);
       // The level-up flash still needs to read on a raster ship; a white full-field
       // flash effect already exists below (`drawWhiteFlash`) for bigger moments, so
       // this one frame of colour just isn't drawn on raster yet — a placeholder

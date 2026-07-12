@@ -1296,3 +1296,60 @@ for this one — the rendering path (`drawCards`/`drawCardArt` reading
 identical code path a weapon card goes through).
 
 145/145, typecheck clean.
+
+## [44] Owner feedback 12.07 12:42 — the player ship never turned. Fixed: it now banks toward its own heading.
+
+"Why is the ship on its place! Space ships turn and move and do epic stuff.
+this gameplay is now weird for a space game!" Read literally, not
+metaphorically: `render.ts` passed a hardcoded `angle: 0` into `drawImage` for
+the player, every frame, regardless of movement — `world.ts`'s only notion of
+orientation was `facing` (`1 | -1`, a horizontal flip), which exists purely to
+aim the Chain (§7, the comment block above it is explicit this is a design
+call, not a rendering gap). Visually the ship never rotated at all; it just
+mirrored left/right like the old ASCII figure did. That's the "stuck in
+place" the owner's describing.
+
+The hook for this already existed and was unused: `Surface.drawImage`'s
+`angle` param (`surface.ts`), and the canvas backend's own doc comment said
+so outright — *"unused by any caller yet (v1 ships don't turn to face their
+heading)"* (`canvas.ts`). Not a new mechanism, just wiring one that was built
+ahead of need.
+
+**What changed:**
+- `World.heading` (radians, `world.ts`) — the ship's visual orientation,
+  separate from `facing`. `facing` still drives the Chain's aim exactly as
+  before; nobody touched that mechanic.
+- `movePlayer` computes the input direction's target angle
+  (`atan2(nx, -ny)` — confirmed against the actual sprite: `Galactica_Ranger
+  _A.png` noses "up" in the file, and `up`/`w` decrements `y`, so 0 = no
+  rotation = nose already pointing the way you're walking) and turns
+  `heading` toward it via the same `turnToward(from, to, maxStep)` the boss's
+  `bossHeading` already uses (`world.ts` ~1480) — same pattern, not a new one.
+  720°/s: fast enough that small direction changes look instant, slow enough
+  that a hard reversal is a visible ~0.25s bank, not a teleporting flip.
+- Idle: heading holds its last value. A coasting ship keeps its nose where it
+  was, it doesn't snap back to some default — matches how the rest of the
+  physics already works (no drag, no idle animation).
+- `render.ts`'s player `drawImage` call now passes `w.heading` instead of `0`.
+
+Verified in a real browser (`?play&god`), not just reasoning about the math:
+screenshotted idle (nose up), holding D (rotated 90° to face right), holding
+S (180°, upside-down, nose down), a frame mid-turn while reversing from
+down-facing to A/left (caught it visibly mid-bank, not snapped), and holding
+W (back to nose-up). All four cardinal headings and the transition read
+correctly. `console --errors` clean. 145/145, typecheck clean (both configs).
+
+**Scope call — didn't touch enemies.** `moveEnemies` already computes a
+per-frame velocity for every mob (homing, `vx`/`vy`), so extending the same
+`atan2`+rotate treatment to them is mechanically just as cheap. Didn't do it:
+unlike the Ranger, I don't know that every mob's art was drawn nose-up with
+rotation in mind — a bug or wisp sprite might read as broken/upside-down
+rotated the same way a ship reads as banking. That's an art call, not a code
+one. Flagging it as an open option in `jane.md` rather than guessing at
+which mobs it'd look right on.
+
+Not the "full graphical overhaul" the owner's asking to see next time
+(that's real scope, Jane's call on direction) — this is the one concrete,
+literal thing in the 12:42 note that was a code bug with a already-half-built
+hook sitting right there. Picked it up without waiting since it didn't touch
+anything Jane owns.

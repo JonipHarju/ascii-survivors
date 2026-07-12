@@ -644,7 +644,7 @@ export class App {
   private drawPause(r: Surface, field: Rect): void {
     const cx = field.x + Math.floor(field.w / 2);
     const box: Rect = { x: cx - 16, y: field.y + Math.floor(field.h / 2) - 3, w: 32, h: 7 };
-    drawBox(r, box, ACCENT, 0x101010, 'PAUSED');
+    drawBox(r, box, ACCENT, 0x101010, 'PAUSED', this.panelImage(r));
     drawCentered(r, cx, box.y + 2, 'ESC / ENTER  resume', TEXT, 0x101010);
     drawCentered(r, cx, box.y + 4, 'Q  quit to shell', DIM, 0x101010);
   }
@@ -678,7 +678,7 @@ export class App {
       const border = selected ? ACCENT : DIM;
       const bg: Color = selected ? 0x1c1a10 : 0x101010;
 
-      drawBox(r, rect, border, bg);
+      drawBox(r, rect, border, bg, undefined, this.panelImage(r));
 
       const mid = rect.x + Math.floor(cardW / 2);
       this.drawCardArt(r, card, rect, bg);
@@ -700,6 +700,21 @@ export class App {
     }
 
     drawCentered(r, cx, y0 + cardH + 2, '← → select   ENTER confirm   1-3 quick pick', DIM);
+  }
+
+  /**
+   * A texture for `drawBox` to stretch behind its ASCII border (design.md
+   * §15.13's GUI-overhaul plumbing) — every `drawBox` caller in this file
+   * shares one id, `panels/frame`, rather than one per screen: it's a plain
+   * backdrop with no baked-in text or per-screen meaning, so there's nothing
+   * to differentiate on, the same "free reuse" call already made for
+   * portraits. `undefined` (no row, no raster backend) is the normal case
+   * until Jane adds one — `drawBox` already treats that as "no texture,
+   * flat fill" with zero special-casing needed here.
+   */
+  private panelImage(r: Surface): CanvasImageSource | undefined {
+    if (!r.caps.raster) return undefined;
+    return resolveImage(this.images, this.data.images, 'panels/frame')?.img;
   }
 
   /**
@@ -752,7 +767,7 @@ export class App {
     // "bands on BOTH sides, always, no facing check" -> "bands on BOTH sides, a…".
     const boxW = clamp(field.w - 4, 28, 44);
     const box: Rect = { x: cx - Math.floor(boxW / 2), y: field.y + Math.floor(field.h / 2) - 4, w: boxW, h: 9 };
-    drawBox(r, box, ACCENT, 0x1c1a10);
+    drawBox(r, box, ACCENT, 0x1c1a10, undefined, this.panelImage(r));
 
     drawCentered(r, cx, box.y + 2, 'EVOLUTION', ACCENT, 0x1c1a10);
     drawCentered(r, cx, box.y + 4, evo.intoName.toUpperCase(), 0xffffff, 0x1c1a10);
@@ -765,7 +780,7 @@ export class App {
     const w = this.world;
     const cx = field.x + Math.floor(field.w / 2);
     const box: Rect = { x: cx - 21, y: field.y + Math.floor(field.h / 2) - 9, w: 42, h: 17 };
-    drawBox(r, box, RED, 0x100808, 'YOU DIED');
+    drawBox(r, box, RED, 0x100808, 'YOU DIED', this.panelImage(r));
     drawCentered(r, cx, box.y + 2, 'the night took you', 0x8a5a5a, 0x100808);
 
     const rows: [string, string][] = [

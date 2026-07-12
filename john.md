@@ -1430,3 +1430,46 @@ the fix is real, tested two ways, and the art/sizing you picked doesn't need
 to change.
 
 146/146 (new test included), typecheck clean (both configs).
+
+## [47] §15.13 phase 3 plumbing — built ahead of your file pick, same pattern as backgrounds/cards.
+
+Your [47]/design.md §15.13 named the level-up card frame background as
+"next whenever either of us picks it up." Picked it up — the plumbing
+doesn't need your exact file choice to exist first, same reasoning as
+`backgrounds.tsv`: build the mechanism, let raster shadow the current look
+until a row lands.
+
+**`drawBox` (`draw.ts`) grew an optional `panelImg` param.** When given, it
+draws the texture stretched to the box's full rect, immediately, then skips
+the interior's own buffered bg fill (left `DEFAULT`) so `flush()`'s
+background pass can't blot the texture out later — the mirror image of the
+card-icon bug from [46]: there the icon needed to win over the fill; here
+the fill needs to get out of the texture's way instead. Border and title
+glyphs still carry the given `bg` as before (a solid character tile always
+wins regardless of what's behind it), so the selection tint still reads on
+the frame line. No `panelImg` (today's default, always, until a row exists)
+→ byte-identical behaviour to before this change.
+
+**One shared id, not one per screen: `panels/frame`.** Added a `panelImage()`
+helper in `app.ts` (same `resolveImage()`/`this.images` call every other
+raster lookup uses) and wired it into all four `drawBox` call sites —
+pause, the level-up card frame, the evolution screen, and the death
+summary. It's a plain backdrop with no baked-in text or per-screen meaning,
+so there's nothing to differentiate on — same "free reuse" call you already
+made for portraits. If you ever want these to look different from each
+other, that's a real ask (more ids), not something I should guess at now.
+
+**Verified two ways.** A unit test (`engine.test.ts`, new `describe('drawBox')`
+block, fake `Surface`) proving the exact mechanics: no `panelImg` → today's
+fill, unchanged; `panelImg` given → drawn once, stretched to the rect
+exactly, and the interior cell's `bg` comes back `DEFAULT` while the border
+keeps its color. Then a real browser pass (`?play&god`, dev panel) on pause
+and the level-up screen with *no* `panels/frame` row in `images.tsv` yet —
+confirmed zero visual regression, byte-for-byte the same as before this
+patch, which is exactly what should happen with the id unresolved.
+
+Didn't touch `images.tsv` — not my file, and I don't have your file pick
+yet either. The moment a `panels/frame` row exists and resolves, all four
+screens pick it up automatically, no further code change needed.
+
+148/148 (2 new tests), typecheck clean (both configs).

@@ -8,9 +8,10 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { drawBar, drawSprite } from '../engine/draw.ts';
-import { DEFAULT, detectDepth, parseColor, rgb } from '../engine/color.ts';
+import { drawBar, drawBox, drawSprite } from '../engine/draw.ts';
+import { DEFAULT, detectDepth, parseColor, rgb, type Color } from '../engine/color.ts';
 import { Renderer } from '../engine/renderer.ts';
+import type { Capabilities, Surface } from '../engine/surface.ts';
 import { parseGlyphTable } from '../data/entities.ts';
 import { frameAt, parseSprite } from '../assets/sprite.ts';
 
@@ -265,6 +266,69 @@ describe('drawSprite', () => {
     assert.equal(r.getChar(1, 0), ' ');
     assert.equal(r.getChar(0, 0), 'a', 'the art itself must survive the fill');
     assert.equal(r.getChar(3, 0), '#', 'the fill must not spill past the frame');
+  });
+});
+
+describe('drawBox', () => {
+  /** Just enough `Surface` to see what a call did — no rendering, only bookkeeping. */
+  class FakeSurface implements Surface {
+    readonly width = 40;
+    readonly height = 20;
+    readonly caps: Capabilities = { smoothLight: false, subCell: true, raster: true };
+    cells = new Map<string, { ch: string; fg?: Color; bg?: Color }>();
+    images: { cx: number; cy: number; w: number; h: number }[] = [];
+
+    clear(): void {}
+    set(x: number, y: number, ch: string, fg?: Color, bg?: Color): void {
+      this.cells.set(`${x},${y}`, { ch, fg, bg });
+    }
+    setF(x: number, y: number, ch: string, fg?: Color): void {
+      this.set(Math.round(x), Math.round(y), ch, fg);
+    }
+    tint(): void {}
+    getChar(x: number, y: number): string {
+      return this.cells.get(`${x},${y}`)?.ch ?? ' ';
+    }
+    text(x: number, y: number, s: string, fg?: Color, bg?: Color): number {
+      for (let i = 0; i < s.length; i++) this.set(x + i, y, s[i]!, fg, bg);
+      return s.length;
+    }
+    fillRect(x: number, y: number, w: number, h: number, ch: string, fg?: Color, bg?: Color): void {
+      for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) this.set(x + i, y + j, ch, fg, bg);
+    }
+    inBounds(): boolean {
+      return true;
+    }
+    invalidate(): void {}
+    setLight(): void {}
+    drawImage(cx: number, cy: number, _img: CanvasImageSource, wCells: number, hCells: number): void {
+      this.images.push({ cx, cy, w: wCells, h: hCells });
+    }
+    flush(): number {
+      return 0;
+    }
+  }
+
+  it('fills the interior with bg when no panel texture is given — today\'s behaviour, unchanged', () => {
+    const r = new FakeSurface();
+    drawBox(r, { x: 0, y: 0, w: 5, h: 4 }, 0xffffff, 0x101010, undefined);
+    assert.equal(r.images.length, 0, 'no texture, no drawImage call');
+    assert.equal(r.cells.get('2,2')?.bg, 0x101010, 'interior cell keeps the given bg');
+  });
+
+  it('stretches a panel texture to the box and lets it show through the interior', () => {
+    const r = new FakeSurface();
+    const img = {} as unknown as CanvasImageSource;
+    drawBox(r, { x: 10, y: 5, w: 6, h: 5 }, 0xffffff, 0x101010, undefined, img);
+
+    assert.equal(r.images.length, 1, 'the texture is drawn once, stretched to the rect');
+    assert.deepEqual(r.images[0], { cx: 13, cy: 7.5, w: 6, h: 5 });
+
+    // The interior fill is skipped (left DEFAULT) so the texture isn't blotted
+    // out by flush()'s buffered background pass later (see canvas.ts/surface.ts).
+    assert.equal(r.cells.get('12,7')?.bg, DEFAULT, 'interior cell no longer carries the box bg');
+    // The border still does — a solid glyph tile always wins regardless.
+    assert.equal(r.cells.get('10,5')?.bg, 0x101010, 'border corner keeps the given bg');
   });
 });
 

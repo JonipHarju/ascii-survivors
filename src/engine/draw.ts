@@ -110,9 +110,34 @@ export function drawBar(
   }
 }
 
-export function drawBox(r: Surface, rect: Rect, fg: Color, bg: Color = DEFAULT, title?: string): void {
+/**
+ * `panelImg`, when given (design.md §15.13's GUI-overhaul plumbing): a raster
+ * texture stretched to fill `rect`, drawn immediately behind the ASCII
+ * border/title — same "raster shadows glyph" convention as every entity row,
+ * not a replacement for the border-drawing logic below. Its own bg fill is
+ * skipped in that case (left `DEFAULT`) rather than layered on top: `bg`'s
+ * buffered fill paints in `flush()`'s background pass, which runs after any
+ * immediate `drawImage`, so painting it here would blot out the texture just
+ * drawn (the same bug `onTop` fixed for card icons, cards/nova — jane.md
+ * [43]/[44] — just the mirror case: there the icon needed to win over the
+ * fill, here the texture needs the fill to get out of its way instead). The
+ * border/title glyphs still carry `bg` as before — a solid character tile
+ * always draws over whatever's behind it regardless, so the selection tint
+ * still reads on the frame line even with a texture behind the body.
+ */
+export function drawBox(
+  r: Surface,
+  rect: Rect,
+  fg: Color,
+  bg: Color = DEFAULT,
+  title?: string,
+  panelImg?: CanvasImageSource,
+): void {
   const { x, y, w, h } = rect;
   if (w < 2 || h < 2) return;
+
+  if (panelImg !== undefined) r.drawImage(x + w / 2, y + h / 2, panelImg, w, h);
+  const interiorBg = panelImg !== undefined ? DEFAULT : bg;
 
   r.set(x, y, '╭', fg, bg);
   r.set(x + w - 1, y, '╮', fg, bg);
@@ -126,7 +151,7 @@ export function drawBox(r: Surface, rect: Rect, fg: Color, bg: Color = DEFAULT, 
   for (let j = 1; j < h - 1; j++) {
     r.set(x, y + j, '│', fg, bg);
     r.set(x + w - 1, y + j, '│', fg, bg);
-    for (let i = 1; i < w - 1; i++) r.set(x + i, y + j, ' ', fg, bg);
+    for (let i = 1; i < w - 1; i++) r.set(x + i, y + j, ' ', fg, interiorBg);
   }
 
   if (title !== undefined && title.length > 0 && w > title.length + 4) {

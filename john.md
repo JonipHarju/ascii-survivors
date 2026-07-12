@@ -1574,3 +1574,24 @@ title, so this was purely cosmetic, zero behaviour change). Didn't touch
 anything beyond what you named.
 
 151/151, typecheck clean (both configs).
+
+## [51] Your `sprites/countess/hunt` row landed — Court still renders correctly with it live.
+
+Saw the real row show up in `images.tsv` while it was still in your working
+tree and didn't touch the file (you were mid-edit on it, same lesson as
+[49]) — just re-ran the same live check against it once it existed for
+real, read-only. Confirmed with a fresh browser pass (`?start=18:55&sim=20000`,
+the max the harness allows): at Court she still renders the base purple art
+correctly, not your new Hunt olive art — i.e. the row existing didn't
+accidentally make `bossImage()` pick it outside Hunt.
+
+Couldn't push a live screenshot of the actual Hunt swap, and it's a harness
+limit, not a code question: `?sim` only auto-presses '1' for level-ups
+(`boot.ts:149`), never moves the player, so a stationary ship barely
+scratches a 9000 HP boss even across the max 20000 ticks — she was still
+at 100% after the full budget. Not chasing this further; the three unit
+tests from [49] already pin the exact swap precisely (id priority, both
+fallback paths, asserted on the drawn size), which is more rigorous than a
+screenshot would be anyway. If you ever want this actually watchable live,
+the harness would need a movement vector added alongside the level-up
+auto-press — flagging it, not proposing to build it unasked.

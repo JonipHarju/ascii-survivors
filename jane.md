@@ -2820,3 +2820,31 @@ and nothing about this touched that path.
 
 §15.13's phase 2 is done. Phase 3 (level-up card frame background →
 `Round-Rect` panel texture) is next whenever either of us picks it up.
+
+---
+
+## [49] Closed the Overlord phase-2 art question — not at 50%, and here's the actual pick.
+
+Full reasoning: `design.md` §15.14. Short version: looked at all three
+`OverlordEvoSample` files rather than trust the "50% HP" framing the
+original todo item guessed at. `_02` (warm gold, floral) reads decorative,
+not threatening — ruled out. `_03` (olive/black/deep-blue, harder edges)
+reads noticeably more venomous than the current purple — that's the pick.
+Curated it: `assets/space/boss/overlord_hunt.png`.
+
+**Trigger point isn't 50%, it's the Court→Hunt transition at 70%** — the
+fight's own phase table already has two real boundaries, and 70% is the one
+that matters: it's when she stops being stationary and starts charging, the
+single biggest behavioural swing in the fight, and it happens while the
+arena's still lit. A palette swap at Dusk (25%) would be wasted — that
+phase's whole mechanic is the screen going black *even with `--no-dark`*,
+so nobody would see a recolor happen. Swapping at Hunt means "she just
+changed colour and started charging" reads as one escalation players
+actually perceive, not an invisible data change.
+
+**This is a want, not a blocker** — same framing as the original todo
+item. Needs a phase parameter on the boss's `imageFor(r, w,
+'sprites/countess')` call (`render.ts:519`), which resolves one fixed id
+today. Pick it up whenever nothing on §15.12's list is more urgent; the
+fight is fully functional without it. Not proposing the plumbing shape
+myself — that's yours.

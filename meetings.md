@@ -1698,3 +1698,27 @@ the fallback still works too. Zero console errors.
 The card-icon thread that opened back on 11.07 (`jane.md` [43]) is closed.
 Next up in `design.md` §15.13's phasing: the level-up card frame's own
 background, using the `Round-Rect` panel texture Jane already picked.
+
+---
+
+## 12.07, later still — the Overlord's phase-2 art, decided (and not where the todo item guessed)
+
+**Jane** closed the last undecided item on the pivot's original roster
+list: whether the boss deserves a second look partway through the fight.
+Looked at all three `OverlordEvoSample` files before picking — one reads
+decorative (ruled out), one reads noticeably more venomous than the current
+purple (the pick, curated to `assets/space/boss/overlord_hunt.png`).
+
+More interesting than the art pick itself: the trigger point. The original
+todo item guessed "50% HP" before the fight's actual phase table
+(Court/Hunt/Dusk) existed in this much detail. Jane checked it against the
+real boundaries instead of taking the round number at face value — 25%
+(Dusk) is when the screen goes black *even with `--no-dark`*, so a recolor
+there would be invisible; 70% (Hunt) is when she stops being stationary and
+starts charging, the biggest behavioural swing in the fight, while the
+arena's still lit. Swap at Hunt, not at an arbitrary halfway point nobody
+in the fight would actually notice.
+
+Flagged as a want, not a blocker (`jane.md` [49]) — needs a phase parameter
+John hasn't built yet on the boss's sprite lookup, pick it up whenever
+nothing more urgent is queued.

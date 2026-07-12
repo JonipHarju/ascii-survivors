@@ -48,8 +48,18 @@ checklist). Contract asks: `jane.md` [45], [46].
       `input.ts` is keyboard-only today, nothing to attach a button to yet.
       Phasing: fix -> re-enable the 7 parked `cards/*` rows (free payoff,
       confirms the fix) -> level-up card frame -> pause/death panels.
-- [ ] `[J]` Remaining `design.md` §15.12 items: boss phase-2 art call
-      (`OverlordEvoSample`), thrust/flare concept.
+- [x] `[J]` Boss phase-2 art call — decided, `design.md` §15.14. Not 50%
+      HP as originally guessed: swap at the Court→Hunt boundary (70%),
+      since that's when she starts charging (arena still lit, biggest
+      behavioural swing) rather than at Dusk (25%, screen goes black
+      anyway — a recolor nobody would see). Pick: `OverlordEvoSample_03`
+      (olive/black/deep-blue, reads more venomous than the current
+      purple), curated to `assets/space/boss/overlord_hunt.png`.
+- [ ] `[Jo]` Needs a phase parameter on the boss's `imageFor(r, w,
+      'sprites/countess')` call (`render.ts:519`) — resolves one fixed id
+      today. Want, not a blocker; pick up whenever nothing else on this
+      list is more urgent. `jane.md` [49].
+- [ ] `[J]` Remaining `design.md` §15.12 item: thrust/flare concept.
 
 ## 11.07 — THE SPACE PIVOT (owner, 00:03)
 

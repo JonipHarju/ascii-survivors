@@ -1975,6 +1975,55 @@ picking blind against a contract that might not match what gets built.
 Posted to `jane.md` [47] as a proposal, not a spec — same as §15.9, John
 confirms what's actually buildable against the fix once it lands.
 
+### 15.14 The Overlord's phase-2 art — decided, and not at the HP number `todo.md` originally guessed
+
+Closing out the open item: "is the Overlord's `OverlordEvoSample` art worth
+a 50%-HP phase-2 swap?" Looked at all three samples
+(`OverLord_Nightmare/Samples/OverlordEvoSample_0{1,2,3}.png`) before
+deciding anything:
+
+- **`_01`** — purple/teal with a cyan core. Essentially the same palette as
+  the currently-live `overlord_01.png` (Court phase). Not a swap target,
+  it's what's already on screen.
+- **`_02`** — warm gold/pink, floral patterning. Reads *decorative*, not
+  *threatening* — wrong direction for an escalation. Ruled out.
+- **`_03`** — olive/black/deep-blue, harder-edged patterning. Reads
+  noticeably more venomous/alien than the purple. **This one.**
+
+**Decided against 50% HP as the trigger point — the fight's own phase table
+(above, Court/Hunt/Dusk) already has two real boundaries, and one of them
+is a far better fit than an arbitrary round number nobody in the fight
+would notice.** The actual candidates:
+
+- **Dusk, 25% HP** — tempting, since it's already the "everything gets
+  worse" moment. Rejected on inspection: Dusk's whole mechanic is the field
+  going black *even with `--no-dark`*, "you can only see her when she's on
+  top of you" (this file, boss section, above). A recolor nobody can see
+  because the screen is already dark is wasted art.
+- **Hunt, 70% HP — the pick.** This is where she stops being stationary and
+  starts charging: the single biggest behavioural swing in the fight, and
+  it happens while the arena is still fully lit, so a palette swap actually
+  gets seen at the exact moment the fight gets scarier. "She just changed
+  colour *and* started charging me" reads as one escalation, not two
+  disconnected events.
+
+**Decision: swap `sprites/countess` to `_03`'s palette at the Court→Hunt
+transition (70% HP), not at 50%, and not at Dusk.** Curated the pick into
+the tracked folder (`assets/space/boss/overlord_hunt.png`, matching
+`overlord_01.png`'s naming) rather than leave it pointing at the gitignored
+vendor drop. Not committing to the Dusk transition getting its own third look
+Dusk transition getting its own third look — the darkness already carries
+that moment on its own, per §9/this file's existing "the carpet is the only
+thing telling you where you are" beat; adding art there risks competing
+with a mechanic that's already doing the work.
+
+**Still needs John's phase-trigger plumbing, unchanged from `todo.md`'s
+original framing** — `drawBossBar`'s `imageFor(r, w, 'sprites/countess')`
+call (`render.ts:519`) resolves one fixed id today, no phase parameter.
+Posted as a want, not a blocker, in `jane.md` [49] — the fight is fully
+functional without this, it's polish, and John should only pick it up if
+nothing on §15.12's list is more urgent.
+
 ## Open questions / assumptions I'm running with
 
 Tracked live in `jane.md`. Anything settled gets promoted **into this file** and

@@ -1868,3 +1868,46 @@ further for the same reason as before: the unit tests pin the exact
 before/after state more precisely than a lucky screenshot would anyway.
 
 162/162 (2 new), typecheck clean (both configs).
+
+## [58] Checked the framerate honestly, since a lot of raster work landed this session and `bench.ts` can't actually see it.
+
+Not a fix, a health check — the backlog and owner-feedback.md were both
+quiet, so went back to an old open question instead of idling: the owner
+asked for "at least 120fps" twice (09.07), and an old note further up this
+file admitted the canvas pivot only got to 94fps in its own benchmark,
+"still short of the original 120." A lot has been added on top of that
+since — per-frame rotation math for the player and every mob, the thrust
+trail's particle stream, pulsing XP orbs, panel textures, the boss's new
+telegraph glow. Worth knowing whether any of that actually cost something,
+not assuming it didn't.
+
+**`npm run bench` is measuring the wrong renderer, discovered by actually
+running it.** It's still built against `engine/renderer.ts` (the terminal
+ANSI backend) — reports "sustainable fps: 999" and "ANSI bytes/frame,"
+numbers that describe a code path nobody actually plays through anymore.
+The real game runs on `CanvasSurface` in a browser; this tool has no way to
+see any of the raster/particle work landed this session. Not fixing it (a
+proper browser-side benchmark harness is a real, separate build, and
+there's no active problem driving it) — flagging it as stale tooling rather
+than trusting its number.
+
+**Measured the actual renderer instead**, via a headless-browser
+`requestAnimationFrame` probe (real frame timing, not the game's own debug
+overlay — that's canvas-drawn pixels, not DOM text, so nothing outside the
+page can read it directly):
+- Dense mid-run (`?start=8:00&sim=6000`, lots of raster mobs + decals),
+  stationary: **96fps**.
+- Same scene, moving — rotation *and* the thrust trail both active every
+  frame, the two heaviest additions this session: **92fps**.
+- The boss encounter itself (`?start=18:55&sim=18000`), her raster sprite
+  the single biggest thing on screen: **86fps**.
+
+**Verdict: still comfortably clear of 60fps everywhere tested, including
+the single heaviest scene in the game, and this session's additions cost
+single-digit percent, not a cliff.** Short of the owner's 120fps stretch
+target, same as before this session — not a new problem, and headless
+Chromium in this sandbox isn't necessarily representative of a real
+desktop GPU besides. Not chasing micro-optimisation with no active
+complaint behind it; recording the honest number now so "is it still fast"
+has a real answer instead of a stale terminal-only one next time it comes
+up.

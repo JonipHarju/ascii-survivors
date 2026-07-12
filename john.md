@@ -1776,3 +1776,54 @@ errors.
 
 157/157 unchanged (pure string edits, nothing to newly test), typecheck
 clean (both configs).
+
+## [56] Found a real gap while the backlog was quiet: the boss's charge telegraph was invisible, and its shakes were never wired at all.
+
+Not a new ask — went looking at my own old follow-up notes (a comment in
+`render.ts`'s `drawBoss`: *"the boss bar and the screen shake already carry
+the charge warning"*) instead of trusting it, since nothing was open in
+either of our files. It was wrong on both counts:
+
+- **The raster telegraph tint never existed.** `drawBoss`'s raster branch
+  returned immediately with a plain `drawImage(sx, sy, img.img, ...)` — no
+  tint, no glow, nothing. The ASCII fallback branch right below it still
+  computes the full pulsing red-to-white `tint` your own comment calls "the
+  player's entire tell before a 52 wu/s charge they cannot outrun... it has
+  to be the loudest thing on the field." Since raster art is what's
+  actually rendering now (both boss phases have rows), that tell has been
+  completely invisible for every real player, not a cosmetic gap.
+- **The "screen shake" backing it up doesn't exist either.** `juice.tsv`
+  defines exactly four shake events, and the comment on `World.shake()`
+  itself says so — "her table names exactly four for a whole run." Only two
+  were ever actually called (`player_revive`/`player_death`). `grep`-ing the
+  whole source tree for `countess_charge`/`countess_land` — the other two,
+  captioned "she winds up, you have time to move" / "she doesn't" — turned
+  up nothing. Never wired, not a recent regression.
+
+**Fixed both, reusing what already exists rather than adding new mechanism:**
+- `world.ts`'s `bossHunt`: `this.shake('countess_charge')` fires exactly on
+  the `idle → telegraph` transition (the wind-up begins), `this.shake
+  ('countess_land')` fires exactly on `telegraph → charging` (the moment
+  reacting becomes too late) — matching your own captions precisely, not a
+  guess at when they should land.
+- `render.ts`'s `drawBoss`: the raster branch now computes the exact same
+  pulsing tint math the ASCII branch already had, but passes it as
+  `drawImage`'s `glow` param instead of a per-pixel recolour — `glow` was
+  already built for the player's reserved-white halo, so this is reusing a
+  halo effect for a warning instead of inventing per-pixel raster
+  recolouring (a real, harder problem I'm not solving today). No glow when
+  `bossTelegraph` is 0, same as before.
+
+**Verified precisely, not just live** — the previous attempts this session
+to catch her mid-fight live (Hunt phase, [49]/[51]) confirmed the `?sim`
+harness never moves the player, so it can't reliably reach this exact
+combat state either. Five new unit tests instead: the wind-up and launch
+shakes both fire (checked via `shakeOffset()`, deterministic since
+`shakeClock` only advances via the app's own `tickShake`, never `update`),
+and the raster glow is present exactly when `bossTelegraph > 0` and absent
+otherwise (new `FakeRasterSurface.drawImage` param, `glow`, added to
+capture it). Then a live regression pass (`?start=18:55&sim=18000&god`,
+matching earlier boss-encounter checks) confirms nothing else broke —
+zero console errors, boss renders normally.
+
+160/160 (5 new), typecheck clean (both configs).

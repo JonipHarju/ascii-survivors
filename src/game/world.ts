@@ -1560,6 +1560,9 @@ export class World {
           this.bossTimer = telegraph;
           this.bossTarget = { x: this.x, y: this.y };
           this.bossHeading = Math.atan2(this.y - b.y, this.x - b.x);
+          // juice.tsv: "she winds up. you have time to move" — the shake is
+          // part of the tell, same as the tint below, not just flavour.
+          this.shake('countess_charge');
         }
         return;
       }
@@ -1574,6 +1577,9 @@ export class World {
           this.bossState = 'charging';
           this.bossTimer = 1.6; // seconds of committed charge
           this.bossTrailAcc = 0;
+          // juice.tsv: "she doesn't [have time left]" — the wind-up just ran
+          // out; this is the moment reacting becomes too late.
+          this.shake('countess_land');
         }
         return;
       }

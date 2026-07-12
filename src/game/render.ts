@@ -577,10 +577,20 @@ export class GameView {
   private drawBoss(r: Surface, w: World, e: Enemy, sx: number, sy: number, field: Rect): void {
     const img = this.bossImage(r, w);
     if (img !== null) {
-      // The telegraph tint (below) needs per-pixel recolouring to apply to a
-      // raster image; skipped for v1 — the boss bar and the screen shake
-      // already carry the charge warning. Tracked in john.md as a follow-up.
-      r.drawImage(sx, sy, img.img, img.wCells, img.hCells);
+      // A full per-pixel recolour (the ASCII path's `tint`, below) can't apply
+      // to a raster image, but the telegraph "has to be the loudest thing on
+      // the field" (comment below) and was rendering as nothing at all on
+      // raster — worse than a missing nicety, a missing warning before an
+      // unavoidable 52 wu/s charge. `drawImage`'s `glow` (built for the
+      // player's reserved-white halo) doubles as the raster equivalent: the
+      // exact same pulsing red-to-white mix the ASCII tint already computes,
+      // haloing the silhouette instead of recolouring it.
+      let glow: Color | undefined;
+      if (w.bossTelegraph > 0) {
+        const pulse = 0.45 + 0.55 * Math.abs(Math.sin(w.timeAlive * 26));
+        glow = mix(0xff3b3b, 0xffffff, pulse * (1 - w.bossTelegraph));
+      }
+      r.drawImage(sx, sy, img.img, img.wCells, img.hCells, 0, glow);
       return;
     }
 

@@ -12,7 +12,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { detectDepth } from '../engine/color.ts';
+import { detectDepth, type Color } from '../engine/color.ts';
 import { Renderer } from '../engine/renderer.ts';
 import { TICK_DT } from '../engine/loop.ts';
 import type { Surface } from '../engine/surface.ts';
@@ -26,7 +26,7 @@ import { parseEvolutions } from '../data/evolutions.ts';
 import { parseCharacters } from '../data/characters.ts';
 import { parseCrossroads } from '../data/crossroads.ts';
 import { parseCountess } from '../data/countess.ts';
-import { fallbackJuice } from '../data/juice.ts';
+import { fallbackJuice, parseJuice } from '../data/juice.ts';
 import { emptyImageTable, parseImageTable } from '../data/images.ts';
 import { emptyAudioTable } from '../data/audio.ts';
 import { emptyBackgroundTable, parseBackgroundTable } from '../data/backgrounds.ts';
@@ -772,7 +772,14 @@ describe('the spawn director', () => {
 
 describe('the Countess fight', () => {
   function bossWorld() {
-    const w = new World(makeData(DIRECTOR_REAL), 7);
+    // makeData()'s juice is fallbackJuice() (no shake rows at all, by design —
+    // a missing table must not shake the screen). The wind-up/launch shake
+    // test needs the two real events, so it gets its own small juice table.
+    const bossData: GameData = {
+      ...makeData(DIRECTOR_REAL),
+      juice: parseJuice(['shake\tcountess_charge\t0.5\t0.25', 'shake\tcountess_land\t0.8\t0.40'].join('\n')),
+    };
+    const w = new World(bossData, 7);
     w.setViewport(100, 32);
     w.weapons.length = 0;
     w.godMode = true; // we're testing her, not our ability to survive her
@@ -818,6 +825,36 @@ describe('the Countess fight', () => {
     assert.equal(w.bossPhase, 'hunt');
     assert.ok(sawTelegraph, 'she must glow before she charges — it is the whole tell');
     assert.ok(sawFastMove, 'and then she must actually charge at 52 wu/s');
+  });
+
+  it('shakes the screen at the wind-up and again at the launch — juice.tsv defines both, the code must fire both', () => {
+    const { w, boss } = bossWorld();
+    boss.hp = boss.maxHp * 0.5;
+
+    let sawWindupShake = false;
+    let sawLaunchShake = false;
+    let prevActive = false;
+
+    for (let i = 0; i < Math.round(6 / TICK_DT); i++) {
+      w.update(TICK_DT, { x: 0, y: 0 });
+      const active = w.bossTelegraph > 0;
+
+      // shakeClock never advances without tickShake (the app calls it outside
+      // update, on purpose — see world.ts), so right after a fresh shake()
+      // call shakeOffset()'s y is exactly amp * 0.5, deterministic to check.
+      if (!prevActive && active) {
+        assert.notEqual(w.shakeOffset().y, 0, 'countess_charge should shake as the wind-up starts');
+        sawWindupShake = true;
+      }
+      if (prevActive && !active) {
+        assert.notEqual(w.shakeOffset().y, 0, 'countess_land should shake as the charge launches');
+        sawLaunchShake = true;
+      }
+      prevActive = active;
+    }
+
+    assert.ok(sawWindupShake, 'never saw the wind-up shake fire');
+    assert.ok(sawLaunchShake, 'never saw the launch shake fire');
   });
 
   it('lays a burning trail while charging', () => {
@@ -971,7 +1008,7 @@ describe('rendering the world', () => {
     readonly caps = { smoothLight: true, subCell: true, raster: true };
     readonly width = 100;
     readonly height = 34;
-    drawImages: { cx: number; cy: number; w: number; h: number }[] = [];
+    drawImages: { cx: number; cy: number; w: number; h: number; glow?: Color }[] = [];
     sets: { x: number; y: number; ch: string }[] = [];
     clear(): void {}
     set(x: number, y: number, ch: string): void {
@@ -993,8 +1030,8 @@ describe('rendering the world', () => {
     }
     invalidate(): void {}
     setLight(): void {}
-    drawImage(cx: number, cy: number, _img: CanvasImageSource, w: number, h: number): void {
-      this.drawImages.push({ cx, cy, w, h });
+    drawImage(cx: number, cy: number, _img: CanvasImageSource, w: number, h: number, _angle?: number, glow?: Color): void {
+      this.drawImages.push({ cx, cy, w, h, glow });
     }
     flush(): number {
       return 0;
@@ -1088,6 +1125,40 @@ describe('rendering the world', () => {
 
       const boss = r.drawImages.find((d) => d.w === 16 && d.h === 14.4 / WU_PER_ROW);
       assert.ok(boss !== undefined, `expected the base-sized blit, got ${JSON.stringify(r.drawImages)}`);
+    });
+  });
+
+  describe('the boss telegraph glows on a raster sprite too', () => {
+    function bossWorld(): { w: World; view: GameView } {
+      const bossData: GameData = { ...data, images: parseImageTable('sprites/countess\tspace/boss/overlord_01.png\t16\t14.4') };
+      const w = new World(bossData, 1);
+      w.spawnEnemy(data.glyphs.entities.get('countess')!, w.x, w.y - 5);
+      const images: ImageSource = { get: (path) => (path.includes('overlord') ? FAKE_IMG : undefined) };
+      return { w, view: new GameView(new SpriteLoader('/nonexistent'), images) };
+    }
+
+    it('passes a glow colour while telegraphing — a full recolour cannot apply to raster, but a halo can', () => {
+      const { w, view } = bossWorld();
+      w.bossTelegraph = 0.6;
+      const r = new FakeRasterSurface();
+
+      view.render(r, w, FIELD, { dark: false, debug: false });
+
+      const boss = r.drawImages.find((d) => d.w === 16);
+      assert.ok(boss !== undefined, `expected the boss to draw, got ${JSON.stringify(r.drawImages)}`);
+      assert.notEqual(boss!.glow, undefined, 'the raster boss must glow while telegraphing — it is the whole tell');
+    });
+
+    it('carries no glow once the charge has launched (telegraph back at 0)', () => {
+      const { w, view } = bossWorld();
+      w.bossTelegraph = 0;
+      const r = new FakeRasterSurface();
+
+      view.render(r, w, FIELD, { dark: false, debug: false });
+
+      const boss = r.drawImages.find((d) => d.w === 16);
+      assert.ok(boss !== undefined);
+      assert.equal(boss!.glow, undefined, 'no telegraph, no glow — must not stay lit after she commits');
     });
   });
 

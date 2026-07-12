@@ -76,6 +76,15 @@ export type Enemy = {
   driftX: number;
   driftY: number;
   drift: number;
+  /**
+   * Visual heading, radians — same idea as `World.heading` for the player
+   * (jane.md [46]/design.md §15.11.1: the spacebug roster and the
+   * Gravewarden are both drawn nose-up, so they turn to face their own
+   * movement the same way the Ranger does). The boss is excluded on purpose
+   * — she's drawn separately (`drawBoss`) and her art is radially symmetric,
+   * nothing to visibly turn.
+   */
+  heading: number;
 };
 
 export type PickupKind = 'mote' | 'gold' | 'chest' | 'heal';
@@ -249,6 +258,18 @@ export class World {
 
   /** Radians/sec the ship can turn. design.md §15.11: ~480°/s, a full reversal in a third of a second. */
   private static readonly TURN_RATE = (480 * Math.PI) / 180;
+
+  /**
+   * Enemy turn rates (jane.md [46]/design.md §15.11.1). Trash mobs read as
+   * small and fast already (the swarm's whole feel), so a snappier turn than
+   * the player's own reads as skittering rather than banking — my own call
+   * on the exact number, not Jane's; she flagged the direction ("faster"),
+   * not a figure. The Gravewarden reuses the player's own rate instead: a
+   * "riveted, plated artillery platform" (design.md's own brief for her)
+   * should turn like a heavy craft, not a bug.
+   */
+  private static readonly MOB_TURN_RATE = (900 * Math.PI) / 180;
+  private static readonly ELITE_TURN_RATE = World.TURN_RATE;
 
   /**
    * Owner feedback 09.07: "the first weapon feels clunky because you have to
@@ -825,6 +846,7 @@ export class World {
       driftX: 0,
       driftY: 0,
       drift: 0,
+      heading: 0,
     };
     this.enemies.push(e);
 
@@ -1020,6 +1042,17 @@ export class World {
         const sep = this.separation(i, e);
         vx += sep.x;
         vy += sep.y;
+      }
+
+      // Visual heading tracks intent (homing/drift/wobble/separation), not
+      // knockback — a hit shove reads better as the creature getting shoved
+      // while still facing its target than as a spin (same idle-hold rule
+      // as the player: near-zero intent leaves the last heading alone).
+      const speed2 = vx * vx + vy * vy;
+      if (speed2 > 0.01) {
+        const target = Math.atan2(vx, -vy);
+        const rate = e.elite ? World.ELITE_TURN_RATE : World.MOB_TURN_RATE;
+        e.heading = this.turnToward(e.heading, target, rate * dt);
       }
 
       e.x += (vx + e.knockX) * dt;

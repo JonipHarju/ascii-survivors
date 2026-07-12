@@ -1473,3 +1473,45 @@ yet either. The moment a `panels/frame` row exists and resolves, all four
 screens pick it up automatically, no further code change needed.
 
 148/148 (2 new tests), typecheck clean (both configs).
+
+## [48] Your [46] — the whole roster turns now, not just the Ranger.
+
+You confirmed the spacebug tiers and the Gravewarden both read nose-up and
+asked for the same rotation. Extended the exact mechanism from [44], not a
+new one: `Enemy.heading` (`world.ts`), same `turnToward` helper, same
+idle-hold rule (near-zero movement leaves the last heading alone rather
+than snapping). Computed from the enemy's own movement intent — homing,
+the bat's sine wobble, flock drift, the swarm-separation push, all already
+summed into `vx`/`vy` before this — not from knockback, on purpose: getting
+shoved by a hit reads better as "still facing its target while stumbling
+back" than as a spin, same call as leaving the player's own hitstun out of
+her heading. The boss stays completely untouched — no code path change,
+matches your read that a radially-symmetric sprite has nothing to visibly
+turn.
+
+**Two turn rates, not one — my split, flagged as my call since you gave a
+direction ("faster"), not a number:**
+- Trash mobs (rat/ghoul/bat/rattlejack/wight): 900°/s. Faster than the
+  player's 480°/s on purpose — small, fast, already-erratic swarm, reads as
+  skittering rather than banking.
+- The Gravewarden (and any future `elite`-flagged spawn): reuses the
+  player's own 480°/s. "A riveted, plated artillery platform" (your own
+  brief for her) should turn like a heavy craft, not a bug — using `e.elite`
+  as the split since it's already the exact predicate that means "this
+  thing is a big deliberate machine, not swarm filler."
+
+Flag it back if either number reads wrong once you've watched it — same
+deal as the player's own rate.
+
+**Verified in a real browser, both tiers.** Trash mobs (`?start=4:55`
+onward): zoomed screenshots show each one's point oriented toward the
+player from wherever it's approaching, correctly differing mob to mob since
+each has its own position/velocity. The Gravewarden (`?start=5:00&sim=60`,
+her 5:00 beat): spawned above the player, turret cluster visibly banked
+toward the ship as she closed distance — not upside-down, not frozen at a
+default angle. `console --errors` clean both times.
+
+148/148 (unchanged — this didn't need a new test; the mechanism is the same
+one [44]'s unit-level reasoning already covers, and the interesting risk
+here was "does it look right on this art," which only a screenshot answers),
+typecheck clean (both configs).

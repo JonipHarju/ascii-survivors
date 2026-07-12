@@ -489,7 +489,7 @@ export class GameView {
       const id = spriteIdFor(e);
       const img = this.imageFor(r, w, id);
       if (img !== null) {
-        r.drawImage(p.colF(e.x), p.rowF(e.y), img.img, img.wCells, img.hCells);
+        r.drawImage(p.colF(e.x), p.rowF(e.y), img.img, img.wCells, img.hCells, e.heading);
       } else {
         const sprite = this.sprites.get(id);
         if (!sprite.placeholder) {

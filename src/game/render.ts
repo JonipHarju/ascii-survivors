@@ -137,6 +137,7 @@ export class GameView {
     // Sparks are the bottom of the juice stack: drawn before the gore even, so
     // nothing that matters ever loses a cell to one (juice.tsv: the rat wins).
     this.drawSparks(r, w, p);
+    this.drawThrust(r, w, p);
     this.drawDecals(r, w, p);
     this.drawEmbers(r, w, p);
     this.drawHazards(r, w, p);
@@ -318,6 +319,29 @@ export class GameView {
       const t = Math.min(1, s.age / Math.max(0.0001, s.life));
       const hue = mix(g.color, 0x6a1a08, t); // yellow -> dim red as it cools
       r.setF(p.colF(s.x), p.rowF(s.y), g.chars, shade(hue, ceil * (1 - t * 0.6)));
+    }
+  }
+
+  /**
+   * The thrust trail (jane.md [53]/design.md §15.17) — a new, separate
+   * particle stream from `drawSparks`, cyan rather than Reactor Fuel's
+   * amber so the two never blur into one "the ship is sparkly" effect. No
+   * `juice.tsv` glyph/level entry exists for this yet (it's a brand-new,
+   * not-yet-promoted-to-data effect, same call as `World`'s private thrust
+   * constants) — a plain apostrophe, hardcoded here rather than defaulting
+   * through `juiceGlyph`, since there's no `ember`-style row for it to fall
+   * back to reading.
+   */
+  private drawThrust(r: Surface, w: World, p: Proj): void {
+    if (w.thrust.length === 0) return;
+    const cyan: Color = 0x4ff0f0;
+
+    for (const t of w.thrust) {
+      const sx = p.col(t.x);
+      const sy = p.row(t.y);
+      if (!p.inside(sx, sy)) continue;
+      const fade = 1 - Math.min(1, t.age / Math.max(0.0001, t.life));
+      r.setF(p.colF(t.x), p.rowF(t.y), "'", shade(cyan, fade));
     }
   }
 

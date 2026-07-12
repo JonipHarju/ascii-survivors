@@ -286,6 +286,22 @@ export class World {
   private static readonly ELITE_TURN_RATE = World.TURN_RATE;
 
   /**
+   * The thrust trail's own tuning (jane.md [53]/design.md §15.17 — her rough
+   * starting numbers, "a tuning pass once it exists, not a commitment now").
+   * Kept as private constants here rather than promoted into `juice.tsv`,
+   * same call as the turn rates above: this is a brand-new, not-yet-tuned
+   * effect, and `DEFAULT_PARAMS` (`data/juice.ts`) is documented as mirroring
+   * Jane's *already-committed* numbers, not a place to stage new ones. Easy
+   * to move into her table later if she wants tuning control there.
+   */
+  private static readonly THRUST_RATE = 18; // particles/sec while thrusting — a constant jet, not an ambient shower
+  private static readonly THRUST_LIFE = 0.4; // seconds — trails off like a jet, doesn't linger like a rising ember
+  private static readonly THRUST_SPEED = 10; // wu/s backward along -heading
+  private static readonly THRUST_SPREAD = 3; // wu/s perpendicular jitter — a cone, not a laser line
+  private static readonly THRUST_TAIL = 2.25; // wu behind centre; the Ranger's own hull is 6x8.6 wu (images.tsv)
+  private static readonly THRUST_MAX = 40;
+
+  /**
    * Owner feedback 09.07: "the first weapon feels clunky because you have to
    * [walk] towards enemies to aim it, meaning that you easily walk to the
    * enemies when trying to damage them."
@@ -349,6 +365,18 @@ export class World {
   pops: Pop[] = [];
   sparks: Spark[] = [];
   private sparkDebt = 0;
+
+  /**
+   * The thrust trail (jane.md [53]/design.md §15.17) — a separate stream from
+   * `sparks`, on purpose: those are Reactor Fuel's always-on shower tied to
+   * light radius, this is off at rest and on while accelerating, trailing
+   * off the ship's tail. Reuses the `Spark` shape (same x/y/vx/vy/age/life),
+   * not the mechanism's emitter.
+   */
+  thrust: Spark[] = [];
+  private thrustDebt = 0;
+  /** Set every frame by `movePlayer`; read by `updateThrust` to gate spawning. No idle-hold — a stopped engine stops visibly, unlike `heading`. */
+  private thrusting = false;
 
   /** Seconds of frozen simulation left. Rendering never stops. */
   private hitstopT = 0;
@@ -688,6 +716,7 @@ export class World {
     this.updateNumbers(dt);
     this.updatePops(dt);
     this.updateSparks(dt);
+    this.updateThrust(dt);
 
     this.pruneDecals();
     this.despawnDistant();
@@ -698,6 +727,7 @@ export class World {
 
   private movePlayer(dt: number, input: Vec, stats: Record<StatName, number>): void {
     const len = Math.hypot(input.x, input.y);
+    this.thrusting = len > 0;
 
     // Normalize so diagonals aren't 1.41x faster (design.md §5).
     const nx = len === 0 ? 0 : input.x / len;
@@ -1261,6 +1291,47 @@ export class World {
         vy: -drift,
         age: 0,
         life: life * this.rng.range(0.7, 1.15),
+      });
+    }
+  }
+
+  /**
+   * The thrust trail (jane.md [53]/design.md §15.17). Existing particles
+   * always age out, same as `sparks` — only *spawning* new ones is gated on
+   * `thrusting`, so releasing the key stops the jet immediately without
+   * truncating the particles already in flight.
+   */
+  private updateThrust(dt: number): void {
+    for (const t of this.thrust) {
+      t.age += dt;
+      t.x += t.vx * dt;
+      t.y += t.vy * dt;
+    }
+    if (this.thrust.some((t) => t.age >= t.life)) this.thrust = this.thrust.filter((t) => t.age < t.life);
+
+    if (!this.thrusting) return; // no idle-hold: a stopped engine stops visibly, unlike `heading`
+
+    this.thrustDebt += World.THRUST_RATE * dt;
+    while (this.thrustDebt >= 1) {
+      this.thrustDebt -= 1;
+      if (this.thrust.length >= World.THRUST_MAX) continue;
+
+      // Forward is (sin(heading), -cos(heading)) — see movePlayer's own
+      // derivation. The tail is directly opposite; "perpendicular" rotates
+      // that by 90° for the cone's spread axis.
+      const bx = -Math.sin(this.heading);
+      const by = Math.cos(this.heading);
+      const px = -by;
+      const py = bx;
+      const jitter = this.rng.range(-World.THRUST_SPREAD, World.THRUST_SPREAD);
+
+      this.thrust.push({
+        x: this.x + bx * World.THRUST_TAIL,
+        y: this.y + by * World.THRUST_TAIL,
+        vx: bx * World.THRUST_SPEED + px * jitter,
+        vy: by * World.THRUST_SPEED + py * jitter,
+        age: 0,
+        life: World.THRUST_LIFE * this.rng.range(0.7, 1.15),
       });
     }
   }

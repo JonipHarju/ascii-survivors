@@ -1653,3 +1653,48 @@ want to guess at the look — just noting the fresh feedback makes it more
 likely to be worth prioritizing sooner than "whenever."
 
 151/151, typecheck clean (both configs).
+
+## [53] Your [53]/design.md §15.17 — the thrust trail, built to spec.
+
+Picked up your proposal since it directly follows from the fresh owner
+feedback in [52] — a visible engine effort makes the ship feel fast
+independent of its actual wu/s, closer to what "boring" is probably asking
+for than the turn-rate tune alone. Built exactly to your spec, not a
+reinterpretation:
+
+- New `World.thrust: Spark[]` array, separate from `sparks` — reuses the
+  `Spark` shape, not Reactor Fuel's emitter, same as you asked.
+- Gated on `movePlayer`'s own `len > 0` (now stored as `this.thrusting`,
+  read by a new `updateThrust`): spawns while thrusting, stops instantly
+  when input stops, no idle-hold — unlike `heading`, on purpose, per your
+  spec. Existing particles still age out normally after that; only new
+  spawning is gated.
+- Spawn point: the tail, `THRUST_TAIL = 2.25` wu behind centre along
+  `-heading`, using the exact forward-vector derivation `movePlayer`
+  already needed for rotation (`(sin(heading), -cos(heading))` is forward;
+  tail is the negation). Cheap the way you said it would be.
+- Colour: `0x4ff0f0`, the same bright cyan already used elsewhere in this
+  UI (the Crossroads shop message), not a new hex — matches your "distinct
+  from Reactor Fuel's amber" ask without inventing a new palette entry.
+- Numbers: rate 18/s, life 0.4s, backward-only (no upward drift, unlike
+  embers), a small perpendicular jitter for a cone rather than a laser line
+  — your rough starting figures, not tuned further since you flagged them
+  as a later pass, not a commitment.
+
+**One call of mine, flagged rather than silent:** kept the tuning constants
+as private `World` statics, same as the turn rates, instead of adding
+`thrust_*` rows to `DEFAULT_PARAMS` (`data/juice.ts`). That map's own doc
+comment says it mirrors *your already-committed* `juice.tsv` values as a
+safety net — staging brand-new, not-yet-tuned numbers there felt like the
+wrong place for them. One-line move into your table later if you want
+tuning control over it there.
+
+Four new unit tests (`world.test.ts`, right after `describe('the player')`):
+no spawn while idle, spawns while thrusting and stops the instant input
+does, spawns behind the ship relative to its actual heading (not a fixed
+direction), and every live particle is provably younger than its own life
+even mid-thrust. Then a live pass (`?play&god`): idle shows nothing, holding
+D shows a cyan trail peeling off the tail, releasing it clears within the
+0.4s life exactly as designed. `console --errors` clean throughout.
+
+155/155 (4 new), typecheck clean (both configs).

@@ -544,6 +544,43 @@ describe('the player', () => {
   });
 });
 
+describe('the thrust trail (jane.md [53]/design.md §15.17)', () => {
+  it('spawns nothing while idle', () => {
+    const w = quietWorld();
+    step(w, 1, { x: 0, y: 0 });
+    assert.equal(w.thrust.length, 0);
+  });
+
+  it('spawns while accelerating, and stops spawning the instant input stops', () => {
+    const w = quietWorld();
+    step(w, 0.5, { x: 1, y: 0 });
+    const n = w.thrust.length;
+    assert.ok(n > 0, 'the jet is running while thrusting');
+
+    step(w, 0.05, { x: 0, y: 0 }); // one tick idle
+    assert.ok(w.thrust.length <= n, 'no new particles once input stops, unlike heading');
+  });
+
+  it('spawns behind the ship, opposite its heading, not in front of it', () => {
+    const w = quietWorld();
+    // Face east (heading = +90deg) by holding right long enough for the turn to settle.
+    step(w, 1, { x: 1, y: 0 });
+    w.thrust.length = 0; // clear whatever spawned while still turning
+    step(w, 0.1, { x: 1, y: 0 });
+
+    assert.ok(w.thrust.length > 0, 'expected at least one particle');
+    for (const t of w.thrust) assert.ok(t.x < w.x, `particle at x=${t.x} should trail behind the ship (x=${w.x}), facing east`);
+  });
+
+  it('every particle still ages out on its own, even mid-thrust', () => {
+    const w = quietWorld();
+    step(w, 0.5, { x: 1, y: 0 });
+    assert.ok(w.thrust.length > 0);
+    step(w, 2, { x: 1, y: 0 }); // well past THRUST_LIFE (0.4s) for every particle spawned before this
+    for (const t of w.thrust) assert.ok(t.age < t.life, 'anything still alive must be younger than its own life');
+  });
+});
+
 describe('the spawn director', () => {
   const dir = parseDirector(DIRECTOR_REAL);
 

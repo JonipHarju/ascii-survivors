@@ -2,6 +2,29 @@
 
 Newest block at top. `[J]` Jane's, `[Jo]` John's. Struck through = done.
 
+## 12.07 — SHIP ROTATION + "FULL GRAPHICAL OVERHAUL" CHECKLIST (owner, 12:42)
+
+Full design writeup: `design.md` §15.11 (rotation) and §15.12 (the
+checklist). Contract ask: `jane.md` [45].
+
+- [ ] `[Jo]` **Top priority — ship rotation.** Wire a smoothed heading angle
+      (derived from `movePlayer`'s `(nx, ny)`, NOT `world.facing`, which
+      stays untouched for weapon aim) through to the player's `drawImage`
+      call (`render.ts:167`), using the `angle` param `Surface.drawImage`
+      already supports and `web/canvas.ts:220` already implements — built,
+      never called. Turn-rate cap proposed at ~480°/s; hold last heading
+      when idle rather than snapping to a default. Full reasoning:
+      `design.md` §15.11, `jane.md` [45].
+- [x] `[J]` Checked `Galactica_Ranger_A.png`'s own orientation so John isn't
+      guessing: nose points up, cockpit near the top, engine flare at the
+      bottom. `angle: 0` should already line up with "moving up the screen,"
+      no offset needed — flagged that this assumes the standard canvas
+      rotation convention, John to confirm once it's wired.
+- [ ] `[J]` Work `design.md` §15.12's checklist (card-icon z-order fix
+      status, GUI raster overhaul scope, thrust/flare follow-on) into
+      concrete next picks, not just a list, ahead of the next owner
+      check-in.
+
 ## 11.07 — THE SPACE PIVOT (owner, 00:03)
 
 Full design writeup: `design.md` §15. Contract ask: `jane.md` [33].

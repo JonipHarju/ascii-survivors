@@ -1735,6 +1735,125 @@ for a card where the box is supposed to sit *behind* the icon. Traced, not
 fixed — `jane.md` [43], `todo.md`. Portraits don't hit this because nothing
 draws a buffered fill over the portrait panel first.
 
+### 15.11 The Ranger has to turn — a design call plus a contract ask, and the plumbing's half-built already
+
+Owner, 12.07 12:42: *"Why is the ship on its place! Space ships turn and move
+and do epic stuff. this gameplay is now weird for a space game!"* Fair hit —
+every entity in the game, including the player, still renders as a single
+static image nailed to one orientation while it slides around underneath.
+That reads fine for a hooded figure walking (§9 never asked the old sprite to
+turn either), but a spaceship that never points where it's going looks
+broken, not stylised, because "which way is the nose pointing" is the one
+thing every player's eye checks on a ship instantly.
+
+**This is a rendering concern, not a `facing` change — deliberately.**
+`world.facing: 1 | -1` (`world.ts:233`) is a gameplay variable: it's what The
+Chain fires along, it's set by explicit horizontal input, and it auto-turns
+toward the nearest enemy after a 0.25s idle grace (`faceNearestEnemy`,
+`world.ts:678`) so the whip has something sane to aim at while standing
+still. None of that should change — it's tuned, it's in §7, touching it risks
+the exact "walking into damage" regression §7 already fixed once. What the
+owner's asking for is purely visual: the sprite's drawn angle should track
+where the player is actually **moving**, continuously, not the binary
+weapon-aim side. Two different questions that happen to both be called
+"facing" in casual conversation — worth being precise about so the fix
+doesn't accidentally reopen the Chain's old bug.
+
+**The hook already exists and has never been called.** `Surface.drawImage`
+(`engine/surface.ts:91`) has taken an optional `angle` parameter since the
+raster pivot; the canvas backend implements it fully — real
+`ctx.translate`/`ctx.rotate` around the sprite's own center
+(`web/canvas.ts:220-257`) — and its own doc comment says the quiet part
+out loud: *"unused by any caller yet (v1 ships don't turn to face their
+heading), kept so that's additive later, not a signature break."* Later is
+now. The player's draw call (`render.ts:167`) simply never passes a third
+argument. This is about as cheap as a "next time the customer comes back
+they want to see the full graphical overhaul" ask gets to be — no new art,
+no new plumbing layer, one derived number threaded through a call that
+already accepts it.
+
+**The design call — how it should feel, not just that it should work:**
+
+- **Derive heading from actual movement, not from `facing`.** `movePlayer`
+  (`world.ts:646`) already computes a normalized `(nx, ny)` every frame
+  before applying speed — that vector *is* the heading, in the one place
+  that already does the trig. `facing` only flips on a >0.2 horizontal
+  threshold and idles into auto-aim; using it for the sprite would mean the
+  ship silently reorients to face a monster while the player is holding
+  still, which isn't "turning," it's "spinning for no visible reason."
+  Movement and aim read as different verbs to a player and should stay
+  different values in code.
+- **Smooth the turn — snapping to the raw velocity angle every frame will
+  look like a twitch, not a bank.** At swarm density the input vector
+  reverses constantly (dodging is the whole game, §9/§14); an unsmoothed
+  angle will flicker the ship back and forth like a broken compass needle.
+  Cap the turn rate instead of setting the angle directly — propose
+  **~480°/s** (a full reversal in a third of a second: fast enough to read
+  as "arcade spaceship," not slow enough to feel like the ship is fighting
+  the player's own input). Tune by eye once it's live; the number's a
+  starting point, not a commitment.
+- **Hold the last heading at rest, don't snap to a default.** When the input
+  vector is zero (`len === 0`, `world.ts:666`, returns before moving), the
+  ship should keep pointing wherever it last pointed, not reset to "up" or
+  "right." A ship that un-banks itself the instant you release a key is the
+  same twitchy problem as no smoothing at all, just at the other edge of the
+  input.
+- **Confirm the Ranger art's own "up.".** `angle: 0` means "the image's own
+  up" (`web/canvas.ts:210`'s doc comment) — I haven't confirmed which way
+  `Galactica_Ranger_A.png`'s nose actually points in the source file. If
+  it's not drawn nose-up, the fix needs a fixed offset added to the computed
+  angle, not a code bug — I'll check the source art and post the offset (or
+  "0, it's already nose-up") to `jane.md` rather than have John guess and
+  ship a ship that flies sideways.
+- **Out of scope for this pass, flagged so it doesn't get assumed:** a
+  thrust/engine-flare visual cue when accelerating (cheap follow-on once
+  heading exists, pairs well with it, but is a new visual element, not this
+  fix) and applying the same rotation to enemy sprites (mobs don't currently
+  have a "nose," and the owner's complaint named the ship specifically —
+  separate ask if it comes up).
+
+Contract ask posted to `jane.md` [45] for John: where the smoothed-heading
+state should live (`World` alongside `facing`, or local to the renderer) is
+his call, not mine — techstack is his lane. My ask is the derivation (from
+velocity, not `facing`), the turn-rate cap, and the idle-hold behaviour;
+everything else is his to build against.
+
+### 15.12 What "the full graphical overhaul" should mean at the next check-in — a checklist, not new scope
+
+Owner, same message: *"Next time the customer comes back they want to see
+the full graphical overhaul!!"* Rather than treat that as one undefined ask,
+gathering what's actually open across every visual thread already tracked in
+this file and `todo.md`, so there's one list to work down instead of
+scattered open items rediscovered under pressure right before a demo:
+
+1. **Ship rotation (§15.11, above)** — the most visible single gap right
+   now, and the one named explicitly. Top of the list.
+2. **Card icons render blank** (§15.10, `jane.md` [43]/[44]) — traced, not
+   fixed, currently disabled behind a working ASCII fallback so it isn't an
+   active regression. This is the difference between "level-up screen looks
+   finished" and "level-up screen looks unfinished" and it's a real,
+   understood bug, not undiscovered work.
+3. **The GUI is still 100% ASCII** (`todo.md`, carried over) — title and
+   death screens got a five-minute reskin (§15's last entry before this
+   one) but menus/HUD chrome/the level-up frame itself are untouched. This
+   is the largest remaining "still looks like the old game" surface and the
+   one most likely to be the first thing a customer's eye catches after the
+   ship itself.
+4. **Weapon effects stay procedural, permanently** (§15.10) — not a gap,
+   a decided architectural boundary. Listing it here so it reads as
+   "closed, on purpose" at the next check-in rather than as an oversight
+   someone re-asks about.
+5. **Thrust/engine-flare on acceleration** — new idea, surfaced by §15.11's
+   rotation work rather than requested yet. Cheap once heading exists
+   (same derived vector), real "epic" payoff for very little new surface.
+   Proposing it here rather than building it unasked.
+6. **Boss phase-2 art swap** (`OverlordEvoSample`, `todo.md`) — parked as a
+   want, needs John's phase-trigger plumbing first, not started.
+
+Not a commitment to do all six before the next visit — a shared map of what
+"finished" covers, so whichever subset gets done, both of us (and the
+owner) are working off the same picture of what's left.
+
 ## Open questions / assumptions I'm running with
 
 Tracked live in `jane.md`. Anything settled gets promoted **into this file** and

@@ -2659,3 +2659,63 @@ the kind of thing that would land on the owner's screen the next time he
 looks. Commented the 7 rows out in `images.tsv` (values kept, not deleted —
 one-line uncomment once [43]'s fixed) and confirmed with a screenshot:
 Sanguine Nova's card is back to its ASCII diagram. `npm test` 145/145.
+
+---
+
+## [45] Owner ask: "why is the ship on its place" — design call plus a contract ask, and you already half-built the hook.
+
+Full writeup: `design.md` §15.11 (the decision) and §15.12 (a checklist for
+"next time they want the full graphical overhaul," so that ask doesn't stay
+vague). The short version, since this one's time-sensitive:
+
+The player ship never rotates — `render.ts:167`'s `drawImage` call never
+passes an `angle`, even though `Surface.drawImage` (`engine/surface.ts:91`)
+has taken one since the raster pivot and your `web/canvas.ts:220-257`
+already implements the rotation transform for real. Your own doc comment on
+that method says it: *"unused by any caller yet ... kept so that's
+additive later, not a signature break."* That's this. The hook's built; it's
+never been wired to anything.
+
+**What I'm asking for, precisely — this is a rendering value, not a change
+to `world.facing`.** I read `movePlayer` (`world.ts:646`) and
+`faceNearestEnemy` (`world.ts:678`) before writing this: `facing` is a
+gameplay variable (what The Chain fires along, binary, auto-turns toward
+the nearest enemy after 0.25s idle) and I don't want it touched — that's
+tuned, it's in §7, and conflating "which way the whip aims" with "which way
+the sprite points" risks reopening the exact "walking into damage" bug §7
+already fixed once. What I want instead: derive a **smoothed heading angle**
+from the actual movement vector — `movePlayer` already computes normalized
+`(nx, ny)` every frame before applying speed, that's the number — and pass
+it as `drawImage`'s `angle` on the player's draw call. Two asks bundled in
+because they're both required for it to look right, not just work:
+
+- **Cap the turn rate, don't set the angle directly.** Snapping straight to
+  the raw input angle every frame will flicker like a broken compass at
+  swarm density, since dodging means the input reverses constantly. Propose
+  **~480°/s** as a starting turn-rate cap — full reversal in a third of a
+  second, reads as "arcade ship," not "sprite fighting the input." Tune by
+  eye once it's live; I'm not precious about the exact number.
+- **Hold the last heading at rest.** When `len === 0` in `movePlayer` (no
+  input), don't reset the angle to a default — keep pointing wherever it
+  last pointed. Snapping to "up" the instant a key's released is the same
+  twitchy problem as no smoothing, just at the other edge.
+
+Where the smoothed-heading state should live — on `World` next to `facing`,
+or local to the renderer — is your call, not mine; that's techstack, your
+lane. I'm not proposing an implementation, just the derivation, the rate
+cap, and the idle behaviour.
+
+**Checked the one thing that would've made you guess blind:** pulled up
+`Galactica_Ranger_A.png` directly — nose points up (the pointed cluster and
+cockpit bubble are at the top of the sprite), flared engine shape at the
+bottom. So `angle: 0` ("the image's own up," your doc comment on
+`web/canvas.ts:210`) should already line up nose-first with "moving up the
+screen" — no offset needed on my end, *if* your rotation convention treats
+angle the standard canvas way (0 = up, increasing = clockwise) and that
+matches how `(nx, ny)` maps to screen directions. Flag it back to me if the
+math doesn't fall out that clean and the ship ends up flying sideways —
+I'll re-check the art, not assume the code's wrong.
+
+Not blocking on this — moving to `design.md` §15.12's checklist work
+(picking through what "full graphical overhaul" should mean concretely)
+while this sits with you, same as always.

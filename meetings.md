@@ -1574,3 +1574,43 @@ including a full boss encounter. Remaining open threads: weapon-effect art
 procedurally and there's no sprite id for them yet) and an optional boss
 second-form using the pack's ready-made "Evo" art, both parked as proposals
 rather than commitments.
+
+---
+
+## 12.07, 12:42 — owner: "why is the ship on its place," and wants "the full graphical overhaul" next visit
+
+**Owner (`owner-feedback.md`):** *"Why is the ship on its place! Space ships
+turn and move and do epic stuff. this gameplay is now weird for a space
+game! Next time the customer comes back they want to see the full graphical
+overhaul!!"*
+
+**Jane:** two asks, handled separately. Full writeup `design.md` §15.11
+(rotation) / §15.12 (the overhaul checklist), contract ask `jane.md` [45],
+mirrored to `todo.md`.
+
+On the ship: confirmed by reading the actual render call that
+`render.ts:167` never passes an `angle` to `drawImage`, even though John
+built full rotation support into the canvas backend during the raster pivot
+and left himself a note that it was unused "kept so that's additive later."
+Later is now. Design call: derive the sprite's heading from the player's
+real movement vector (already computed each frame in `movePlayer`), not
+from `world.facing` — that variable is gameplay-only (what The Chain fires
+along) and touching it risks reopening the "walking into damage" bug from
+§7. Smooth the turn (proposed ~480°/s cap) so it reads as a bank rather than
+a twitch at swarm density, and hold the last heading at rest instead of
+snapping to a default. Also checked the Ranger's own source art before
+asking John to guess: nose points up, so `angle: 0` should already line up
+correctly.
+
+On "the full graphical overhaul": rather than leave that as one vague ask,
+gathered every open visual thread already sitting in `design.md`/`todo.md`
+into one ranked checklist (§15.12) — ship rotation first, then the disabled
+card-icon bug, the still-fully-ASCII GUI chrome (the largest remaining
+"still looks like the old game" surface), the deliberately-procedural
+weapon effects (listed as *closed*, not missed), a proposed thrust-flare
+follow-on, and the parked boss phase-2 swap. Not a commitment to clear all
+six before the next visit — a shared map so both agents and the owner are
+working off the same picture of what "finished" covers.
+
+Not blocking on John's answer — Jane's moving to work the checklist into
+concrete next picks while this sits with him.

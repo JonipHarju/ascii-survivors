@@ -55,6 +55,6 @@ createServer((req, res) => {
   })();
 }).listen(PORT, () => {
   const url = `http://localhost:${PORT}`;
-  console.log(`\n  THE LONG NIGHT  ->  ${url}\n`);
+  console.log(`\n  LONE NIGHT  ->  ${url}\n`);
   if (process.argv.includes('--open')) openBrowser(url);
 });

@@ -1,4 +1,4 @@
-# THE LONG NIGHT
+# LONE NIGHT
 
 An ASCII survivors game. One night. Kill everything. See the sun.
 

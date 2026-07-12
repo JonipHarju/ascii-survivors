@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * THE LONG NIGHT — entry point.
+ * LONE NIGHT — entry point.
  *
  * Wires the terminal, renderer, input, asset loader and game loop together,
  * then gets out of the way. Run it with `npm start`.
@@ -147,7 +147,7 @@ async function main(): Promise<void> {
 
   const term = new Terminal();
   if (!term.isTTY) {
-    console.error('THE LONG NIGHT needs an interactive terminal (stdin/stdout must be a TTY).');
+    console.error('LONE NIGHT needs an interactive terminal (stdin/stdout must be a TTY).');
     console.error('Try: npm start   — from a real shell, not a pipe.');
     process.exitCode = 1;
     return;

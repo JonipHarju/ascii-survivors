@@ -111,7 +111,7 @@ async function main(): Promise<void> {
 
   const row = (k: string, v: string): void => console.log(`  ${k.padEnd(22)} ${v}`);
 
-  console.log(`\nTHE LONG NIGHT — benchmark  (${target} enemies, ${world.decals.length} decals, 100x34)\n`);
+  console.log(`\nLONE NIGHT — benchmark  (${target} enemies, ${world.decals.length} decals, 100x34)\n`);
   row('sim update  avg', `${avgU.toFixed(3)} ms`);
   row('sim update  p99', `${percentile(updateMs, 99).toFixed(3)} ms`);
   row('render+diff avg', `${avgR.toFixed(3)} ms`);

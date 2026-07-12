@@ -143,7 +143,7 @@ function escapeHtml(s: string): string {
 }
 
 server.listen(PORT, () => {
-  console.log(`\n  THE LONG NIGHT — DEV  ->  http://localhost:${PORT}\n`);
+  console.log(`\n  LONE NIGHT — DEV  ->  http://localhost:${PORT}\n`);
   console.log('  developer mode: press ` in-game for the cheat panel');
   console.log('  (god / level up / kill screen / gold / skip time)\n');
   console.log('  ?play    skip the title screen');

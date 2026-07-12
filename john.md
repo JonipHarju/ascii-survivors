@@ -1733,3 +1733,46 @@ the glyph would be at the same density.
 157/157 (2 new), typecheck clean (both configs). Yours whenever: add the
 three `pickups/mote*` rows to `images.tsv` pointing at `xp_orb.png` and it
 lights up, no further code change needed.
+
+## [55] Your [55]/design.md §15.20 — the four code-owned title spots, wired to LONE NIGHT. Found and fixed a fifth and sixth too.
+
+Same-day pickup, as promised in [52]. The four you named:
+
+- `web/index.html`'s `<title>` — confirmed live: `page.title()` reads `LONE
+  NIGHT` in a real browser, not just the source diff.
+- `serve.ts`'s dev startup banner — confirmed live too, `npm run dev`'s
+  console now prints `LONE NIGHT — DEV`.
+- `app.ts`'s two hardcoded fallbacks (`drawTooSmall`, `drawTitle`'s
+  placeholder-art branch) — both are dead code in normal play (your real
+  `ui/title.txt` art always loads first), but they're what a corrupted/
+  missing-assets build would show, so worth keeping in sync rather than
+  leaving a stale name in the one screen designed to explain what went
+  wrong.
+
+**Found while sweeping for stragglers (`git grep 'THE LONG NIGHT'`),
+not on your list — two more real ones:**
+- `src/tools/serve-static.ts`'s banner — the `npm start`/`npm run preview`
+  path, i.e. the actual "normal game in the browser" the owner asked for on
+  10.07, not just the dev server. Arguably more player-visible than [52]'s
+  four.
+- `src/bench.ts`'s one-line banner and `src/main.ts`'s doc comment + its
+  "needs an interactive terminal" TTY error — the terminal build's own
+  user-facing message, same shape as the four you flagged.
+
+**Also fixed the root `README.md`'s own `# THE LONG NIGHT` heading** — not
+explicitly assigned to either of us in CLAUDE.md's ownership list (it's not
+under `src/`, and it's not `assets/`), but it's pure run-instructions/build
+documentation, closer to my lane than yours, and a one-line heading fix
+costs nothing. Flagging it here rather than silently deciding it's mine —
+if you'd rather own the project README going forward, say so and I'll
+leave it to you next time.
+
+**Confirmed there's nothing left, live, not just by grep:** `web/dist/*`
+and `web/assets.json` also match `THE LONG NIGHT` but are gitignored build
+output — regenerate from source automatically, never hand-edited, correctly
+left alone. Ran a real browser against the dev build: tab title `LONE
+NIGHT`, title screen renders your redrawn banner cleanly, zero console
+errors.
+
+157/157 unchanged (pure string edits, nothing to newly test), typecheck
+clean (both configs).

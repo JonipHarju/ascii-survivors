@@ -536,7 +536,7 @@ export class App {
   private drawTooSmall(r: Surface): void {
     const cy = Math.floor(r.height / 2);
     const cx = Math.floor(r.width / 2);
-    drawCentered(r, cx, cy - 1, 'THE LONG NIGHT', ACCENT);
+    drawCentered(r, cx, cy - 1, 'LONE NIGHT', ACCENT);
     drawCentered(r, cx, cy + 1, `needs at least ${MIN_COLS}x${MIN_ROWS} — you have ${r.width}x${r.height}`, TEXT);
     drawCentered(r, cx, cy + 2, 'resize your terminal', DIM);
   }
@@ -555,7 +555,7 @@ export class App {
       drawSprite(r, frame, cx - Math.floor(frame.w / 2), y, full);
     } else {
       const y = Math.max(1, Math.floor(r.height / 2) - 5);
-      drawCentered(r, cx, y, 'THE LONG NIGHT', ACCENT);
+      drawCentered(r, cx, y, 'LONE NIGHT', ACCENT);
       drawCentered(r, cx, y + 2, 'One night. Kill everything. See the sun.', DIM);
       drawCentered(r, cx, y + 4, 'You cannot attack. Your weapons swing themselves.', TEXT);
       drawCentered(r, cx, y + 5, 'All you do is walk.', TEXT);

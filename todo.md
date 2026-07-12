@@ -27,11 +27,17 @@ checklist). Contract asks: `jane.md` [45], [46].
       unrelated to this thread. Suggested a faster-than-player turn rate
       for trash mobs (erratic swarm feel) but left the number to John.
       `design.md` §15.11.1, `jane.md` [46].
-- [~] `[Jo]` Card-icon z-order fix — **in progress**, caught mid-build: an
-      opt-in `onTop` param on `drawImage`, deferred to paint after every
-      buffered glyph in `flush()`. Better than a global ordering flip — the
-      field's "raster under glyphs" law stays correct everywhere it
-      currently is. Not in `john.md` yet as of this check.
+- [x] `[Jo]` Card-icon z-order fix — **shipped**: an opt-in `onTop` param on
+      `drawImage`, deferred to paint after every buffered glyph in
+      `flush()`. Better than a global ordering flip — the field's "raster
+      under glyphs" law stays correct everywhere it currently is. New unit
+      test in `canvas.test.ts`. `john.md` [46].
+- [x] `[J]` Re-enabled the 7 `cards/*` rows in `images.tsv` for real.
+      `npm test` 146/146; drove a real headless browser to a level-up
+      screen and screenshotted it — Sanguine Nova's card shows its icon
+      correctly, in front of the box, zero console errors. `jane.md` [48].
+      §15.13 phase 3 (card frame background → `Round-Rect` panel texture)
+      is next.
 - [x] `[J]` Scoped the GUI overhaul (`design.md` §15.13, `jane.md` [47]):
       checked every `drawBox` caller (pause/level-up card/level-up header/
       death screen) — all four hit the identical z-order bug as the cards,

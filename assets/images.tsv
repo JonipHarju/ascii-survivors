@@ -85,21 +85,21 @@ portraits/gravewarden	space/elites/gravewarden.png	8	8
 # box instead of pixel-exact proportion. The rounder icons (nova, censer,
 # lantern, gravesalt) ARE aspect-preserving, same math as every sprite row.
 #
-# DISABLED 11.07 (jane.md [43]) — not a data problem, a rendering bug: the
-# card's own background fill paints over the icon (drawBox's buffered set()
-# calls always composite over an immediate drawImage(), regardless of call
-# order — see the trace in jane.md [43]/design.md §15.10). Enabling these
-# rows right now is a REGRESSION, not a no-op: before this table had cards/*
-# rows, a card fell through to its ASCII diagram; now it takes the raster
-# branch, "succeeds," and renders invisible — worse than before, not neutral.
-# Re-enable (uncomment) the moment John confirms the z-order fix; the art
-# and sizing are already picked and shouldn't need to change.
+# RE-ENABLED 12.07 (jane.md [48], john.md [46]) — was disabled 11.07 for the
+# z-order bug (drawBox's buffered fill painting over an immediate drawImage,
+# jane.md [43]/design.md §15.10). John fixed it with an opt-in `onTop` flag
+# on drawImage (surface.ts/canvas.ts), deferred to paint after every
+# buffered fill; drawCardArt now passes it for the icon call. Confirmed
+# working two ways before this flip: his own screenshot test (temporarily
+# uncommented these same 7 rows, verified, reverted) and a new unit test
+# (canvas.test.ts) proving the defer ordering. Art/sizing unchanged from the
+# original pick.
 #
 # id	path	w	h
-# cards/nova	space/cards/nova.png	9.9	4.5
-# cards/chain	space/cards/chain.png	2.5	5
-# cards/censer	space/cards/censer.png	8	4.5
-# cards/gravesalt	space/cards/gravesalt.png	4.1	4.5
-# cards/lantern	space/cards/lantern.png	11	2.1
-# cards/silverrain	space/cards/silverrain.png	2.2	5
-# cards/cinder	space/cards/cinder.png	3.2	5
+cards/nova	space/cards/nova.png	9.9	4.5
+cards/chain	space/cards/chain.png	2.5	5
+cards/censer	space/cards/censer.png	8	4.5
+cards/gravesalt	space/cards/gravesalt.png	4.1	4.5
+cards/lantern	space/cards/lantern.png	11	2.1
+cards/silverrain	space/cards/silverrain.png	2.2	5
+cards/cinder	space/cards/cinder.png	3.2	5

@@ -1676,3 +1676,25 @@ win — re-enabling the 7 already-picked card icons — lands first and
 doubles as confirmation the fix works.
 
 `design.md` §15.13, `jane.md` [47], mirrored to `todo.md`.
+
+---
+
+## 12.07, later still — the level-up cards actually show art now
+
+**John** shipped the `onTop` fix (`john.md` [46]) and, notably, verified it
+himself before handing it back: temporarily uncommented the same 7 `cards/*`
+rows Jane had parked, screenshotted a real level-up screen, confirmed the
+icons render, then reverted the file with a clean `git checkout` rather
+than commit into Jane's file.
+
+**Jane** made it permanent: uncommented the 7 rows for real, ran the suite
+(146/146), then drove a headless browser against the actual dev server
+herself rather than take the fix on faith twice — forced a level-up,
+screenshotted it. Sanguine Nova's card shows its blue-orb icon sitting
+correctly inside the box, in front of the background. Passive cards on the
+same screen (no `cards/*` row) still show their ASCII diagrams, confirming
+the fallback still works too. Zero console errors.
+
+The card-icon thread that opened back on 11.07 (`jane.md` [43]) is closed.
+Next up in `design.md` §15.13's phasing: the level-up card frame's own
+background, using the `Round-Rect` panel texture Jane already picked.

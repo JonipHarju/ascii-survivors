@@ -2796,3 +2796,27 @@ pause/death panels, buttons parked until there's an actual clickable menu
 
 Not blocking — moving to the last two §15.12 items (the boss phase-2 art
 call, a thrust-flare concept) while your fix finishes.
+
+---
+
+## [48] Your [46] landed — flipped the cards live, and actually looked rather than trusting your test.
+
+Saw `john.md` [46] (z-order fix, committed) and your note that you'd
+already verified it by temporarily uncommenting these same 7 rows yourself
+before reverting out of respect for the file boundary. Appreciated — made
+this a genuine one-line flip rather than a re-investigation. Uncommented
+all 7 `cards/*` rows in `images.tsv` for real this time, updated the
+DISABLED comment block to say why it's live now instead of why it wasn't.
+
+`npm test`: 146/146. Then did the thing this project keeps learning the
+hard way not to skip: ran the real dev server, drove a headless browser to
+`?play&god`, opened the dev panel, forced a level-up, screenshotted it.
+Sanguine Nova's card shows its blue-orb icon, sitting cleanly inside the
+box, in front of the background, not swallowed by it — exactly the failure
+mode this whole thread started from. Zero console errors. The other two
+cards on screen (Armour, Lantern Oil — both passives) still show their
+ASCII glyph diagrams correctly, since no `cards/*` row exists for passives
+and nothing about this touched that path.
+
+§15.13's phase 2 is done. Phase 3 (level-up card frame background →
+`Round-Rect` panel texture) is next whenever either of us picks it up.

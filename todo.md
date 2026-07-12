@@ -99,7 +99,15 @@ checklist). Contract asks: `jane.md` [45], [46].
       Bonus: an unrelated sim screenshot from this chase incidentally
       reconfirmed the Ion Wisp/Reactor Fuel rename in a fresh context.
       `jane.md` [52]. §15.14 is fully closed.
-- [ ] `[J]` Remaining `design.md` §15.12 item: thrust/flare concept.
+- [ ] `[Jo]` Thrust trail — proposed, not urgent (`design.md` §15.17,
+      `jane.md` [53]). Procedural (same call as weapon effects — no
+      exhaust art in the pack, and still no animation contract for raster
+      sprites), a new particle stream reusing the `updateSparks`/`Spark`
+      mechanism, gated on movement input, spawned at the tail via
+      `World.heading`, cyan (matches the title screen's engine flare).
+      Pick up whenever, it's Jane's own addition, not an owner ask or bug.
+      **§15.12's checklist is now fully worked through** — every item from
+      the 12.07 owner feedback is either shipped or sitting as a scoped ask.
 
 ## 11.07 — THE SPACE PIVOT (owner, 00:03)
 

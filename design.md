@@ -2130,6 +2130,62 @@ works, on-theme — flagging the brightness as a possible tint/darken pass
 later rather than treating this as wrong. §15.13's phasing is now fully
 closed (fix → cards → panel texture); nothing left queued on that thread.
 
+### 15.17 The last §15.12 item — a thrust trail, proposed procedural for the same reason weapon effects are
+
+Closing the checklist. Same question §15.9 already had to answer for
+weapon effects: raster or procedural? Checked the pack first rather than
+assume — `grep -i "exhaust|thrust|flare|engine"` across
+`space-assets/` turns up nothing; the closest candidates
+(`!EXTRA PARTS.../SpaceShip Builder Pro`) are hull-component sprites, not
+particle/glow art. Even if something existed, **there's still no animation
+contract for raster sprites** (`todo.md`'s long-open item — `images.tsv` is
+one static image per id, no frames) and a thrust flare that doesn't
+flicker/pulse reads as a sticker, not an engine. Same conclusion as §15.10
+for the weapon shapes: this is a live, per-frame effect, and procedural is
+the only medium that can actually do it today.
+
+**Proposal, not a spec — reusing the existing ember/spark *mechanism*
+(`world.ts`'s `updateSparks`/`Spark`, `juice.tsv`'s `ember_*` params), not
+the existing *emitter*.** Deliberately a new, separate particle stream, not
+a repurpose of Reactor Fuel's sparks: those are an always-on annulus around
+the player tied to light radius (a passive's visual payoff, §15.15/§9's
+"the reactor throws sparks" line, still accurate post-rename) — gating
+that stream on movement would break the passive's whole premise. A thrust
+trail is the opposite shape — off at rest, on while
+accelerating, anchored to the ship's tail:
+
+- **Trigger:** `movePlayer`'s `len > 0` (the same "is there input" check
+  that already gates `heading`'s target angle) — on while thrusting, off
+  the instant input stops. No idle-hold needed here, unlike heading; a
+  stopped engine should stop visibly, not coast.
+- **Spawn point:** the tail, using `World.heading` (already exists,
+  `world.ts:233`+) — offset behind the ship along `-heading`, roughly at
+  the hull's rear edge (~2-2.5 wu behind centre, the Ranger's own
+  `images.tsv` footprint is 6×8.6 wu). Cheap because the exact number this
+  session already needed for rotation is the same number this needs.
+- **Colour:** cyan, not the Reactor Fuel embers' amber — matches the title
+  screen's own engine-flare pick (`jane.md` [40], `▀ ▀` cyan glyphs) and
+  keeps the two particle streams visually distinct rather than blurring
+  into one "the ship is sparkly" effect.
+- **Starting numbers, comparing against the ember system's own tuning
+  (`juice.tsv` above) rather than guessing blind:** faster rate (~15-20/s,
+  it's a constant thrust jet, not an ambient shower), shorter life (~0.4s,
+  it should read as a jet trailing off, not linger like a rising ember),
+  no upward drift — it should trail backward along `-heading` and fade,
+  not rise. Real numbers are a tuning pass once it exists, not a design
+  commitment now.
+
+**Not proposing this as urgent.** Everything else on this checklist was
+either an explicit owner ask or a bug; this is Jane's own addition, real
+"epic space" payoff for cheap, but it's polish layered on already-shipped
+rotation, not something broken. Posted to `jane.md` [53] — John's call
+when to pick it up, same framing as the boss phase-art "want."
+
+**§15.12's checklist is now fully worked through.** Ship rotation, mob
+rotation, the card z-order bug, the GUI panel texture, the lantern
+continuity fix, the boss phase art, and this proposal — every item either
+shipped or is a scoped, posted ask waiting on the other agent's lane.
+
 ## Open questions / assumptions I'm running with
 
 Tracked live in `jane.md`. Anything settled gets promoted **into this file** and

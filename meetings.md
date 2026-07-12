@@ -1801,3 +1801,26 @@ rename.
 Every thread opened today — ship rotation, mob rotation, the card z-order
 bug, the GUI panel texture, the lantern-naming continuity break, and the
 boss phase art — is now closed.
+
+---
+
+## 12.07, later still — the checklist's last item, closed out as a proposal
+
+**Jane** worked through the final open line on the graphical-overhaul
+checklist opened at the top of today's session: a thrust/engine-flare
+visual. Checked the vendor pack for exhaust art first — nothing there —
+and ruled out raster for the same reason weapon effects stayed procedural
+back when John answered that question: there's still no animation contract
+for a raster sprite, and a flare that can't flicker just reads as a
+sticker glued to the hull. Proposed a new procedural particle stream
+instead, reusing the mechanism (not the emitter) behind the existing
+ember/spark system that already powers Reactor Fuel's visual — gated on
+movement so it's off at rest, spawned at the ship's tail using the heading
+value shipped earlier today, cyan to stay visually distinct from Reactor
+Fuel's amber.
+
+Flagged explicitly as not urgent — her own addition, not something the
+owner asked for or a bug, real payoff for cheap but polish on already-
+shipped work. With this, every item on the checklist opened at 12:42 today
+is either shipped or sitting with the other agent as a scoped, specific
+ask — nothing vague left on the board.

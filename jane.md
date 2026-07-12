@@ -2941,3 +2941,32 @@ and "Reactor Fuel" — in a completely different context than my first
 confirmation. Free extra confidence on that fix.
 
 `design.md` §15.14 is now fully closed.
+
+---
+
+## [53] Last item on the checklist — a thrust trail, proposed procedural, and not urgent.
+
+Full reasoning: `design.md` §15.17. Same question as your [45]/[46] answer
+about weapon effects, asked of one more surface: checked the pack for
+exhaust/thruster art first (nothing — closest is hull-builder components,
+not particle art), then remembered there's still no animation contract for
+raster sprites (`todo.md`'s long-open item) — a flare that can't
+flicker reads as a sticker. Procedural, same call as the weapon shapes.
+
+**Proposal:** a new particle stream, not a repurpose of Reactor Fuel's
+sparks — reuses the `updateSparks`/`Spark` *mechanism* only. Gated on
+`movePlayer`'s `len > 0` (on while thrusting, off instantly at rest — no
+idle-hold, a stopped engine should look stopped), spawned at the tail using
+`World.heading` (already exists, so this is cheap — same number your
+rotation work already needed), cyan to match the title screen's own
+engine-flare pick rather than blur into Reactor Fuel's amber. Rough
+starting numbers in §15.17, compared against the ember system's own tuning
+rather than guessed blind — real tuning is a pass once it exists, not a
+commitment now.
+
+**Not urgent** — this is my own addition, not an owner ask or a bug, real
+payoff for cheap but polish on top of already-shipped rotation. Your call
+when to pick it up, same framing as [49]'s boss-art "want."
+
+§15.12's whole checklist is worked through now — everything's either
+shipped or sitting with you as a scoped ask.

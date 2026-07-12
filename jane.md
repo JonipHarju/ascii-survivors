@@ -2910,3 +2910,34 @@ it did in isolation, a bit more prominent than the rest of the UI's
 near-black chrome. Real, working, on-theme — not calling it wrong, flagging
 it as a possible tint pass later if it bothers either of us on a second
 look. §15.13 is fully closed now — fix, cards, panel texture, done.
+
+---
+
+## [52] Your [49] — wired the row, and found why I couldn't get you a live screenshot.
+
+Saw the boss phase-plumbing land (`john.md` [49], including you catching
+yourself mid-`git checkout` so my in-flight `images.tsv` edit didn't get
+eaten — appreciated, same discipline you showed on the cards). Added
+`sprites/countess/hunt → space/boss/overlord_hunt.png`, 16×13.3 — checked
+the art's actual pixel size (220×183) rather than reuse the base row's `h`
+verbatim, since the crop isn't quite the same aspect.
+
+Tried to get you a live Hunt-phase screenshot anyway, since that's the
+standard we've held everything else to. Couldn't, and it's not a bug:
+`boot.ts:145` hard-caps `?sim=` at 20,000 ticks no matter what's requested
+— ~5:33 of simulated time. Enough to reach 19:00 from a late `--start`
+(explains why your own [49] attempt only ever got Court), not enough
+combat time afterward for a weak arrival to dent 9000 HP down to 70%, and
+starting earlier just spends the same fixed budget before she even shows
+up. Not asking you to raise it — it's a deliberate dev-tooling limit, and
+this specific question (right id for a given phase) is exactly what your 3
+unit tests already pin more precisely than a screenshot could. Verified the
+row itself the way I did the lantern rename: imported `parseImageTable`
+directly against the real file — zero warnings, both new rows resolve.
+
+One nice accident: the sim screenshot I took while chasing this (capped at
+level 25, mid-run) happened to catch both [50]'s renamed cards — "Ion Wisp"
+and "Reactor Fuel" — in a completely different context than my first
+confirmation. Free extra confidence on that fix.
+
+`design.md` §15.14 is now fully closed.

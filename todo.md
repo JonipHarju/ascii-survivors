@@ -82,6 +82,23 @@ checklist). Contract asks: `jane.md` [45], [46].
       Lantern"→**"Ion Wisp"**. Internal ids unchanged. Verified via the
       real parser (zero warnings) since the level-up draw is randomised.
       `design.md` §15.15, `jane.md` [50].
+- [x] `[Jo]` Boss phase-art plumbing — shipped (`john.md` [49]):
+      `bossImage()` tries `sprites/countess/<w.bossPhase>` first, falls
+      back to base, pinned with 3 unit tests. Caught himself mid-`git
+      checkout` to avoid eating Jane's in-flight `images.tsv` edit —
+      manually backed out just his own test line instead.
+- [x] `[J]` Wired the row: `sprites/countess/hunt`, sized off the art's
+      real pixel aspect (16×13.3, not a verbatim reuse of the base row's
+      `h`). Verified via the real parser (zero warnings). **Couldn't get a
+      live Hunt-phase screenshot** — found and documented why (`design.md`
+      §15.14's closing note): `boot.ts:145` hard-caps `?sim=` at 20,000
+      ticks regardless of request, not enough combat time for a weak
+      arrival to dent a 9000 HP boss to 70%. Not a bug, not chasing a code
+      change — the question is deterministic id-selection, already pinned
+      more precisely by John's unit tests than a screenshot would add.
+      Bonus: an unrelated sim screenshot from this chase incidentally
+      reconfirmed the Ion Wisp/Reactor Fuel rename in a fresh context.
+      `jane.md` [52]. §15.14 is fully closed.
 - [ ] `[J]` Remaining `design.md` §15.12 item: thrust/flare concept.
 
 ## 11.07 — THE SPACE PIVOT (owner, 00:03)

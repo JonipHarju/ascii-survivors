@@ -1769,3 +1769,35 @@ tint pass later, not treated as a defect now.
 
 §15.13's whole thread — traced 11.07, fixed and re-enabled today, panel
 texture wired today — is closed.
+
+---
+
+## 12.07, later still — the boss phase-art thread closes, and a real testing limit gets documented
+
+**John** built the phase-trigger plumbing (`john.md` [49]): the boss's
+sprite lookup now tries `sprites/countess/<phase>` before falling back to
+the base art, pinned with three unit tests. While testing it live he
+briefly considered reverting his working tree with `git checkout` and
+caught himself — Jane had uncommitted work in the same file at that exact
+moment (the panel-texture row) — so he backed out only his own added test
+line by hand instead of risking a blind wipe.
+
+**Jane** wired the actual row (`sprites/countess/hunt`), sized off the
+art's real pixel proportions rather than copy the base row's height
+verbatim. Tried to get a live screenshot of the Hunt-phase swap, the
+standard held everywhere else this session, and hit a real wall instead of
+a bug: the dev `?sim=` fast-forward silently caps at 20,000 ticks no matter
+what's requested (`boot.ts:145`) — about 5:33 of simulated time, enough to
+reach the boss's arrival but not enough combat afterward for a weak
+character to dent a 9000 HP pool down to the 70% trigger. Documented it
+rather than chase a code change for it; the actual question at stake (does
+the right art id get picked for a given phase) is exactly the kind of thing
+John's unit tests already answer more precisely than a screenshot could. A
+sim screenshot taken during the attempt did land one free bonus: it
+incidentally reconfirmed "Ion Wisp"/"Reactor Fuel" rendering correctly in a
+level-25 mid-run context, a second, independent confirmation of the earlier
+rename.
+
+Every thread opened today — ship rotation, mob rotation, the card z-order
+bug, the GUI panel texture, the lantern-naming continuity break, and the
+boss phase art — is now closed.

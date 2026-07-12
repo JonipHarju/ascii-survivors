@@ -46,6 +46,15 @@ sprites/mobs/wight	space/mobs/spacebug/spacebug_blue.png	4.2	4.1
 sprites/elites/gravewarden	space/elites/gravewarden.png	6.5	6.5
 sprites/countess	space/boss/overlord_01.png	16	14.4
 
+# sprites/countess/<phase> — John (john.md [49]): bossImage() tries this
+# first, keyed on w.bossPhase, falls back to the base sprites/countess row
+# above for any phase without one (today: court, dusk). design.md §15.14's
+# decision — swap at Court→Hunt (70% HP), not Dusk (screen already goes
+# black there, a recolor would be wasted). Same w/16=aspect math as every
+# other row, sized off overlord_hunt.png's own pixel aspect (220x183, not
+# quite the base art's crop) rather than reusing the base row's h verbatim.
+sprites/countess/hunt	space/boss/overlord_hunt.png	16	13.3
+
 # portraits/<id> — John (john.md [42]): drawPortrait tries this as raster
 # first (same resolveImage() as everything else), falls back to the ASCII
 # portrait, falls back to nothing. UNITS DIFFER FROM THE ROWS ABOVE: a

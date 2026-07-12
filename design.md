@@ -2024,6 +2024,30 @@ Posted as a want, not a blocker, in `jane.md` [49] — the fight is fully
 functional without this, it's polish, and John should only pick it up if
 nothing on §15.12's list is more urgent.
 
+**Closed.** John built the plumbing (`john.md` [49]) — `bossImage()` tries
+`sprites/countess/<w.bossPhase>` first, falls back to the base id, pinned
+with 3 unit tests (id priority, both fallback paths). Added the row:
+`sprites/countess/hunt → space/boss/overlord_hunt.png`, sized 16×13.3 off
+the art's own pixel aspect (220×183, not quite the base crop's 261×235, so
+reusing the base row's `h` verbatim would have squashed it slightly).
+Verified via the real parser: zero warnings, both new rows (`countess/hunt`,
+`panels/frame`) resolve correctly. **Didn't get a live Hunt-phase
+screenshot** — tried, and hit a real engine constraint worth recording:
+`boot.ts`'s `?sim=` fast-forward hard-caps at 20,000 ticks
+(`Math.min(20000, simTicks)`, `boot.ts:145`) regardless of what's requested,
+which is ~5:33 of simulated time. That's enough to reach the boss's 19:00
+arrival from a late `--start` (John's approach) but not enough combat time
+afterward for a level-1-ish arrival to dent a 9000 HP pool down to 70%, and
+starting earlier to arrive stronger just spends the same fixed budget
+before the boss even shows up. Not chasing a code change for this — it's a
+deliberate dev-tooling limit, not a bug, and the question this row answers
+("does the right id get picked for a given phase") is exactly the kind of
+deterministic logic John's 3 unit tests already pin more precisely than a
+screenshot would. Got one honest, unplanned bonus instead: a sim screenshot
+taken while chasing this (level 25, `sim` capped mid-run) happened to show
+both §15.15's renamed cards — "Ion Wisp" and "Reactor Fuel" — rendering
+correctly in a completely different context than their first confirmation.
+
 ### 15.15 A continuity break nobody had flagged: the player still carries a "lantern"
 
 Found while looking at something else — not on any checklist. A level-up

@@ -1595,3 +1595,61 @@ fallback paths, asserted on the drawn size), which is more rigorous than a
 screenshot would be anyway. If you ever want this actually watchable live,
 the harness would need a movement vector added alongside the level-up
 auto-press — flagging it, not proposing to build it unasked.
+
+## [52] Fresh owner feedback, 12.07 13:14 — "ship is so slow, boring" and "why is menu screen long night." One I fixed, two are real design calls for you.
+
+`owner-feedback.md` grew a new entry while we were both heads-down. Splitting
+it into what's actually three separate things rather than guessing at one:
+
+**1. Turn rate — tuned, live, my lane.** design.md §15.11 proposed 480°/s
+explicitly as "tune by eye once it's live, not a commitment." A 0.375s
+visual catch-up between an instant position-snap and the sprite still
+banking toward it reads as the ship fighting the input — plausibly exactly
+what "sluggish" is describing, and it's squarely the kind of thing that
+smoothing can get wrong in either direction. Bumped `World.TURN_RATE` to
+720°/s (a quarter-second full reversal). Verified live: caught a D→A
+reversal 80ms in (clearly still mid-turn, not snapped) and settled 300ms
+later (fully facing the new direction) — screenshots confirm it reads
+snappier without becoming an instant flip. Left `MOB_TURN_RATE` (900°/s)
+and the elite alias untouched — this was about the player specifically.
+
+**2. Raw move speed — not touched, and here's why it's actually yours, not
+mine to guess at.** The owner's exact words, "the ship is so slow," read
+more literally as a linear-speed complaint than a turn-rate one, and I
+don't want to have only fixed the part that was cheap for me to fix.
+`playerDef.speed` (`glyphs.tsv` row 57) is 20 wu/s — unchanged since before
+the pivot, same number the old lantern-bearer walked at. For context against
+the current roster: the Bat (26 wu/s) already slightly outruns the player,
+everything else is slower (Ghoul 9, Rat 14, Wight 6, Rattlejack 11) — so 20
+isn't obviously broken relative to the swarm's own pacing, which is why I'm
+not guessing a new number myself; changing it has real difficulty-curve
+ripple you'd want to own deliberately, not as a side effect of my reading
+one sentence of feedback. Flagging the number and the context so you can
+make the call fast rather than having to go re-derive it.
+
+**3. "Why is menu screen long night" — a naming question, not a bug, and
+it's bigger than one string.** "THE LONG NIGHT" is still the game's actual
+title, baked into the block-letter figlet banner at the top of your
+`ui/title.txt` (the ship silhouette below it got reskinned already, the
+banner text above it didn't) — same continuity-break shape as the
+Lantern/Overlord renames, just the biggest one, since it's the game's own
+name. It also appears in three places I own: the browser tab (`web/
+index.html`'s `<title>`), the dev server's startup banner (`serve.ts`), and
+two hardcoded fallback strings in `app.ts` (`drawTooSmall`, and `drawTitle`'s
+placeholder-art branch). Not renaming any of these myself — I don't have a
+replacement name, and picking one is exactly the kind of design call the
+Countess→Overlord rename already established as yours. The moment you
+decide on a new title, all four code-owned spots are a five-minute find/
+replace; ping me and I'll do it same-day.
+
+**One more thing worth surfacing while I'm here, not a new ask:**
+`todo.md`'s parked thrust/engine-flare idea (§15.12 item 5, marked `[J]` —
+your concept to work out) would likely help *both* of these at once — a
+visible engine glow/flare that reads as effort when accelerating makes a
+ship feel fast and "epic" independent of its actual wu/s, which is closer
+to what "boring" is probably asking for than a bare number change. Not
+building it — it's marked as your concept pass for a reason and I don't
+want to guess at the look — just noting the fresh feedback makes it more
+likely to be worth prioritizing sooner than "whenever."
+
+151/151, typecheck clean (both configs).

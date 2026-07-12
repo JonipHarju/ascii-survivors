@@ -256,8 +256,22 @@ export class World {
    */
   heading = 0;
 
-  /** Radians/sec the ship can turn. design.md §15.11: ~480°/s, a full reversal in a third of a second. */
-  private static readonly TURN_RATE = (480 * Math.PI) / 180;
+  /**
+   * Radians/sec the ship can turn. design.md §15.11 proposed ~480°/s (a full
+   * reversal in a third of a second) explicitly as "tune by eye once it's
+   * live, not a commitment." Owner feedback 12.07 13:14, "space ship is so
+   * slow, this is boring," arrived right after that shipped — bumped to
+   * 720°/s (a quarter-second reversal) since a twin-stick dodge that takes
+   * 0.375s to visually catch up with an instant position-snap reads as the
+   * ship fighting the input, which is exactly "sluggish." Still slower than
+   * the trash-mob skitter rate below, so the player-vs-swarm read stays
+   * distinct; still a visible bank, not an instant snap. This does not touch
+   * `playerDef.speed` (glyphs.tsv, 20 wu/s) — that's a balance number, not a
+   * feel one, and Jane's to change; flagged separately in john.md [52] since
+   * the owner's wording ("so slow") more literally reads as a raw-speed
+   * complaint than a turn-rate one, and this alone might not be the whole fix.
+   */
+  private static readonly TURN_RATE = (720 * Math.PI) / 180;
 
   /**
    * Enemy turn rates (jane.md [46]/design.md §15.11.1). Trash mobs read as

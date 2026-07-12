@@ -215,7 +215,7 @@ centre, not its bounding box.
 | | |
 |---|---|
 | Base HP | 100 |
-| Base move | 20 wu/s |
+| Base move | 24 wu/s *(raised from 20, 12.07 — see §15.19)* |
 | Base pickup radius | **12 wu** (was 6 — see below) |
 | Contact damage taken | enemy `power`, on a 0.5s per-enemy cooldown |
 | i-frames | none — damage is a slow drain, not a spike |
@@ -2240,3 +2240,106 @@ actual mechanism that sells "this is alive," the sprite just gives it
 something worth pulsing. Same reuse-one-asset-scaled-by-tier convention as
 the mob roster: one orb file, sized up for `mote5`/`mote20` the way width
 already carries "size is threat" for mobs. Posted to `jane.md` [54].
+
+**Closed.** John built it to spec (`john.md` [54]) — `drawPickups` tries
+`pickups/<id>` raster first, glyph second, world-space wu (a genuine unit
+fork worth knowing about: unlike cards/portraits, a mote lives *on the
+field*, not in screen-space UI, so this is the third different unit
+convention this one table now carries across three id namespaces). The
+pulse still scales the drawn sprite rather than being retired — motion
+stays the actual mechanism, exactly as asked. Wired the three rows myself
+(`pickups/mote1`/`5`/`20` → `xp_orb.png`, sized `1.4`/`2.0`/`2.6` wu,
+matching the values John had already live-tested and reverted). Verified
+via the direct parser: zero warnings, all three resolve. Didn't get my own
+fresh screenshot of a loose mote — my stress-test setup (stationary
+god-mode player, large pickup radius, kills piling on top of it)
+vacuums motes up almost the instant they spawn, so the exact frame I
+captured just didn't have one on the ground. Not chasing that further:
+John's own live pass (temporarily-added rows, since reverted) already
+confirmed "the orbs read as distinct glowing cyan circles against the
+mob/decal field," and two of his new unit tests pin the raster/glyph
+fallback exactly. Between his live check and mine at the data layer,
+confidence is solid without needing to re-derive his screenshot.
+
+### 15.19 Fresh owner feedback, 12.07 13:14 — "ship is so slow, boring": the move-speed half
+
+John split this feedback three ways (`john.md` [52]) and correctly stopped
+at the part that wasn't his to guess: turn rate (his lane, already bumped
+to 720°/s) versus raw `wu/s` (a balance number, flagged to me rather than
+changed on a single sentence's literal reading).
+
+**Decision: raised `playerDef.speed` 20 → 24 wu/s (+20%).** Checked it
+against the roster before picking a number, not guessed: the Bat (26 wu/s)
+is the one enemy explicitly designed to outrun the player (§9's genre rule
+— *something* should occasionally out-pace you, that's tension); everything
+else is well below even the old 20 (Rat 14, Rattlejack 11, Ghoul 9, Wight
+6). 24 keeps that shape intact — still slower than the Bat, now more
+clearly faster than the rest of the swarm — while giving the base movement
+itself more presence, which is what "the ship is so slow" reads as most
+literally. A much bigger jump risked doing to dodging what over-tuning
+usually does to this genre: trivializing the one input that matters.
+
+**Kept proportional, not just changed in isolation.** `glyphs.tsv`'s
+`ashling`/`beggar` rows aren't read at runtime for movement (`World.
+playerDef` always resolves the `player` row specifically; character
+scaling happens via `characters.tsv`'s `move` multiplier applied on top,
+`world.ts:596`) but they're kept as a documented reference, so I updated
+them to stay honest: Ashling 28.8 (still her 1.2x), Beggar 24 (still 1.0x).
+
+**John's own note is doing real work here too, not a coincidence.** He
+flagged that the thrust trail (§15.17, since shipped — `john.md` [53])
+would likely address the *feel* of "boring" better than a bare number
+change, since a visible effort cue sells speed independent of the actual
+wu/s. Both landed the same day: a modest, careful balance change plus a
+visual one that doesn't touch balance at all. Together they're a more
+complete answer to one sentence of feedback than either alone would be.
+
+### 15.20 Fresh owner feedback, 12.07 13:14 — "why is menu screen long night": the title, renamed
+
+**THE LONG NIGHT → LONE NIGHT.** John correctly named this as the biggest
+version of the continuity-break pattern this whole session kept finding
+(Lantern/Overlord, now the game's own name) and correctly didn't guess at
+a replacement himself (`john.md` [52]) — that's the Countess→Overlord
+precedent, and picking names is design, not code.
+
+**Why this exact rename, not a bigger one.** "THE LONG NIGHT" is
+specifically recognizable as a *Game of Thrones* phrase — that specific,
+famous echo is more likely what read as leftover-fantasy-branding than
+"night" as a generic word. The dawn/crossroads screens, the whole survive-
+until-dawn structure, and "night" as the run's own framing were already
+checked and kept during the pivot (§15.2: "genre-neutral... left alone") —
+that call still holds, a spaceship crew can absolutely be surviving a long
+shift in the dark. So the fix is surgical: break the specific recognizable
+phrase, keep the vocabulary that was already vetted as fine. Considered
+bigger swaps (`LAST LIGHT` — ties nicely into the reserved-glow/reactor
+theme, `DEEP SPACE`-flavoured options) and set them aside for a real
+reason, not just caution: they need brand-new hand-drawn letterforms in
+`ui/title.txt`'s block-letter font (this session already found two new
+letters it doesn't have — A, S), and getting a highly visible, first-frame
+asset's font subtly wrong is a worse outcome than a smaller, confident fix
+shipped today. "LONE" reuses only letters the banner already draws
+correctly (L, O, N, E — cut and reassembled from the existing "LONG" and
+"THE" blocks, verified column-for-column, zero freehand drawing). If the
+owner's next look says this doesn't go far enough, a bigger rename is a
+same-day job with the letterform work done properly, not blocked on
+anything.
+
+**What actually changed:**
+- `ui/title.txt`'s banner block (Jane's file) — "THE LONG" became "LONE",
+  "NIGHT" untouched. Screenshotted the real title screen to confirm it
+  renders cleanly, correctly centered, no artifacts.
+- Every `assets/*.tsv` file header comment ("# THE LONG NIGHT — ...") —
+  updated for consistency across all twelve tables. Purely internal
+  documentation, not player-facing, but cheap and in Jane's own files, so
+  no reason to leave them stale the way `countess.tsv`'s filename stays
+  stale on purpose (that one has a real coordination cost against John's
+  code; a comment line does not).
+- **Not touched, deliberately internal:** `countess.tsv`'s own filename,
+  and every in-code identifier — same boundary as every other rename this
+  session.
+
+**Four code-owned spots John already found and flagged (`john.md` [52]) —
+posted back to him now that a name exists:** the browser tab `<title>`
+(`web/index.html`), the dev server's startup banner (`serve.ts`), and two
+hardcoded fallback strings in `app.ts` (`drawTooSmall`, `drawTitle`'s
+placeholder-art branch). `jane.md` [55].

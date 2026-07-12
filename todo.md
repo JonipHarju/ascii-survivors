@@ -2,6 +2,35 @@
 
 Newest block at top. `[J]` Jane's, `[Jo]` John's. Struck through = done.
 
+## 12.07, 13:14 — "SHIP IS SO SLOW, BORING" + "WHY IS MENU SCREEN LONG NIGHT" (owner)
+
+Full design writeup: `design.md` §15.19 (speed) / §15.20 (title). John's
+triage: `john.md` [52]. Contract ask: `jane.md` [55].
+
+- [x] `[Jo]` Turn rate bumped 480°/s → 720°/s — his lane, tuned and
+      verified live, since a 0.375s visual catch-up read as the ship
+      fighting the input.
+- [x] `[J]` Move speed decided: 20 → 24 wu/s. Checked against the roster
+      (Bat 26 stays the one thing that outruns you; everything else well
+      under 20) rather than pick a number blind. Kept `ashling`/`beggar`'s
+      unused-but-documented `glyphs.tsv` rows proportional.
+- [x] `[Jo]` Thrust trail — built to spec (`john.md` [53]), 4 new tests,
+      verified live. Not a coincidence this landed same-day as the speed
+      fix: a visible effort cue addresses the *feel* of "boring" that a
+      bare number change alone wouldn't.
+- [x] `[J]` Title renamed: **THE LONG NIGHT → LONE NIGHT.** Surgical fix —
+      breaks the specific *Game of Thrones* echo, keeps the already-vetted
+      "night"/dawn survival framing. Redrew `ui/title.txt`'s banner by
+      cutting and reassembling existing verified letterforms (L, O, N, E),
+      zero freehand drawing — bigger renames need new letters (A, S) the
+      font doesn't have yet, deliberately deferred. Updated every
+      `assets/*.tsv` header comment for consistency.
+- [ ] `[Jo]` Four code-owned spots, already flagged by John himself: the
+      browser tab `<title>` (`web/index.html`), `serve.ts`'s startup
+      banner, `app.ts`'s two hardcoded fallback strings (`drawTooSmall`,
+      `drawTitle`'s placeholder branch). Same-day find/replace once picked
+      up.
+
 ## 12.07 — SHIP ROTATION + "FULL GRAPHICAL OVERHAUL" CHECKLIST (owner, 12:42)
 
 Full design writeup: `design.md` §15.11/§15.11.1 (rotation) and §15.12 (the
@@ -99,15 +128,11 @@ checklist). Contract asks: `jane.md` [45], [46].
       Bonus: an unrelated sim screenshot from this chase incidentally
       reconfirmed the Ion Wisp/Reactor Fuel rename in a fresh context.
       `jane.md` [52]. §15.14 is fully closed.
-- [ ] `[Jo]` Thrust trail — proposed, not urgent (`design.md` §15.17,
-      `jane.md` [53]). Procedural (same call as weapon effects — no
-      exhaust art in the pack, and still no animation contract for raster
-      sprites), a new particle stream reusing the `updateSparks`/`Spark`
-      mechanism, gated on movement input, spawned at the tail via
-      `World.heading`, cyan (matches the title screen's engine flare).
-      Pick up whenever, it's Jane's own addition, not an owner ask or bug.
-      **§15.12's checklist is now fully worked through** — every item from
-      the 12.07 owner feedback is either shipped or sitting as a scoped ask.
+- [x] `[Jo]` Thrust trail — **shipped** (`john.md` [53]), built to spec,
+      4 new tests, verified live. Turned out well-timed: the fresh 13:14
+      "boring" feedback made this the "feel fast" half of that fix.
+      **§15.12's checklist is fully worked through** — every item from the
+      12.07 owner feedback is either shipped or sitting as a scoped ask.
 
 ## 11.07 — THE SPACE PIVOT (owner, 00:03)
 
@@ -265,9 +290,7 @@ unless we go back to the ASCII skin:
   fix: `assets/space/pickups/xp_orb.png` (glowing cyan orb). Needs a real
   code hook — `drawPickups` never calls `imageFor()` today, confirmed by
   reading it. `design.md` §15.18, `jane.md` [54].
-- [ ] `[Jo]` Wire `drawPickups` through `imageFor()`/`resolveImage()`,
-  same raster→glyph fallback as everything else, keep the existing pulse
-  math driving the raster version. One asset (`pickups/xp` or similar id —
-  John's naming call), scaled per mote tier like the mob roster. Not
-  blocking anything, but it's the owner's original 09.07 complaint —
-  worth not leaving parked indefinitely.
+- [x] `[Jo]` Wire `drawPickups` through `imageFor()`/`resolveImage()` —
+  **shipped** (`john.md` [54]): raster→glyph fallback, pulse still drives
+  the raster version's scale. Rows wired (`pickups/mote1`/`5`/`20`,
+  `jane.md` [55]). Closes the owner's original 09.07 complaint.

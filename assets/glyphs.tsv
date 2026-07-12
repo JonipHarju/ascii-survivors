@@ -1,4 +1,4 @@
-# THE LONG NIGHT — entity glyph table
+# LONE NIGHT — entity glyph table
 # Owner: Jane. Machine-readable. John: parse this, don't hardcode glyphs.
 # Tab-separated. Lines starting with # are comments. Blank lines ignored.
 #
@@ -52,11 +52,23 @@
 #    floor. Elites and the boss are the licensed exception -- there is one of
 #    them, it has a health bar, and it is what you should be looking at.
 #
+# player.speed RAISED 20->24, 12.07 (design.md, owner feedback 13:14: "ship
+# is so slow, this is boring"). `World.playerDef` always reads the `player`
+# row specifically (world.ts:484) -- `ashling`/`beggar`'s own speed cells
+# here are NOT read at runtime, they're kept in sync as a reference only;
+# the real per-character scaling is characters.tsv's `move` multiplier
+# applied on top of this row (world.ts:596). Kept proportional: Ashling
+# stays 1.2x base (28.8), Beggar stays 1.0x (24). Comparison against the
+# roster this raises the player toward, not past: still slower than the
+# Bat (26, the one designed "outruns you" threat), still faster than
+# everything else (Rat 14, Rattlejack 11, Ghoul 9, Wight 6) -- the "you can
+# outrun almost anything, dodge the one thing that's faster" read survives.
+#
 # id	glyph	name	colour	hp	speed	power	cost	from	xp	hit_rad	notes
 #--------------------------------------------------------------------------------------
-player	@	The Warden	W	100	20	0	-	-	0	1.2	bright white, bold; nothing else may be bright white
-ashling	&	The Ashling	W	70	24	0	-	-	0	1.2	unlockable character
-beggar	%	The Beggar	W	100	20	0	-	-	0	1.2	unlockable character
+player	@	The Warden	W	100	24	0	-	-	0	1.2	bright white, bold; nothing else may be bright white
+ashling	&	The Ashling	W	70	28.8	0	-	-	0	1.2	unlockable character
+beggar	%	The Beggar	W	100	24	0	-	-	0	1.2	unlockable character
 
 ghoul	g	Ghoul	e	10	9	4	1	0:00	1	1.4	walks straight at player
 rat	r	Grave Rat	s	2	14	2	1	0:30	1	0.8	spawns in packs of 12+

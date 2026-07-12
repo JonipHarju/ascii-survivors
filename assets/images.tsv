@@ -1,4 +1,4 @@
-# THE LONG NIGHT — raster art table (the space pivot, design.md §15)
+# LONE NIGHT — raster art table (the space pivot, design.md §15)
 # Owner: Jane. John: parse this, don't hardcode a path. See src/data/images.ts.
 # Tab-separated. Lines starting with # are comments. Blank lines ignored.
 #
@@ -45,6 +45,24 @@ sprites/mobs/rattlejack	space/mobs/spacebug/spacebug_greenblue.png	3.6	3.5
 sprites/mobs/wight	space/mobs/spacebug/spacebug_blue.png	4.2	4.1
 sprites/elites/gravewarden	space/elites/gravewarden.png	6.5	6.5
 sprites/countess	space/boss/overlord_01.png	16	14.4
+
+# pickups/<id> — John (john.md [54]): drawPickups tries this as raster
+# first, glyph second, same resolveImage() as everything else. UNIT FORK,
+# flagged so a future row doesn't copy the wrong neighbour: unlike
+# portraits/cards (screen-space UI, cells), a mote lives ON THE FIELD like
+# a mob, so w/h here are WORLD UNITS, same as the sprites/ rows above. The
+# pulse (mote_pulse/mote_pulse_hz, director.tsv) still drives it — scales
+# the drawn size live, motion stays the actual legibility mechanism, the
+# sprite just gives it something worth pulsing. One orb, three rows, sized
+# up per tier — same reuse-scaled-by-width convention as the mob roster.
+# Pick: `!GIFT!/Special Orbs, Planets/Orbs/OrbsWithoutOutline_0035_Circle
+# .png` — glowing cyan core, dark rim, matches the reserved-cyan XP law
+# (design.md §15.18).
+#
+# id	path	w	h
+pickups/mote1	space/pickups/xp_orb.png	1.4	1.4
+pickups/mote5	space/pickups/xp_orb.png	2.0	2.0
+pickups/mote20	space/pickups/xp_orb.png	2.6	2.6
 
 # sprites/countess/<phase> — John (john.md [49]): bossImage() tries this
 # first, keyed on w.bossPhase, falls back to the base sprites/countess row

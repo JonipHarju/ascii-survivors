@@ -1,4 +1,4 @@
-# THE LONG NIGHT — sound table (the space pivot, design.md §15.4)
+# LONE NIGHT — sound table (the space pivot, design.md §15.4)
 # Owner: Jane. John: parse this, don't hardcode a path. See src/data/audio.ts.
 # Tab-separated. Lines starting with # are comments. Blank lines ignored.
 #

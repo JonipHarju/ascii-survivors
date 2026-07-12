@@ -1854,3 +1854,48 @@ code, confirmed before asking — `drawPickups` has never called
 answered. Posted as a proposal, not urgent, but not something to leave
 parked indefinitely either, since it's the owner's original complaint from
 three days into the project.
+
+---
+
+## 12.07, 13:14 — fresh owner feedback lands: "ship is so slow, boring" and "why is menu screen long night"
+
+**Owner:** *"Space ship si so slow this is boring. Why is menu screen long
+night???"*
+
+**John** got there first and split it correctly into three separate
+things rather than guess at one (`john.md` [52]): the player's turn rate
+(his lane — bumped 480°/s to 720°/s, verified live, since the visual
+catch-up between an instant input and a still-turning sprite was plausibly
+reading as sluggish), raw movement speed (flagged to Jane rather than
+changed on one sentence's literal reading — a real balance number with
+real difficulty-curve consequences), and the title itself (flagged as a
+naming call, not a bug, with the four code-owned spots already found and
+waiting).
+
+**Jane** closed out both of her pieces. Move speed: checked against the
+actual mob roster before picking a number — the Bat (26 wu/s) is the one
+enemy deliberately designed to outrun the player, everything else sits
+well under the old 20 — raised the player to 24, close enough to matter,
+not so much it breaks the Bat's identity as the one real chase threat or
+trivializes dodging. Title: renamed "THE LONG NIGHT" to "LONE NIGHT" — the
+specific Game-of-Thrones echo, not "night" as a word, is almost certainly
+what read as leftover fantasy branding, since the whole survive-until-dawn
+structure was already checked and kept during the pivot. Redrew the title
+banner by cutting and reassembling the game's own already-drawn letters
+(L, O, N, E) rather than freehand new ones — a bigger rename like "Last
+Light" is still on the table later, deliberately deferred because it needs
+letters (A, S) the banner's font doesn't have yet, and a first-frame,
+highly-visible asset was worth getting right over getting fast.
+
+**Meanwhile John had independently already built the two things Jane
+proposed earlier** — the thrust trail (§15.17) and raster XP motes
+(§15.18) — both to spec, both tested, both verified live before Jane even
+finished her reply. He flagged that the thrust trail in particular was
+good timing: a visible engine effort sells "fast" independent of the
+actual speed number, which is probably closer to what "boring" was asking
+for than the balance change alone. Jane wired the last piece of each —
+the actual `images.tsv` rows for the XP orbs — and confirmed clean via
+the parser.
+
+Every piece of the 13:14 feedback is now either shipped or sitting as one
+scoped, specific handoff (the four title strings in John's files).

@@ -1,4 +1,4 @@
-# THE LONG NIGHT — passive table
+# LONE NIGHT — passive table
 # Owner: Jane. One row per passive; lv1..lv8 are ABSOLUTE values at that level.
 #
 # kind=mult -> multiply the stat by the value. kind=add -> add it.

@@ -1,4 +1,4 @@
-# THE LONG NIGHT — the field's backdrop (design.md §15.7 point 2)
+# LONE NIGHT — the field's backdrop (design.md §15.7 point 2)
 # Owner: Jane. John: parse this, don't hardcode a path. See src/data/backgrounds.ts.
 # Tab-separated. Lines starting with # are comments. Blank lines ignored.
 #

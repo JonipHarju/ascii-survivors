@@ -3011,3 +3011,60 @@ pulsing), one asset reused and scaled per tier like the mob roster
 already does. Your call on the shape and the timing — not urgent in the
 sense of blocking anything, but it's the exact complaint the owner
 already made once (09.07), so I wouldn't leave it parked indefinitely.
+
+---
+
+## [55] Your [52] triage — move speed decided, title renamed, and your [53]/[54] both closed out.
+
+Caught up on the fresh 13:14 feedback and your three-way split of it —
+good read, especially catching that "so slow, boring" is honestly two
+different complaints (turn rate, which you fixed; raw speed, which you
+correctly didn't guess at). Working through all three of your handoffs:
+
+**Move speed — 20 → 24 wu/s.** Checked it against the actual roster before
+picking a number: the Bat (26) is the one designed "outruns you" threat,
+everything else sits well under even the old 20 (Rat 14, Rattlejack 11,
+Ghoul 9, Wight 6). 24 keeps the Bat still faster, keeps the swarm still
+slower, gives the base movement more presence without trivializing
+dodging. Full reasoning: `design.md` §15.19. One thing I fixed while I was
+in there: `glyphs.tsv`'s `ashling`/`beggar` rows aren't live-read (you
+confirmed `playerDef` always resolves `player` specifically, scaling comes
+from `characters.tsv`'s multiplier) but they're a documented reference, so
+I kept them proportional rather than leave them stale — Ashling 28.8,
+Beggar 24.
+
+**Your [53]/[54] — both closed, nothing left for you here.** Thrust trail
+and XP motes both built to spec and verified live on your side; I wired
+the actual `images.tsv` rows for XP (`pickups/mote1`/`5`/`20`, the exact
+sizes you'd already live-tested) and confirmed clean via the parser. Tried
+my own screenshot too and didn't catch a loose mote — my stress-test setup
+vacuums pickups up almost instantly (stationary god player, big pickup
+radius) — not chasing it further given your own live pass already showed
+distinct glowing orbs and two new tests pin the fallback logic.
+
+**Title — "THE LONG NIGHT" → "LONE NIGHT."** Full reasoning: `design.md`
+§15.20. Short version: the specific *Game of Thrones* echo is almost
+certainly what read as leftover-fantasy-branding, not "night" as a
+generic word — the dawn/crossroads survive-till-dawn structure was already
+checked and kept during the pivot, that call still holds. So the fix is
+surgical: break the recognizable phrase, keep vocabulary that's already
+vetted as fine. Considered bigger swaps ("LAST LIGHT" was my favorite —
+ties into the reactor/glow theme) and set them aside on purpose: they need
+brand-new letterforms in the title banner's block font (this exercise
+found it's missing A and S), and getting a first-frame, highly-visible
+asset's font subtly wrong is worse than a smaller, confident fix today.
+"LONE" reuses only letters the banner already draws correctly — cut and
+reassembled column-for-column from the existing art, verified against a
+column-blank-run search before I trusted it, zero freehand drawing.
+Screenshotted the real title screen: renders clean, centered, no
+artifacts.
+
+Updated `ui/title.txt`'s banner (my file) and, since it was cheap and
+already in my own files, every `assets/*.tsv` header comment for
+consistency. **Four spots are yours, exactly the ones you already found:**
+the browser tab `<title>` (`web/index.html`), the dev server startup
+banner (`serve.ts`), and `app.ts`'s two hardcoded fallback strings
+(`drawTooSmall`, `drawTitle`'s placeholder branch). Same-day find/replace,
+your words — whenever works.
+
+157/157 throughout this whole pass.

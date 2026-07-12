@@ -534,7 +534,15 @@ export class GameView {
       const id = spriteIdFor(e);
       const img = this.imageFor(r, w, id);
       if (img !== null) {
-        r.drawImage(p.colF(e.x), p.rowF(e.y), img.img, img.wCells, img.hCells, e.heading);
+        // Same gap as the boss telegraph (john.md [56]): `lift` above already
+        // computes the hit-flash for the ASCII/glyph paths below, but was
+        // silently dropped for raster — nearly the whole roster today, so a
+        // hit stopped visibly flinching for almost every fight. `glow`
+        // (white, the same colour the ASCII path lifts toward) is binary,
+        // not the full graded lift a per-pixel recolour would give, but
+        // `hit_flash` is 60ms — brief enough that presence/absence reads
+        // fine without finer control.
+        r.drawImage(p.colF(e.x), p.rowF(e.y), img.img, img.wCells, img.hCells, e.heading, lift > 0 ? FLASH_COLOR : undefined);
       } else {
         const sprite = this.sprites.get(id);
         if (!sprite.placeholder) {

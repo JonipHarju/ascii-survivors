@@ -33,7 +33,7 @@ import { emptyBackgroundTable, parseBackgroundTable } from '../data/backgrounds.
 import type { GameData } from '../data/gamedata.ts';
 import { GameView } from '../game/render.ts';
 import { SpriteLoader } from '../assets/loader.ts';
-import { World, WU_PER_ROW, xpToNext } from '../game/world.ts';
+import { World, WU_PER_ROW, xpToNext, type Enemy } from '../game/world.ts';
 
 const GLYPHS = [
   'player\t@\tThe Warden\tW\t100\t20\t0\t-\t-\t0',
@@ -1159,6 +1159,39 @@ describe('rendering the world', () => {
       const boss = r.drawImages.find((d) => d.w === 16);
       assert.ok(boss !== undefined);
       assert.equal(boss!.glow, undefined, 'no telegraph, no glow — must not stay lit after she commits');
+    });
+  });
+
+  describe('enemy hit-flash reaches raster sprites too (john.md [57])', () => {
+    function mobWorld(): { w: World; view: GameView; ghoul: Enemy } {
+      const imgData: GameData = { ...data, images: parseImageTable('sprites/mobs/ghoul\tspace/mobs/spacebug/spacebug_green.png\t3\t2.9') };
+      const w = new World(imgData, 1);
+      const ghoul = w.spawnEnemy(data.glyphs.entities.get('ghoul')!, w.x + 6, w.y);
+      const images: ImageSource = { get: (path) => (path.includes('spacebug_green') ? FAKE_IMG : undefined) };
+      return { w, view: new GameView(new SpriteLoader('/nonexistent'), images), ghoul };
+    }
+
+    it('glows white the instant a raster mob takes a hit', () => {
+      const { w, view, ghoul } = mobWorld();
+      w.damageEnemy(ghoul, 1); // sets e.flash/e.flashMax via the real path, not hand-set fields
+      const r = new FakeRasterSurface();
+
+      view.render(r, w, FIELD, { dark: false, debug: false });
+
+      const drawn = r.drawImages.find((d) => d.w === 3);
+      assert.ok(drawn !== undefined, `expected the ghoul to draw, got ${JSON.stringify(r.drawImages)}`);
+      assert.notEqual(drawn!.glow, undefined, 'a freshly-hit raster enemy must flash — it stopped flinching once raster art shipped');
+    });
+
+    it('carries no glow when nothing has hit it', () => {
+      const { w, view } = mobWorld();
+      const r = new FakeRasterSurface();
+
+      view.render(r, w, FIELD, { dark: false, debug: false });
+
+      const drawn = r.drawImages.find((d) => d.w === 3);
+      assert.ok(drawn !== undefined);
+      assert.equal(drawn!.glow, undefined, 'an undamaged enemy must not glow');
     });
   });
 

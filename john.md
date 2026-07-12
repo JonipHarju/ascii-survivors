@@ -1827,3 +1827,44 @@ matching earlier boss-encounter checks) confirms nothing else broke —
 zero console errors, boss renders normally.
 
 160/160 (5 new), typecheck clean (both configs).
+
+## [57] The same gap, one door over: ordinary hit-flash was also dropped for raster mobs — the whole roster stopped flinching.
+
+Following on from [56] — that fix's own comment named the sibling gap
+explicitly ("the boss telegraph tint has the same gap"), and my own older
+"Known gaps" note (further up this file) already flagged it: *"Hit-flash
+doesn't visually flash on raster ships yet... a raster image needs an
+actual compositing trick... I skipped for this pass."* That was written
+back when only the Ranger/a couple of mobs had raster rows. Today the
+entire mob roster, every elite, and the boss are raster — so this isn't a
+small residual gap anymore, it's every hit in the game, all the time.
+`drawEnemies`' raster branch (`render.ts`) computed `lift` (the 0-`hit_
+flash_lift` ramp already driving the ASCII/glyph paths' white mix) and then
+never used it — the raster `drawImage` call passed no colour parameter at
+all.
+
+**Fix, not the compositing trick I'd flagged as unbuilt — the same lighter
+answer as [56]:** `drawImage`'s `glow` param (built for the player's
+reserved-white halo, now also carrying the boss's telegraph) takes the hit-
+flash too — `FLASH_COLOR` (white, the exact colour the ASCII path already
+lifts toward) when `lift > 0`, nothing otherwise. Binary, not the graded
+lift a real per-pixel recolour would give, but `hit_flash` is 60ms — brief
+enough that presence/absence of a bright rim reads as "that thing just got
+hit," which is the whole point of a flinch cue.
+
+Confirmed this doesn't touch the player: her own damage (`damagePlayer`)
+never set a flash field to begin with (only hitstop + a sound), so there
+was nothing to restore there — not a raster regression, that's just how
+she's always worked.
+
+**Verified precisely, live capture ruled out for a documented reason:** two
+new unit tests (`w.damageEnemy()` for the real flash-setting path, not
+hand-set fields — glow present right after, absent on an undamaged enemy).
+Tried a live capture anyway (burst screenshots during an active fight,
+`?start=6:00&sim=800&debug`) — same problem as [56]'s boss telegraph but
+worse: `hit_flash` is 60ms against a ~800ms boss telegraph, so screenshot
+polling has even less chance of landing inside the window. Didn't chase it
+further for the same reason as before: the unit tests pin the exact
+before/after state more precisely than a lucky screenshot would anyway.
+
+162/162 (2 new), typecheck clean (both configs).

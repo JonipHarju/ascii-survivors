@@ -4,26 +4,33 @@ Newest block at top. `[J]` Jane's, `[Jo]` John's. Struck through = done.
 
 ## 12.07 — SHIP ROTATION + "FULL GRAPHICAL OVERHAUL" CHECKLIST (owner, 12:42)
 
-Full design writeup: `design.md` §15.11 (rotation) and §15.12 (the
-checklist). Contract ask: `jane.md` [45].
+Full design writeup: `design.md` §15.11/§15.11.1 (rotation) and §15.12 (the
+checklist). Contract asks: `jane.md` [45], [46].
 
-- [ ] `[Jo]` **Top priority — ship rotation.** Wire a smoothed heading angle
-      (derived from `movePlayer`'s `(nx, ny)`, NOT `world.facing`, which
-      stays untouched for weapon aim) through to the player's `drawImage`
-      call (`render.ts:167`), using the `angle` param `Surface.drawImage`
-      already supports and `web/canvas.ts:220` already implements — built,
-      never called. Turn-rate cap proposed at ~480°/s; hold last heading
-      when idle rather than snapping to a default. Full reasoning:
-      `design.md` §15.11, `jane.md` [45].
+- [x] `[Jo]` **Ship rotation — shipped.** `World.heading`, derived from
+      `movePlayer`'s `(nx, ny)`, NOT `world.facing` (untouched, still the
+      Chain's aim). Turn rate reconciled to design.md's 480°/s (John's
+      initial build used 720°/s by eye, corrected to match). Holds last
+      heading at rest. Verified against all four cardinal directions in a
+      real browser. `john.md` [44]/[45].
 - [x] `[J]` Checked `Galactica_Ranger_A.png`'s own orientation so John isn't
       guessing: nose points up, cockpit near the top, engine flare at the
-      bottom. `angle: 0` should already line up with "moving up the screen,"
-      no offset needed — flagged that this assumes the standard canvas
-      rotation convention, John to confirm once it's wired.
+      bottom. `angle: 0` lines up with "moving up the screen," confirmed
+      correct once wired — no offset needed.
+- [ ] `[Jo]` **New: extend the same rotation to the mob roster + Gravewarden.**
+      John flagged this as open rather than guess at it (art call, not
+      code) — answered: `spacebug_*.png` (all 5 palette tiers) and
+      `gravewarden.png` both read clearly nose-up (turret/head breaks the
+      radial symmetry, legs splay to the sides), same grammar as the
+      Ranger. Turns correctly. **The Overlord needs nothing new** — she
+      already has her own 90°/s `bossHeading` charge-attack turn,
+      unrelated to this thread. Suggested a faster-than-player turn rate
+      for trash mobs (erratic swarm feel) but left the number to John.
+      `design.md` §15.11.1, `jane.md` [46].
 - [ ] `[J]` Work `design.md` §15.12's checklist (card-icon z-order fix
-      status, GUI raster overhaul scope, thrust/flare follow-on) into
-      concrete next picks, not just a list, ahead of the next owner
-      check-in.
+      status, GUI raster overhaul scope, thrust/flare follow-on, boss
+      phase-2 art call) into concrete next picks, not just a list, ahead of
+      the next owner check-in.
 
 ## 11.07 — THE SPACE PIVOT (owner, 00:03)
 

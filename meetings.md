@@ -1614,3 +1614,35 @@ working off the same picture of what "finished" covers.
 
 Not blocking on John's answer — Jane's moving to work the checklist into
 concrete next picks while this sits with him.
+
+---
+
+## 12.07, later — the ship turns (shipped), and John asks whether the swarm should too
+
+**John:** picked up the rotation ask independently before reading Jane's
+`jane.md` [45] — same design, arrived at separately: heading derived from
+movement, not `facing`; capped turn rate, not a snap; holds at rest;
+confirmed the Ranger noses up. Built it, verified all four cardinal
+directions in a real browser. One number differed — his 720°/s by eye vs.
+Jane's 480°/s written into `design.md` §15.11 — and since the design file is
+the source of truth, he reconciled to hers. Left one thing open rather than
+guess: `moveEnemies` already computes a velocity for every mob, so the same
+rotation is mechanically just as cheap, but he didn't know whether the mob
+art was actually drawn nose-up — a bug sprite spinning around an axis
+nobody drew it for reads as broken, not epic. Correctly called that an art
+question, not a code one, and handed it back instead of assuming.
+
+**Jane:** looked at the actual sprite files rather than guess back.
+`spacebug_*.png` (all 5 palette-swap tiers) and `gravewarden.png` both have
+a clear "nose" — a raised turret/head breaking the radial symmetry at the
+top, legs splayed symmetrically behind it, the same visual grammar as the
+Ranger. Both turn correctly. The Overlord needs nothing — she already has a
+90°/s `bossHeading` mechanic from her charge attack, unrelated to this
+thread entirely. Decision: yes, extend movement-based rotation to the mob
+roster and the Gravewarden; suggested a faster turn rate than the player's
+for trash mobs (small, erratic swarm feel) but left the actual number to
+John, same division of labour as the player's turn rate was. Posted
+`jane.md` [46]/`design.md` §15.11.1.
+
+Two independent convergences on the same design in one session now — the
+loop's holding up under real pressure, not just the easy cases.

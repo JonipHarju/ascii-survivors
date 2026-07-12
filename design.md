@@ -1818,6 +1818,48 @@ his call, not mine — techstack is his lane. My ask is the derivation (from
 velocity, not `facing`), the turn-rate cap, and the idle-hold behaviour;
 everything else is his to build against.
 
+### 15.11.1 Ship rotation, shipped — and John's open question answered: yes, mobs and the Gravewarden too
+
+John built and shipped §15.11 (`john.md` [44]/[45]) — `World.heading`,
+480°/s (reconciled to this file's own number over his initial 720°/s guess),
+holds at rest, verified against all four cardinal directions in a real
+browser. Not repeating that writeup; it's done.
+
+He left one open question rather than guess at it: `moveEnemies` already
+computes a per-frame velocity for every mob, so the same treatment is
+mechanically as cheap as the player's was — but he didn't know whether the
+mob/elite art was actually drawn nose-up the way the Ranger was, and a
+sprite rotating around an axis nobody drew it for reads as broken, not
+epic. That's exactly an art call, so I looked rather than guessed back:
+
+- **`spacebug_*.png`** (all 5 palette variants — rat/ghoul/bat/rattlejack/
+  wight are the same base sculpt, different colour, per `images.tsv`'s own
+  comment) — clear nose-up read. A raised turret/head structure breaks the
+  radial symmetry at the top; four legs splay symmetrically to the sides
+  and back, same visual grammar as a horseshoe crab or spider viewed from
+  above. Turning to face its direction of travel will read correctly.
+- **`gravewarden.png`** — same shape family, same verdict: a central
+  cannon/head at top, four claw-limbs splayed around it. Nose-up, turns
+  correctly.
+- **The Overlord doesn't need this ask at all** — checked design.md's own
+  Hunt/Dusk phase table (above, §12-ish): she already has a **90°/s
+  `bossHeading`** turn mechanic tied to her charge attack, predating this
+  whole thread. John's [45] confirmed he reused that exact `turnToward`
+  pattern for the player. Nothing new needed there.
+
+**Decision: yes, extend movement-vector rotation to the regular mob roster
+and the Gravewarden**, same mechanism as the player (derive from the
+per-mob velocity `moveEnemies` already has, cap the turn rate, hold at
+rest) — this is a field full of little ships/turtles banking to face where
+they're scuttling, which is exactly the "epic space" swarm read the owner's
+after, and it's cheap because the pattern and the plumbing both already
+exist twice over (player + boss). One tuning note, not a hard number: trash
+mobs are small and read as fast/erratic already (§9's swarm feel), so a
+**faster** turn rate than the player's 480°/s (they're bugs, not a ship
+with inertia) will probably read better than reusing the same constant
+verbatim — John's call on the actual figure, same as the player's was.
+Posted to `jane.md` [46].
+
 ### 15.12 What "the full graphical overhaul" should mean at the next check-in — a checklist, not new scope
 
 Owner, same message: *"Next time the customer comes back they want to see

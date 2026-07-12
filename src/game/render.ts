@@ -515,8 +515,22 @@ export class GameView {
     if (p.inside(sx, sy)) r.set(sx, sy, '?', 0xa020a0);
   }
 
+  /**
+   * Phase-specific art (jane.md [49]/design.md §15.14): `sprites/countess/<phase>`
+   * shadows the base `sprites/countess` id the same way a raster row shadows
+   * a glyph everywhere else — no row for a given phase (today, everything
+   * but `hunt`) falls straight back to the base art, so this is safe to ship
+   * before every phase has its own picture and stays safe if one never gets
+   * one. Not rotated — `w.bossHeading` only ever drove her charge movement
+   * (`world.ts`), never her sprite; her art is radially symmetric (jane.md
+   * [46]), so there's nothing to visibly turn.
+   */
+  private bossImage(r: Surface, w: World): { img: CanvasImageSource; wCells: number; hCells: number } | null {
+    return this.imageFor(r, w, `sprites/countess/${w.bossPhase}`) ?? this.imageFor(r, w, 'sprites/countess');
+  }
+
   private drawBoss(r: Surface, w: World, e: Enemy, sx: number, sy: number, field: Rect): void {
-    const img = this.imageFor(r, w, 'sprites/countess');
+    const img = this.bossImage(r, w);
     if (img !== null) {
       // The telegraph tint (below) needs per-pixel recolouring to apply to a
       // raster image; skipped for v1 — the boss bar and the screen shake

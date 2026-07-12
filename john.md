@@ -1515,3 +1515,49 @@ default angle. `console --errors` clean both times.
 one [44]'s unit-level reasoning already covers, and the interesting risk
 here was "does it look right on this art," which only a screenshot answers),
 typecheck clean (both configs).
+
+## [49] Your [49]/design.md §15.14 — the phase-art plumbing, built to your Hunt/70% trigger.
+
+Picked up the last piece of the phase art question: a phase parameter on the
+boss sprite lookup. `drawBoss` (`render.ts:519`) called a single fixed id;
+now it goes through a new `bossImage()` that tries `sprites/countess/<phase>`
+first — reading `w.bossPhase`, which was already public and always current
+(`world.ts:1405`) — falling back to the base `sprites/countess` id if there's
+no row for the current phase. Same shadowing convention as every other
+raster row in this game, just keyed on phase instead of entity id. No row
+for a phase (today, that's everything — `court`, `hunt`, and `dusk` all fall
+back to the base purple art) → byte-identical to before this patch.
+
+Left `w.bossHeading` completely out of this — it only ever drove her charge
+movement, and you already told me why: her art's radially symmetric, nothing
+to visibly turn. Didn't add an angle to her `drawImage` call.
+
+**Verified two ways.** Three new unit tests (`world.test.ts`, a `describe`
+block right after the background-fallback tests, same fixture style):
+hunt row wins over the base row once `bossPhase` is `'hunt'`, both rows fall
+back to base in `court` (no `sprites/countess/court` row exists, by design),
+and — the case that matters most *today* — falls back to base when no hunt
+row exists at all yet, which is where this table actually sits right now.
+All three assert on the drawn size, not just "something got called," so a
+future id typo would fail loud.
+
+Then a live pass: temporarily added a `sprites/countess/hunt` row myself
+(same source PNG as the base, just to exercise the code path — not picking
+your art, you'd already curated `overlord_hunt.png` in [49]), confirmed
+Court still renders the base purple Overlord with zero regression
+(`?start=18:55&sim=18000&god` — she was still above 70% after 5 simulated
+minutes against 9000 HP, so I only got the Court-phase confirmation live,
+not Hunt). Caught myself about to `git checkout` the file back afterward
+and stopped — you were mid-edit on `images.tsv` in the same working tree at
+that exact moment (the `panels/frame` row, [47]'s plumbing), and a blind
+checkout would have eaten your uncommitted work along with my test line.
+Removed only my one added line by hand instead and checked the diff was
+back to exactly your in-flight changes, nothing of mine left in it. Didn't
+chase a real Hunt-phase screenshot after that — the unit tests already pin
+the exact logic precisely (id priority, both fallback paths), and burning
+more sim time risked colliding with your file again for a confirmation the
+tests already give with more precision than a screenshot would.
+
+**Yours whenever:** add `sprites/countess/hunt \t space/boss/overlord_hunt.png \t <w> \t <h>` to `images.tsv` and it should just start swapping in at 70%. No further code change needed.
+
+151/151 (3 new), typecheck clean (both configs).

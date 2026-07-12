@@ -27,7 +27,7 @@ import { parseCharacters } from '../data/characters.ts';
 import { parseCrossroads } from '../data/crossroads.ts';
 import { parseCountess } from '../data/countess.ts';
 import { fallbackJuice } from '../data/juice.ts';
-import { emptyImageTable } from '../data/images.ts';
+import { emptyImageTable, parseImageTable } from '../data/images.ts';
 import { emptyAudioTable } from '../data/audio.ts';
 import { emptyBackgroundTable, parseBackgroundTable } from '../data/backgrounds.ts';
 import type { GameData } from '../data/gamedata.ts';
@@ -998,5 +998,59 @@ describe('rendering the world', () => {
 
     assert.equal(r.drawImages.length, 0);
     assert.ok(r.sets.some((s) => s.ch === '"' || s.ch === ',' || s.ch === '`'), 'the old ground scatter still drew');
+  });
+
+  /** jane.md [49]/design.md §15.14: the boss's art can shadow by phase, `sprites/countess/<phase>` over the base id. */
+  describe('the boss picks phase-specific art (jane.md [49])', () => {
+    function bossWorld(imagesSrc: string): { w: World; view: (images: ImageSource) => GameView } {
+      const bossData: GameData = { ...data, images: parseImageTable(imagesSrc) };
+      const w = new World(bossData, 1);
+      w.spawnEnemy(data.glyphs.entities.get('countess')!, w.x, w.y - 5);
+      return { w, view: (images) => new GameView(new SpriteLoader('/nonexistent'), images) };
+    }
+
+    it('uses the hunt-phase row over the base row once she reaches Hunt', () => {
+      const { w, view } = bossWorld(
+        ['sprites/countess\tspace/boss/overlord_01.png\t16\t14.4', 'sprites/countess/hunt\tspace/boss/overlord_hunt.png\t10\t8'].join(
+          '\n',
+        ),
+      );
+      w.bossPhase = 'hunt';
+      const images: ImageSource = { get: (path) => (path.includes('overlord') ? FAKE_IMG : undefined) };
+      const r = new FakeRasterSurface();
+
+      view(images).render(r, w, FIELD, { dark: false, debug: false });
+
+      const boss = r.drawImages.find((d) => d.w === 10 && d.h === 8 / WU_PER_ROW);
+      assert.ok(boss !== undefined, `expected the hunt-sized blit, got ${JSON.stringify(r.drawImages)}`);
+    });
+
+    it('falls back to the base row in Court, and if no hunt row exists at all', () => {
+      const { w, view } = bossWorld(
+        ['sprites/countess\tspace/boss/overlord_01.png\t16\t14.4', 'sprites/countess/hunt\tspace/boss/overlord_hunt.png\t10\t8'].join(
+          '\n',
+        ),
+      );
+      // bossPhase defaults to 'court' — no row for `sprites/countess/court` exists.
+      const images: ImageSource = { get: (path) => (path.includes('overlord') ? FAKE_IMG : undefined) };
+      const r = new FakeRasterSurface();
+
+      view(images).render(r, w, FIELD, { dark: false, debug: false });
+
+      const boss = r.drawImages.find((d) => d.w === 16 && d.h === 14.4 / WU_PER_ROW);
+      assert.ok(boss !== undefined, `expected the base-sized blit, got ${JSON.stringify(r.drawImages)}`);
+    });
+
+    it('falls back to the base row when only the base row exists at all (today, before any hunt art)', () => {
+      const { w, view } = bossWorld('sprites/countess\tspace/boss/overlord_01.png\t16\t14.4');
+      w.bossPhase = 'hunt';
+      const images: ImageSource = { get: (path) => (path.includes('overlord') ? FAKE_IMG : undefined) };
+      const r = new FakeRasterSurface();
+
+      view(images).render(r, w, FIELD, { dark: false, debug: false });
+
+      const boss = r.drawImages.find((d) => d.w === 16 && d.h === 14.4 / WU_PER_ROW);
+      assert.ok(boss !== undefined, `expected the base-sized blit, got ${JSON.stringify(r.drawImages)}`);
+    });
   });
 });

@@ -720,7 +720,11 @@ export class App {
       const resolved = resolveImage(this.images, this.data.images, card.icon);
       if (resolved !== null) {
         const cy = rect.y + 2 + resolved.entry.h / 2;
-        r.drawImage(mid, cy, resolved.img, resolved.entry.w, resolved.entry.h);
+        // `onTop`: `drawBox` already buffered this card's own background fill
+        // over these cells; without it the icon would paint, then vanish
+        // under that fill at flush() regardless of call order (jane.md
+        // [43]/[44]).
+        r.drawImage(mid, cy, resolved.img, resolved.entry.w, resolved.entry.h, 0, undefined, true);
         return;
       }
     }

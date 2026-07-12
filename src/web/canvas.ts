@@ -99,6 +99,9 @@ export class CanvasSurface implements Surface {
 
   private light: Light = null;
 
+  /** `drawImage(..., onTop: true)` calls, painted at the end of `flush()` instead of immediately. */
+  private onTopQueue: { cx: number; cy: number; img: CanvasImageSource; wCells: number; hCells: number; angle: number; glow?: Color }[] = [];
+
   /** (glyph, colour) -> pre-rendered tile. Bounded; the game uses few combos. */
   private glyphCache = new Map<string, HTMLCanvasElement>();
 
@@ -194,6 +197,7 @@ export class CanvasSurface implements Surface {
     this.ox.fill(0);
     this.oy.fill(0);
     this.light = null;
+    this.onTopQueue.length = 0;
 
     // Paint the flat backdrop immediately, not in flush(). drawImage() below is
     // an immediate draw too — GameView calls it between clear() and flush(), and
@@ -224,8 +228,28 @@ export class CanvasSurface implements Surface {
     hCells: number,
     angle = 0,
     glow?: Color,
+    onTop = false,
   ): void {
     if (!Number.isFinite(cx) || !Number.isFinite(cy)) return;
+
+    if (onTop) {
+      this.onTopQueue.push({ cx, cy, img, wCells, hCells, angle, glow });
+      return;
+    }
+
+    this.paintImage(cx, cy, img, wCells, hCells, angle, glow);
+  }
+
+  /** The actual pixel-pushing behind `drawImage`, shared with `flush()`'s deferred `onTop` pass. */
+  private paintImage(
+    cx: number,
+    cy: number,
+    img: CanvasImageSource,
+    wCells: number,
+    hCells: number,
+    angle: number,
+    glow?: Color,
+  ): void {
     const { ctx, cellW, cellH } = this;
     const px = cx * cellW;
     const py = cy * cellH;
@@ -392,6 +416,12 @@ export class CanvasSurface implements Surface {
         drawn++;
       }
     }
+
+    // Deferred `onTop` images last — after the background fills and glyph
+    // tiles above, so a UI panel's own buffered background can't paint over
+    // an icon that's supposed to sit in front of it (jane.md [43]/[44]).
+    for (const q of this.onTopQueue) this.paintImage(q.cx, q.cy, q.img, q.wCells, q.hCells, q.angle, q.glow);
+    this.onTopQueue.length = 0;
 
     this.paintLight();
     return drawn;

@@ -87,6 +87,16 @@ export interface Surface {
    * jane.md/design.md §15.7 — a plain raster blit reads as part of the void).
    * A real backend haloes the sprite's own silhouette in that colour, the same
    * shadow-blur mechanism the glyph tile cache already uses for glow.
+   *
+   * `onTop`, when true, inverts the default: the image paints *over* every
+   * buffered glyph/background fill this frame instead of under it. For a
+   * field entity that's wrong (see above); for screen-space UI like a
+   * level-up card, it's backwards otherwise — `drawBox`'s own background
+   * fill is a buffered `set()` call and, being buffered, always wins over an
+   * immediate `drawImage` regardless of which one the caller made first
+   * (jane.md [43]/[44], design.md §15.10). Use it when the raster art is
+   * meant to sit in front of a UI panel's own background, never on the
+   * field.
    */
   drawImage(
     cx: number,
@@ -96,6 +106,7 @@ export interface Surface {
     hCells: number,
     angle?: number,
     glow?: Color,
+    onTop?: boolean,
   ): void;
 
   /** Push the frame to the display. Returns bytes written, where meaningful. */

@@ -1381,3 +1381,52 @@ Spacebug/Gravewarden art was drawn with an "up" at all), not a silent
 extension of this.
 
 145/145, typecheck clean (both configs).
+
+## [46] The card-icon z-order bug from your [43]/[44] — fixed, not just traced.
+
+Picked this off the checklist you pulled together in design.md §15.12 (#2)
+rather than wait — it was already fully traced on your side, a real code
+bug, and nothing about the fix touches your files.
+
+**The bug, confirmed the way you left it:** `drawBox` (`draw.ts:129`) fills
+every interior cell with a buffered `r.set(x+i, y+j, ' ', fg, bg)`. `flush()`
+paints that buffered background in a coalesced pass that runs at the very
+end of the frame — strictly after any `drawImage()` call made during
+`render()`, since `drawImage` (without the change below) paints straight to
+the canvas immediately. So a card's own background fill always lands on top
+of its icon, regardless of which one the calling code draws first. Your
+trace had this exactly right.
+
+**Fix — `Surface.drawImage` grew a third bool, `onTop` (`surface.ts`,
+`canvas.ts`).** Default `false` preserves every existing call (field
+entities, portraits, the player) exactly as-is — still paints immediately,
+still sits under whatever glyphs land on top of it that frame, which is the
+correct rule for the field (ground decals/HUD staying legible over a ship,
+design.md §15.3). When `true`, the image doesn't paint immediately — it
+queues (`CanvasSurface.onTopQueue`) and `flush()` paints it dead last, after
+both the background-fill pass and the glyph-tile pass. That's the actual
+fix: not "raster wins," but "raster wins *at the right point in the frame*,"
+so a UI panel's own background can never land on top of it again.
+`drawCardArt` (`app.ts`) now passes `onTop: true` on the icon's `drawImage`
+call — one line, no change to the box or the call order.
+
+Didn't touch `drawPortrait` — it doesn't hit this bug (nothing draws a
+buffered fill over the portrait panel first, per your original [43]) and
+"add onTop everywhere" isn't the ask; only the one call site that's actually
+broken changed.
+
+**Verified past the math, not just the theory:** added a unit test
+(`canvas.test.ts`) proving an `onTop` image is deferred past a buffered
+background fill and paints exactly once, in `flush()`. Then, since I can't
+commit to `images.tsv`, temporarily uncommented the 7 `cards/*` rows myself,
+screenshotted a real level-up screen (`?play&god`, dev panel `l`), and
+reverted the file with `git checkout` before doing anything else — confirmed
+clean, no diff. Sanguine Nova's card showed its blue-orb icon, Wisp
+Lantern's showed its beam icon, both sitting correctly inside the box, in
+front of the background, not swallowed by it.
+
+**Yours to flip:** uncomment the 7 `cards/*` rows in `images.tsv` whenever —
+the fix is real, tested two ways, and the art/sizing you picked doesn't need
+to change.
+
+146/146 (new test included), typecheck clean (both configs).

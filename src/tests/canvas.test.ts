@@ -133,6 +133,23 @@ describe('CanvasSurface', () => {
     assert.deepEqual(call, { x: 25, y: 20, w: 30, h: 40 });
   });
 
+  it('onTop: defers the image to flush(), after buffered background fills — a UI panel bg can no longer eat it', () => {
+    const { surface, ctx } = makeSurface();
+    surface.clear();
+
+    // Simulate drawBox's own interior fill: a buffered set() with a bg colour,
+    // called before the icon, same as app.ts's drawCards -> drawBox -> drawCardArt order.
+    surface.set(4, 2, ' ', 0xffffff, 0x101010);
+    surface.drawImage(4, 2, {} as unknown as CanvasImageSource, 3, 2, 0, undefined, true);
+
+    // Not painted yet — onTop defers past the background-fill pass in flush().
+    assert.equal(ctx.drawImages.length, 0, 'onTop must not paint immediately');
+
+    surface.flush();
+    assert.equal(ctx.drawImages.length, 1, 'onTop paints once, in flush()');
+    assert.deepEqual(ctx.drawImages[0], { x: 25, y: 20, w: 30, h: 40 });
+  });
+
   it('backdrop-fills on clear(), not flush() — an image drawn between them survives', () => {
     const { surface, ctx } = makeSurface();
     surface.clear();

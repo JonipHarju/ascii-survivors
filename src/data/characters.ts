@@ -5,7 +5,7 @@
  * aiming.** The Chain used to be the Warden's opener; it fires along your facing,
  * facing came from your last horizontal input, so hitting a thing meant walking
  * toward it in a game where things hurt you by touching you. Nova seeks, Cinder
- * Trail drops behind you, Wisp Lantern orbits. Directional weapons are chosen,
+ * Trail drops behind you, Ion Wisp orbits. Directional weapons are chosen,
  * never given.
  *
  * Which is why the starting weapon lives here and not in a constant in world.ts.

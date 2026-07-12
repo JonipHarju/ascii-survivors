@@ -33,7 +33,7 @@ const WEAPONS = [
   'nova\t2\tSanguine Nova\t*\tR\tbolt\t1.3\t9\t2\t2\t1\t1\t2\t1\t40\t',
   'censer\t1\tCenser\t~\tG\tring\t0.5\t3\t8\t8\t99\t0\t0\t1\t0\t',
   'cinder\t1\tCinder Trail\t.\tr\ttrail\t0.25\t2\t2\t2\t99\t0\t3\t1\t0\t',
-  'lantern\t1\tWisp Lantern\to\tY\torbit\t0\t6\t9\t3\t99\t1\t0\t1\t120\t',
+  'lantern\t1\tIon Wisp\to\tY\torbit\t0\t6\t9\t3\t99\t1\t0\t1\t120\t',
 ].join('\n');
 
 const PASSIVES = [

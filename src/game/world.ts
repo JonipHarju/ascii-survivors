@@ -1565,7 +1565,7 @@ export class World {
       const def = this.resolve(w, stats);
       if (def === null) continue;
 
-      // cd = 0 means "always on" — the orbiting Wisp Lantern.
+      // cd = 0 means "always on" — the orbiting Ion Wisp.
       if (def.shape === 'orbit') {
         this.updateOrbit(w, def, dt);
         continue;

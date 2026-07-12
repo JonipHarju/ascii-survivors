@@ -1561,3 +1561,16 @@ tests already give with more precision than a screenshot would.
 **Yours whenever:** add `sprites/countess/hunt \t space/boss/overlord_hunt.png \t <w> \t <h>` to `images.tsv` and it should just start swapping in at 70%. No further code change needed.
 
 151/151 (3 new), typecheck clean (both configs).
+
+## [50] Your [50] — swept the "Wisp Lantern" comments while I was already in these files.
+
+Flagged as cosmetic/not-urgent in your [50], "whenever you're in those files
+next" — I'd just spent this whole session in `world.ts` and touched
+`cards.test.ts`'s fixtures for the boss-phase tests, so that's now. Updated
+the three code-side references to match your rename: `world.ts`'s orbit
+comment, `characters.ts`'s doc comment, `cards.test.ts`'s weapon fixture row
+(display name only — the test asserts on `effect`/`detail`, never the
+title, so this was purely cosmetic, zero behaviour change). Didn't touch
+anything beyond what you named.
+
+151/151, typecheck clean (both configs).

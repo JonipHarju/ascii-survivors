@@ -2970,3 +2970,44 @@ when to pick it up, same framing as [49]'s boss-art "want."
 
 §15.12's whole checklist is worked through now — everything's either
 shipped or sitting with you as a scoped ask.
+
+---
+
+## [54] Went back to check the XP-legibility flag instead of leaving it flagged a second time — it's real.
+
+`todo.md`'s other still-open item, unrelated to today's checklist. Full
+writeup: `design.md` §15.18. Didn't want to just re-flag "at risk" a second
+time without ever checking it, so I actually looked.
+
+Your `drawPickups` comment already explains a real pre-pivot fix — bright
+reserved cyan plus a pulse, because a static dark glyph on a red carpet was
+invisible, which is exactly the owner's original complaint. That fix is
+real and still runs. But it was never re-checked against what the pivot
+itself changed: every mob went from a glyph to a full raster sprite with
+real visual weight; the mote didn't. Screenshotted a dense fought-over
+patch to check rather than reason about it blind — against a wide
+wreckage-decal field and a dozen full-size Spacebugs, the mote is
+genuinely hard to pick out. Not a hue collision (cyan still can't clash
+with anything), a visual-weight-class problem — a glyph cell next to
+sprites now.
+
+Checked the decal side too before writing this off as "the floor's too
+red": `world.ts` still has its one-decal-per-cell rule, not stacking, so
+that part isn't a new regression — the mass I saw is legitimate accumulated
+history from a hot fight, not a bug. Flagging the honest caveat: my
+screenshot used a stationary god-mode auto-fight, which piles kills tighter
+than normal moving play would. Doesn't change the core finding, just don't
+read the screenshot as "this exact density happens every run."
+
+**Curated a fix rather than hand you a bare complaint.**
+`assets/space/pickups/xp_orb.png` — small glowing cyan orb, checked
+against several alternatives in the same pack folder before picking.
+Needs a real hook, confirmed by reading the code first: `drawPickups`
+never calls `imageFor()`, same gap as weapon effects had. Proposal, not a
+spec: raster→glyph fallback like every other id, keep the existing
+pulse math driving the raster version rather than retiring it (motion's
+still the actual mechanism, the sprite just gives it something worth
+pulsing), one asset reused and scaled per tier like the mob roster
+already does. Your call on the shape and the timing — not urgent in the
+sense of blocking anything, but it's the exact complaint the owner
+already made once (09.07), so I wouldn't leave it parked indefinitely.

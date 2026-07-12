@@ -2186,7 +2186,57 @@ rotation, the card z-order bug, the GUI panel texture, the lantern
 continuity fix, the boss phase art, and this proposal — every item either
 shipped or is a scoped, posted ask waiting on the other agent's lane.
 
-## Open questions / assumptions I'm running with
+### 15.18 Checked §15.3 point 5's "at risk" flag — still at risk, and here's the actual evidence
 
-Tracked live in `jane.md`. Anything settled gets promoted **into this file** and
-mirrored to `meetings.md`.
+Not on today's checklist — went looking at `todo.md`'s other still-open item
+("XP pickup readability at density... don't let the reskin reintroduce it")
+since everything from the 12:42 feedback was closed. Wanted a verdict, not
+another flag, so I actually looked rather than re-flag it a second time.
+
+**What I found.** `drawPickups`' own comment (`render.ts:416`) says the
+legibility problem was already solved once, pre-pivot: a mote is reserved
+**bright cyan** (`C` = `0x4ff0f0` in `sprite.ts`'s `PALETTE` — objectively
+brighter than the decal floor's `r` = `0xb22222` or its aged `k` = near-
+black) and it pulses (`mote_pulse`/`mote_pulse_hz`/`mote_lift`,
+`director.tsv`) so the eye catches motion even without extra brightness.
+That fix is real and still runs, untouched by the pivot. But it was never
+re-validated against what the pivot actually changed: **every other actor
+on the field went from a single glyph cell to a multi-cell raster sprite**
+with real visual weight — the mote didn't. Screenshotted a dense, fought-
+over patch (`?start=8:00&sim=8000&god`) to check rather than reason about
+it in the abstract: the wreckage/scorch floor (§9's "one decal per cell"
+rule, confirmed still in force in `world.ts` — not stacking, so this isn't
+a regression there) can legitimately blanket a wide screen area after a
+hot fight, and against that field plus a dozen full-size Spacebug sprites,
+the tiny `·`/`+`/`◆` glyph mote is genuinely hard to pick out at a glance —
+not a hue problem (cyan still can't collide with anything), a **visual
+weight class** problem. Small honest caveat: that screenshot used a
+stationary god-mode auto-fight (sim-compressed, kills piling in one spot),
+which likely concentrates decals more than normal moving play would — but
+the core comparison (one glyph cell vs. a field of full sprites) holds
+regardless of exactly how dense the floor gets.
+
+**Verdict: still at risk, matches the original 09.07 complaint's shape
+closely enough to take seriously, not resolved by the pre-pivot fix.**
+
+**Curated the fix rather than just re-flag it.** `!GIFT!/Special Orbs,
+Planets/Orbs/OrbsWithoutOutline_0035_Circle.png` — a small glowing orb,
+bright cyan core fading to a dark blue rim, no outline. Checked several
+alternatives in the same folder before picking (`design.md` doesn't need
+the full survey, just the result): most read as decorative planet textures
+or the wrong hue (green, gold); this one is the closest match to the
+reserved-cyan law already in place, with real bloom a glyph can't have.
+Curated to `assets/space/pickups/xp_orb.png`.
+
+**This needs a real code hook, not a data row — checked before proposing
+it, same discipline as every other raster ask this session.**
+`drawPickups` never calls `imageFor()`/`resolveImage()` — confirmed by
+reading it, not assuming (§15.9 already found the same gap for weapon
+effects). Proposal for John: same three-tier fallback every other id
+already gets (raster → glyph, no ASCII-sprite middle tier needed since
+motes never had one), keep the existing pulse math driving the raster
+version's scale or glow instead of retiring it — motion is still the
+actual mechanism that sells "this is alive," the sprite just gives it
+something worth pulsing. Same reuse-one-asset-scaled-by-tier convention as
+the mob roster: one orb file, sized up for `mote5`/`mote20` the way width
+already carries "size is threat" for mobs. Posted to `jane.md` [54].

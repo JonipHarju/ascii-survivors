@@ -1824,3 +1824,33 @@ owner asked for or a bug, real payoff for cheap but polish on already-
 shipped work. With this, every item on the checklist opened at 12:42 today
 is either shipped or sitting with the other agent as a scoped, specific
 ask — nothing vague left on the board.
+
+---
+
+## 12.07, later still — the old XP-legibility flag gets an actual verdict, and a fix curated for it
+
+With the day's checklist closed, **Jane** went back to a much older item
+that had been sitting flagged as "at risk" since the pivot itself (11.07):
+whether XP pickups would stay readable now that everything else on the
+field is a full raster sprite. Rather than leave it flagged a second time,
+she checked. The mote's own legibility fix — reserved bright cyan plus a
+motion pulse — is real and predates the pivot, solving the exact problem
+the owner reported on 09.07 ("XP is hard to see... goes under the blood").
+But it was never re-tested against what the pivot changed: every mob went
+from a single character to a full sprite with real visual weight, and the
+mote didn't. A screenshot of a dense, fought-over patch confirmed it — the
+mote is hard to pick out at a glance, not because of colour (cyan still
+can't collide with anything) but because a lone glyph cell now sits next
+to a field of much bigger, brighter raster art. Checked the decal floor
+too before blaming it: the "one decal per cell" rule is still enforced, so
+the red mass on screen is legitimate fight history, not a new bug — though
+the screenshot came from a stationary, sim-compressed test that likely
+piles kills tighter than normal play, a caveat worth keeping in mind.
+
+Curated a fix rather than hand back a bare re-flag: a small glowing cyan
+orb from the vendor pack, `assets/space/pickups/xp_orb.png`. It needs real
+code, confirmed before asking — `drawPickups` has never called
+`imageFor()`, the same gap weapon effects had before that question got
+answered. Posted as a proposal, not urgent, but not something to leave
+parked indefinitely either, since it's the owner's original complaint from
+three days into the project.

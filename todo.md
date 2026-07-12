@@ -251,10 +251,23 @@ unless we go back to the ASCII skin:
 
 ## Still open, not touched by the pivot (mechanics, not skin)
 
-- `[Jo]` Passives showing `note` as the effect line with numbers dimmed
-  underneath (from `jane.md` [22], still John's queue per `john.md`'s last
-  entry). Unrelated to art medium — carries forward as-is.
-- `[J]` XP pickup readability at density — flagged as *at risk* in
-  design.md §15.3 point 5 until the new XP sprite is actually picked/drawn.
-  This is the same complaint the owner made on 09.07 about ASCII XP; don't
-  let the reskin reintroduce it.
+- [x] `[Jo]` Passives showing `note` as the effect line — **stale entry,
+  already done.** `john.md`'s [43] (session start) confirmed the passive
+  half of `jane.md` [22] shipped in an earlier pass (`effect: def.note`
+  already live in `upgrades.ts`); only the weapon half needed the fix,
+  closed the same entry (`7e6d87a`, before this session's log begins).
+  Left un-struck here by oversight until now.
+- [x] `[J]` XP pickup readability at density — **checked, confirmed still
+  at risk, not just re-flagged.** Screenshotted a dense fought-over patch:
+  the mote's reserved bright cyan (pre-pivot fix, still runs) never got
+  re-validated against every mob now being a full raster sprite instead of
+  a glyph — a visual-weight-class gap, not a colour collision. Curated a
+  fix: `assets/space/pickups/xp_orb.png` (glowing cyan orb). Needs a real
+  code hook — `drawPickups` never calls `imageFor()` today, confirmed by
+  reading it. `design.md` §15.18, `jane.md` [54].
+- [ ] `[Jo]` Wire `drawPickups` through `imageFor()`/`resolveImage()`,
+  same raster→glyph fallback as everything else, keep the existing pulse
+  math driving the raster version. One asset (`pickups/xp` or similar id —
+  John's naming call), scaled per mote tier like the mob roster. Not
+  blocking anything, but it's the owner's original 09.07 complaint —
+  worth not leaving parked indefinitely.

@@ -1090,4 +1090,30 @@ describe('rendering the world', () => {
       assert.ok(boss !== undefined, `expected the base-sized blit, got ${JSON.stringify(r.drawImages)}`);
     });
   });
+
+  describe('XP motes go raster when a pickups/<id> row exists (jane.md [54])', () => {
+    it('draws a raster mote, pulsing size instead of the glyph fallback', () => {
+      const imgData: GameData = { ...data, images: parseImageTable('pickups/mote1\tspace/pickups/xp_orb.png\t2\t2') };
+      const w = new World(imgData, 1);
+      w.pickups.push({ kind: 'mote', x: w.x + 4, y: w.y, value: 1, homing: false, dead: false });
+      const images: ImageSource = { get: (path) => (path.includes('xp_orb') ? FAKE_IMG : undefined) };
+      const r = new FakeRasterSurface();
+
+      new GameView(new SpriteLoader('/nonexistent'), images).render(r, w, FIELD, { dark: false, debug: false });
+
+      assert.equal(r.drawImages.length, 1, 'the mote drew as raster, not a glyph');
+      assert.equal(r.sets.some((s) => s.ch === '·'), false, 'the glyph fallback must not also draw');
+    });
+
+    it('falls back to the glyph when no pickups/<id> row exists — today, before Jane\'s row lands', () => {
+      const w = new World({ ...data, images: emptyImageTable() }, 1);
+      w.pickups.push({ kind: 'mote', x: w.x + 4, y: w.y, value: 1, homing: false, dead: false });
+      const r = new FakeRasterSurface();
+
+      new GameView(new SpriteLoader('/nonexistent'), { get: () => undefined }).render(r, w, FIELD, { dark: false, debug: false });
+
+      assert.equal(r.drawImages.length, 0);
+      assert.ok(r.sets.some((s) => s.ch === '·'), 'the glyph mote still drew');
+    });
+  });
 });

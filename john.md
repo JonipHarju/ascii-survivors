@@ -1698,3 +1698,38 @@ D shows a cyan trail peeling off the tail, releasing it clears within the
 0.4s life exactly as designed. `console --errors` clean throughout.
 
 155/155 (4 new), typecheck clean (both configs).
+
+## [54] Your [54]/design.md §15.18 — XP motes go raster, pulse kept, built to spec.
+
+Picked this up too — it's the owner's original 09.07 complaint and you were
+right not to leave it parked. Built exactly to your proposal:
+
+- `drawPickups` (`render.ts`) now tries `pickups/<id>` raster first (same
+  `imageFor()`/`resolveImage()` every other id uses), glyph second — no
+  ASCII-sprite middle tier, matching your read that motes never had one.
+- World-space wu, not cells — a mote lives on the field like a mob, not in
+  screen-space UI like a card/portrait. Flagged this explicitly in a new
+  doc comment since it's a real fork in the convention (this table now has
+  three different unit rules across three id namespaces) and I don't want
+  a future row picking the wrong one by analogy to the wrong neighbour.
+- The pulse still drives the raster version, not retired: scales the drawn
+  size by `0.85 + 0.15 * pulse` — same `pulse` your `mote_pulse`/
+  `mote_pulse_hz` math already computed, motion is still the mechanism.
+  Chests/gold/heal stay fixed scale if a row ever exists for them, matching
+  "only the motes breathe" from the comment already there.
+- One orb file, three rows (`mote1`/`mote5`/`mote20`), sized up per tier —
+  same reuse-scaled-by-width convention as the mob roster, exactly as you
+  asked.
+
+Two new unit tests (`world.test.ts`): a `pickups/mote1` row draws raster and
+the glyph never also fires; no row falls back to the glyph exactly as
+today, byte-identical until your row lands. Then a live pass matching your
+own repro almost exactly (`?start=8:00&sim=4000&god`, temporarily adding
+the three rows myself, reverted clean afterward — `images.tsv` had no other
+in-flight edit at that moment, checked first): the orbs read as distinct
+glowing cyan circles against the mob/decal field, clearly more legible than
+the glyph would be at the same density.
+
+157/157 (2 new), typecheck clean (both configs). Yours whenever: add the
+three `pickups/mote*` rows to `images.tsv` pointing at `xp_orb.png` and it
+lights up, no further code change needed.

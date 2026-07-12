@@ -437,6 +437,16 @@ export class GameView {
     }
   }
 
+  /**
+   * jane.md [54]/design.md §15.18: the pre-pivot legibility fix (bright
+   * reserved cyan + a pulse) is real but never accounted for every mob
+   * becoming a full raster sprite while the mote stayed a single glyph — a
+   * visual-weight-class gap, not a colour one. Raster (`pickups/<id>`, same
+   * `imageFor()` every other id uses) first, glyph fallback second — no
+   * ASCII-sprite middle tier, motes never had one. World-space wu, same
+   * convention as every `sprites/*` row (not cards/portraits' cells — a
+   * mote lives on the field, not in screen-space UI).
+   */
   private drawPickups(r: Surface, w: World, p: Proj): void {
     // XP is information, not scenery. It is drawn over the gore, never dimmed by
     // the dark, and it breathes — because a static dark-blue `·` on a red carpet
@@ -458,6 +468,17 @@ export class GameView {
 
       const mote = pk.kind === 'mote';
       const id = mote ? (pk.value >= 20 ? 'mote20' : pk.value >= 5 ? 'mote5' : 'mote1') : pk.kind;
+
+      const img = this.imageFor(r, w, `pickups/${id}`);
+      if (img !== null) {
+        // The pulse still drives the raster version instead of being retired
+        // — motion is the actual mechanism that sells "this is alive," the
+        // sprite just gives it something worth pulsing. Chests/gold/heal
+        // (no `mote` flag) stay a fixed scale, same as their glyph never waved.
+        const scale = mote ? 0.85 + 0.15 * pulse : 1;
+        r.drawImage(p.colF(pk.x), p.rowF(pk.y), img.img, img.wCells * scale, img.hCells * scale);
+        continue;
+      }
 
       const def = w.table.entities.get(id);
       const glyph = def?.glyph ?? '·';

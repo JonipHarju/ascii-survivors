@@ -321,18 +321,38 @@ export class GameView {
     }
   }
 
+  /**
+   * design.md §16.2a: the raster pivot's small ambient particles (embers,
+   * sparks, the thrust trail) go through `Surface.dot()` — a real filled
+   * circle with a soft radial edge — on a backend that has it, falling back
+   * to the original single glyph everywhere else (the terminal, `caps.raster
+   * === false`). First-pass size, not a tuned number: big enough to read as
+   * a small glow rather than a single lit pixel, small enough three of them
+   * don't merge into a blob. `ry` divides by `WU_PER_ROW` — see `Surface.
+   * dot`'s own doc comment — so the ellipse comes out an isotropic circle in
+   * actual pixels, same trick every other circular AoE in this file uses.
+   */
+  private static readonly PARTICLE_DOT_RADIUS_WU = 0.4;
+
   private drawEmbers(r: Surface, w: World, p: Proj): void {
     // A Cinder Trail ember is a weapon the player emits, so it speaks the
     // Warden's alphabet: `°`, never `.`. `.` reads as `·` at a glance, and `·`
     // is an XP mote — the owner has already reported losing his XP once. The
     // ember holds its shape and fades in COLOUR instead (jane.md [29]).
     const cinder = juiceGlyph(w.data.juice, 'cinder', '°', DEFAULT).chars;
+    const rx = GameView.PARTICLE_DOT_RADIUS_WU;
+    const ry = rx / WU_PER_ROW;
     for (const em of w.embers) {
       const sx = p.col(em.x);
       const sy = p.row(em.y);
       if (!p.inside(sx, sy)) continue;
       const t = Math.min(1, em.life / 3);
-      r.setF(p.colF(em.x), p.rowF(em.y), cinder, shade(em.color, 0.5 + t * 0.5));
+      const color = shade(em.color, 0.5 + t * 0.5);
+      if (r.caps.raster) {
+        r.dot(p.colF(em.x), p.rowF(em.y), rx, ry, color, 1);
+        continue;
+      }
+      r.setF(p.colF(em.x), p.rowF(em.y), cinder, color);
     }
   }
 
@@ -345,6 +365,8 @@ export class GameView {
     if (w.sparks.length === 0) return;
     const g = juiceGlyph(w.data.juice, 'ember', "'", 0xffcc44);
     const ceil = juice(w.data.juice, 'ember_level');
+    const rx = GameView.PARTICLE_DOT_RADIUS_WU;
+    const ry = rx / WU_PER_ROW;
 
     for (const s of w.sparks) {
       const sx = p.col(s.x);
@@ -352,47 +374,53 @@ export class GameView {
       if (!p.inside(sx, sy)) continue;
       const t = Math.min(1, s.age / Math.max(0.0001, s.life));
       const hue = mix(g.color, 0x6a1a08, t); // yellow -> dim red as it cools
-      r.setF(p.colF(s.x), p.rowF(s.y), g.chars, shade(hue, ceil * (1 - t * 0.6)));
+      const color = shade(hue, ceil * (1 - t * 0.6));
+      if (r.caps.raster) {
+        r.dot(p.colF(s.x), p.rowF(s.y), rx, ry, color, 1);
+        continue;
+      }
+      r.setF(p.colF(s.x), p.rowF(s.y), g.chars, color);
     }
   }
 
   /**
-   * The thrust trail (jane.md [53]/design.md §15.17) — a new, separate
-   * particle stream from `drawSparks`, cyan rather than Reactor Fuel's
-   * amber so the two never blur into one "the ship is sparkly" effect. No
-   * `juice.tsv` glyph/level entry exists for this yet (it's a brand-new,
-   * not-yet-promoted-to-data effect, same call as `World`'s private thrust
-   * constants) — a plain apostrophe, hardcoded here rather than defaulting
-   * through `juiceGlyph`, since there's no `ember`-style row for it to fall
-   * back to reading.
+   * The thrust trail (jane.md [53]/design.md §15.17, §16.2a/§16.3) — a new,
+   * separate particle stream from `drawSparks`, cyan rather than Reactor
+   * Fuel's amber so the two never blur into one "the ship is sparkly"
+   * effect.
    */
   private drawThrust(r: Surface, w: World, p: Proj): void {
     if (w.thrust.length === 0) return;
     const cyan: Color = 0x4ff0f0;
+    const rx = GameView.PARTICLE_DOT_RADIUS_WU;
+    const ry = rx / WU_PER_ROW;
 
     for (const t of w.thrust) {
       const sx = p.col(t.x);
       const sy = p.row(t.y);
       if (!p.inside(sx, sy)) continue;
       const fade = 1 - Math.min(1, t.age / Math.max(0.0001, t.life));
-      // Owner feedback 12.07 16:10: "the weird teal thruster effeect is not
-      // center to ship." Real bug, not a hull/nozzle judgement call — a grid
-      // convention mismatch between the two draw families `canvas.ts` grew as
-      // raster rows shipped. `setF`/`set` bake a half-cell offset into every
-      // glyph (`CanvasSurface.tile()` centers the glyph *within* its cell, so
-      // coordinate V paints at pixel (V+0.5)*cellW — see canvas.test.ts's own
-      // "nudges a sub-cell glyph" assertion). `drawImage` never got that
-      // offset — coordinate V paints at pixel V*cellW directly, dead centre,
-      // no cell-index concept. The player's ship (`drawImage`, this file's
-      // own `render()`) and her thrust trail (`setF`, right here) both feed
-      // the *same* `p.colF(w.x)`/`p.rowF(w.y))`-derived value through this
-      // loop, so the trail always painted half a cell right-and-down of the
-      // hull it's meant to pour out of. `- 0.5` cancels the glyph family's
-      // baked offset so both land on the same pixel for the same world
-      // position. (Likely not the only spot this bites — weapon effects and
-      // damage numbers share the same two-family split against raster
-      // enemies; flagged in john.md rather than swept in wholesale here.)
-      r.setF(p.colF(t.x) - 0.5, p.rowF(t.y) - 0.5, "'", shade(cyan, fade));
+      if (r.caps.raster) {
+        // design.md §16.2a/§16.3: a real filled dot kills the "glyph anchors
+        // to its cell" wobble outright, and needs no half-cell correction —
+        // `dot()` shares `drawImage`'s own coordinate convention exactly
+        // (see `Surface.dot`'s doc comment), unlike `setF` below.
+        r.dot(p.colF(t.x), p.rowF(t.y), rx, ry, cyan, fade);
+        continue;
+      }
+      // Terminal fallback only (`caps.raster === false`). Historically this
+      // is where "the weird teal thruster effeect is not center to ship"
+      // (owner feedback 12.07 16:10) lived on canvas: `setF`/`set` bake a
+      // half-cell offset into every glyph (`CanvasSurface.tile()` centers
+      // the glyph *within* its cell, so coordinate V paints at pixel
+      // (V+0.5)*cellW — canvas.test.ts's own "nudges a sub-cell glyph"
+      // assertion proves it) while `drawImage` paints coordinate V at pixel
+      // V*cellW directly. That only ever mattered when this branch and the
+      // player's `drawImage` call shared the same backend — which, now that
+      // the `r.caps.raster` branch above exists, it never does. The
+      // terminal's own ship is ALSO a glyph, through this exact same `setF`,
+      // so there is nothing here for it to be offset from — no `- 0.5`.
+      r.setF(p.colF(t.x), p.rowF(t.y), "'", shade(cyan, fade));
     }
   }
 

@@ -109,6 +109,33 @@ export interface Surface {
     onTop?: boolean,
   ): void;
 
+  /**
+   * A small, textureless glow — a filled ellipse, `color` at full `alpha` in
+   * the centre fading radially to 0 at the rim. design.md §16.2a: the raster
+   * pivot's small ambient particles (thrust, embers, sparks) don't need a
+   * texture, just to stop being monospace glyphs next to a smoothly-rotating
+   * raster ship.
+   *
+   * `rx`/`ry` are cell-space, the SAME ellipse convention every circular AoE
+   * in this codebase already reduces to (render.ts's own header comment: a
+   * column is 1 wu, a row is `WU_PER_ROW` wu, so an isotropic wu circle is
+   * `rx = r, ry = r / WU_PER_ROW` once expressed in cells) — a backend that
+   * scales `rx` by its own cell width and `ry` by its own cell height gets a
+   * true circle in pixels for free, no extra correction needed. `alpha` is
+   * the CENTRE opacity (0..1); it fades to 0 at the rim regardless — callers
+   * still control temporal fade (age, cooling) by varying `color`/`alpha`
+   * frame to frame, same as they always did.
+   *
+   * Deferred, not immediate like `drawImage`: painted at `flush()`, after
+   * every buffered glyph AND every immediate `drawImage` call made this
+   * frame, so a dot spawned early in `render()` (thrust/embers/sparks all
+   * draw before the player and the enemies) still reads on top of a raster
+   * ship painted later in the same frame instead of vanishing under it.
+   * No-op where `caps.raster` is false, same contract as `drawImage` —
+   * callers keep a glyph fallback ready.
+   */
+  dot(cx: number, cy: number, rx: number, ry: number, color: Color, alpha: number): void;
+
   /** Push the frame to the display. Returns bytes written, where meaningful. */
   flush(): number;
 }

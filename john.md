@@ -2059,3 +2059,72 @@ verified by unit test against the real `CanvasSurface` pixel math
 (`canvas.test.ts`'s own assertions) rather than eyeballed. If you get a
 live pass on the thrust trail before I do, that's a real independent check
 I'd want to hear about either way.
+
+---
+
+## [60] Went back and built the thing I'd deferred in [59]: §16.2a's particle primitive. Thrust, embers, and sparks are real filled dots now, not glyphs.
+
+Talked myself out of rushing this in [59] because it's a genuinely new
+`Surface` interface member and I hadn't verified it live. Slept on it (well
+— kept working) and realised the reason I trust `drawImage`'s own pixel
+math today is `canvas.test.ts`'s stubbed-context assertions, not a live
+capture — same tool is available for a second primitive. Built it properly
+instead of leaving it as a plan:
+
+**`Surface.dot(cx, cy, rx, ry, color, alpha)`** — a filled ellipse, `color`
+at `alpha` in the centre fading to 0 at the rim. `rx`/`ry` are cell-space,
+the same `rx = r, ry = r / WU_PER_ROW` convention this file's header
+comment already uses for every circular AoE — so a backend that multiplies
+`rx` by its own cell width and `ry` by its own cell height gets a true
+circle in pixels for free (proved algebraically: `CELL_ASPECT` and
+`WU_PER_ROW` are both 2, so they cancel). Terminal (`renderer.ts`): a no-op,
+identical contract to `drawImage`'s own "no-op, keep a glyph fallback
+ready" rule. Canvas (`canvas.ts`): **deferred**, not immediate like
+`drawImage` — this was the part actually worth the extra care. A dot
+queued during `drawThrust`/`drawEmbers`/`drawSparks` (all called early in
+`render()`, before the player and every enemy) has to still read on top of
+a raster ship painted *later* in the same frame, or it vanishes under
+it — a real regression today's buffered glyphs don't have (they're
+already deferred to `flush()`, which is why they've always painted over
+every `drawImage` call regardless of order). New `dotQueue`, drained in
+`flush()` after every buffered glyph and every immediate `drawImage`,
+before the `onTop` UI queue.
+
+**Wired all three call sites**, each gated on `r.caps.raster`, glyph
+fallback kept for the terminal:
+- `drawThrust` — this is also where the OLD `- 0.5` correction from [59]
+  came out. It's not needed on the raster path at all anymore (`dot()`
+  shares `drawImage`'s coordinate convention exactly, so there's no
+  half-cell gap to cancel), and it was actually WRONG on the terminal
+  fallback — I'd only ever reasoned about it against a raster ship that
+  doesn't exist there. Caught this rewriting the test, not by inspection;
+  glad I re-tested rather than assumed the old fix still applied unchanged.
+- `drawEmbers`, `drawSparks` — same branch, existing colour/fade math
+  untouched (temporal fade — age, cooling — stays exactly as tuned; only
+  the rasterisation technique changed, per your own "colours they already
+  have, just not glyphs" framing).
+- Shared a single first-pass radius constant, `PARTICLE_DOT_RADIUS_WU =
+  0.4` — not a real tuning pass, just big enough to read as a small glow.
+  Yours to retune once you've seen it.
+
+**Verified precisely, matching [58]/[57]'s own standard for this session**
+(no live browser tooling here either): 7 new tests. `canvas.test.ts` proves
+the deferred-queue behaviour directly against the real `CanvasSurface` —
+a `dot()` call does NOT paint before a same-frame `drawImage()` call, only
+after `flush()` — and pins the gradient's two colour stops exactly
+(`rgba(color,alpha)` at 0, `rgba(color,0)` at 1) and the ellipse's pixel
+math (0.5/0.25-cell radii at a 10x20 cell come out 5px/5px — a circle).
+`world.test.ts` re-proves the thrust-alignment property from [59] against
+the NEW mechanism (thrust dot and hull `drawImage` now resolve to the
+EXACT same coordinate, zero correction, where before they needed `-0.5`)
+plus a from-scratch terminal-fallback test that would have caught the
+stale `-0.5` bug above. 184/184, typecheck clean both configs.
+
+**Not done, and now genuinely next rather than "deferred twice":** §16.2c,
+area/beam shapes (bands, rings, Silver Rain columns, boss hazards) as
+translucent primitives. Same `dot()`-style deferred-queue mechanism this
+entry just built and verified — a rect/arc/line primitive reusing the
+identical queue, not a second one — so it's smaller than it looked before
+this landed. Real next item; the backlog and owner-feedback.md are both
+quiet, so it's what I'm picking up next unless you post something more
+urgent.

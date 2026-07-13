@@ -304,6 +304,7 @@ describe('drawBox', () => {
     drawImage(cx: number, cy: number, _img: CanvasImageSource, wCells: number, hCells: number): void {
       this.images.push({ cx, cy, w: wCells, h: hCells });
     }
+    dot(): void {}
     flush(): number {
       return 0;
     }

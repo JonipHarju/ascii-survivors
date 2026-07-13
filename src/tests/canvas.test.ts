@@ -25,14 +25,28 @@ class StubContext {
   fillRects: DrawCall[] = [];
   drawImages: DrawCall[] = [];
   gradients = 0;
+  gradientStops: { offset: number; color: string }[] = [];
   texts: string[] = [];
+  /** One entry per `dot()`'s `translate` + `scale`, in call order — the ellipse's pixel centre/radii. */
+  arcs: { tx: number; ty: number; sx: number; sy: number }[] = [];
+  private pendingTranslate = { x: 0, y: 0 };
+  private pendingScale = { x: 1, y: 1 };
 
   setTransform(): void {}
-  scale(): void {}
+  scale(x: number, y: number): void {
+    this.pendingScale = { x, y };
+  }
   save(): void {}
   restore(): void {}
-  translate(): void {}
+  translate(x: number, y: number): void {
+    this.pendingTranslate = { x, y };
+  }
   rotate(): void {}
+  beginPath(): void {}
+  arc(): void {
+    this.arcs.push({ tx: this.pendingTranslate.x, ty: this.pendingTranslate.y, sx: this.pendingScale.x, sy: this.pendingScale.y });
+  }
+  fill(): void {}
   fillText(s: string): void {
     this.texts.push(s);
   }
@@ -42,9 +56,9 @@ class StubContext {
   drawImage(_img: unknown, x: number, y: number, w: number, h: number): void {
     this.drawImages.push({ x, y, w, h });
   }
-  createRadialGradient(): { addColorStop(): void } {
+  createRadialGradient(): { addColorStop(offset: number, color: string): void } {
     this.gradients++;
-    return { addColorStop: () => {} };
+    return { addColorStop: (offset: number, color: string) => this.gradientStops.push({ offset, color }) };
   }
 }
 
@@ -148,6 +162,46 @@ describe('CanvasSurface', () => {
     surface.flush();
     assert.equal(ctx.drawImages.length, 1, 'onTop paints once, in flush()');
     assert.deepEqual(ctx.drawImages[0], { x: 25, y: 20, w: 30, h: 40 });
+  });
+
+  it('dot(): defers to flush(), after every buffered glyph and immediate drawImage this frame', () => {
+    const { surface, ctx } = makeSurface();
+    surface.clear();
+
+    // Simulate the real frame order (render.ts): particles draw early, the
+    // player's raster ship draws later, both in the same frame.
+    surface.dot(4, 2, 0.5, 0.25, 0x4ff0f0, 0.8);
+    assert.equal(ctx.arcs.length, 0, 'a dot must not paint immediately — a later drawImage would paint over it');
+    surface.drawImage(4, 2, {} as unknown as CanvasImageSource, 3, 2);
+    assert.equal(ctx.drawImages.length, 1, 'drawImage still paints immediately, unlike dot()');
+
+    surface.flush();
+    assert.equal(ctx.arcs.length, 1, 'the dot paints once, in flush()');
+    // Cell (4,2) at cellW=10/cellH=20 -> pixel centre (40, 40). Radii 0.5/0.25
+    // cells -> 5px/5px: an isotropic wu radius comes out a true circle.
+    assert.deepEqual(ctx.arcs[0], { tx: 40, ty: 40, sx: 5, sy: 5 });
+  });
+
+  it('dot(): the gradient fades from the given colour+alpha at the centre to fully transparent at the rim', () => {
+    const { surface, ctx } = makeSurface();
+    surface.clear();
+    surface.dot(0, 0, 1, 1, 0xff8800, 0.6);
+    surface.flush();
+
+    assert.equal(ctx.gradientStops.length, 2);
+    assert.deepEqual(ctx.gradientStops[0], { offset: 0, color: 'rgba(255,136,0,0.6)' });
+    assert.deepEqual(ctx.gradientStops[1], { offset: 1, color: 'rgba(255,136,0,0)' });
+  });
+
+  it('dot(): a non-positive radius or alpha costs nothing, not a zero-size draw', () => {
+    const { surface, ctx } = makeSurface();
+    surface.clear();
+    surface.dot(1, 1, 0, 1, 0xffffff, 1);
+    surface.dot(1, 1, 1, 0, 0xffffff, 1);
+    surface.dot(1, 1, 1, 1, 0xffffff, 0);
+    surface.flush();
+
+    assert.equal(ctx.arcs.length, 0);
   });
 
   it('backdrop-fills on clear(), not flush() — an image drawn between them survives', () => {

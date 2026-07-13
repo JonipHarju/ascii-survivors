@@ -75,6 +75,14 @@ function css(c: Color): string {
   return `#${(c & 0xffffff).toString(16).padStart(6, '0')}`;
 }
 
+/** `css()` with an alpha channel — canvas gradient stops need `rgba()`, not hex. */
+function rgba(c: Color, a: number): string {
+  const r = (c >> 16) & 0xff;
+  const g = (c >> 8) & 0xff;
+  const b = c & 0xff;
+  return `rgba(${r},${g},${b},${a})`;
+}
+
 export class CanvasSurface implements Surface {
   readonly caps: Capabilities = { smoothLight: true, subCell: true, raster: true };
 
@@ -101,6 +109,9 @@ export class CanvasSurface implements Surface {
 
   /** `drawImage(..., onTop: true)` calls, painted at the end of `flush()` instead of immediately. */
   private onTopQueue: { cx: number; cy: number; img: CanvasImageSource; wCells: number; hCells: number; angle: number; glow?: Color }[] = [];
+
+  /** `dot()` calls — always deferred, painted in `flush()`. See `Surface.dot`'s own doc comment for why. */
+  private dotQueue: { cx: number; cy: number; rx: number; ry: number; color: Color; alpha: number }[] = [];
 
   /** (glyph, colour) -> pre-rendered tile. Bounded; the game uses few combos. */
   private glyphCache = new Map<string, HTMLCanvasElement>();
@@ -198,6 +209,7 @@ export class CanvasSurface implements Surface {
     this.oy.fill(0);
     this.light = null;
     this.onTopQueue.length = 0;
+    this.dotQueue.length = 0;
 
     // Paint the flat backdrop immediately, not in flush(). drawImage() below is
     // an immediate draw too — GameView calls it between clear() and flush(), and
@@ -276,6 +288,39 @@ export class CanvasSurface implements Surface {
       ctx.rotate(angle);
       ctx.drawImage(img, -w / 2, -h / 2, w, h);
     }
+    ctx.restore();
+  }
+
+  /** See `Surface.dot`'s doc comment — always deferred, painted in `flush()`. */
+  dot(cx: number, cy: number, rx: number, ry: number, color: Color, alpha: number): void {
+    if (!Number.isFinite(cx) || !Number.isFinite(cy)) return;
+    this.dotQueue.push({ cx, cy, rx, ry, color, alpha });
+  }
+
+  /**
+   * `ctx.scale` stretches a unit circle into the wu-correct ellipse (see
+   * `Surface.dot`'s doc comment: `rx`/`ry` already carry the WU_PER_ROW
+   * correction, so `rx*cellW`/`ry*cellH` come out equal in pixels for an
+   * isotropic wu radius — a true circle, not squashed). The gradient is
+   * defined in that same scaled space, so its 0..1 stops don't need their
+   * own pixel math.
+   */
+  private paintDot(cx: number, cy: number, rx: number, ry: number, color: Color, alpha: number): void {
+    const { ctx, cellW, cellH } = this;
+    const rxPx = rx * cellW;
+    const ryPx = ry * cellH;
+    if (rxPx <= 0 || ryPx <= 0 || alpha <= 0) return;
+
+    ctx.save();
+    ctx.translate(cx * cellW, cy * cellH);
+    ctx.scale(rxPx, ryPx);
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+    g.addColorStop(0, rgba(color, alpha));
+    g.addColorStop(1, rgba(color, 0));
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(0, 0, 1, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
   }
 
@@ -416,6 +461,14 @@ export class CanvasSurface implements Surface {
         drawn++;
       }
     }
+
+    // Deferred `dot()` particles — after every buffered glyph AND every
+    // immediate `drawImage` call made this frame (Surface.dot's own doc
+    // comment: a thrust/ember/spark dot spawned early in `render()` must
+    // still read on top of a raster ship painted later in the same frame,
+    // not vanish under it).
+    for (const q of this.dotQueue) this.paintDot(q.cx, q.cy, q.rx, q.ry, q.color, q.alpha);
+    this.dotQueue.length = 0;
 
     // Deferred `onTop` images last — after the background fills and glyph
     // tiles above, so a UI panel's own buffered background can't paint over

@@ -1010,6 +1010,7 @@ describe('rendering the world', () => {
     readonly height = 34;
     drawImages: { cx: number; cy: number; w: number; h: number; angle?: number; glow?: Color }[] = [];
     sets: { x: number; y: number; ch: string }[] = [];
+    dots: { cx: number; cy: number; rx: number; ry: number; color: Color; alpha: number }[] = [];
     clear(): void {}
     set(x: number, y: number, ch: string): void {
       this.sets.push({ x, y, ch });
@@ -1032,6 +1033,9 @@ describe('rendering the world', () => {
     setLight(): void {}
     drawImage(cx: number, cy: number, _img: CanvasImageSource, w: number, h: number, angle?: number, glow?: Color): void {
       this.drawImages.push({ cx, cy, w, h, angle, glow });
+    }
+    dot(cx: number, cy: number, rx: number, ry: number, color: Color, alpha: number): void {
+      this.dots.push({ cx, cy, rx, ry, color, alpha });
     }
     flush(): number {
       return 0;
@@ -1501,8 +1505,43 @@ describe('rendering the world', () => {
     });
   });
 
+  describe('ambient particles (embers, sparks) go through dot() on a raster backend (design.md §16.2a)', () => {
+    it('embers: a raster backend gets a dot, not the cinder glyph', () => {
+      const w = new World(data, 1);
+      w.embers.push({ x: w.x + 4, y: w.y, radius: 2, dmg: 1, life: 2, color: 0xff8700, spreads: 0 });
+      const r = new FakeRasterSurface();
+
+      new GameView(new SpriteLoader('/nonexistent'), { get: () => undefined }).render(r, w, FIELD, { dark: false, debug: false });
+
+      assert.equal(r.dots.length, 1, `expected one ember dot, got ${JSON.stringify(r.dots)}`);
+      assert.equal(r.sets.some((s) => s.ch === '°'), false, 'the cinder glyph must not also draw');
+    });
+
+    it('embers: the terminal falls back to the cinder glyph, unchanged', () => {
+      const w = new World(data, 1);
+      w.embers.push({ x: w.x + 4, y: w.y, radius: 2, dmg: 1, life: 2, color: 0xff8700, spreads: 0 });
+      const r = new Renderer(100, 34, 'truecolor', { write: () => true } as unknown as NodeJS.WritableStream);
+      r.clear();
+
+      new GameView(new SpriteLoader('/nonexistent'), { get: () => undefined }).render(r, w, FIELD, { dark: false, debug: false });
+
+      assert.equal(r.getChar(FIELD.x + Math.floor(FIELD.w / 2) + 4, FIELD.y + Math.floor(FIELD.h / 2)), '°');
+    });
+
+    it('sparks: a raster backend gets a dot, not the ember glyph', () => {
+      const w = new World(data, 1);
+      w.sparks.push({ x: w.x + 4, y: w.y, vx: 0, vy: -1, age: 0, life: 1 });
+      const r = new FakeRasterSurface();
+
+      new GameView(new SpriteLoader('/nonexistent'), { get: () => undefined }).render(r, w, FIELD, { dark: false, debug: false });
+
+      assert.equal(r.dots.length, 1, `expected one spark dot, got ${JSON.stringify(r.dots)}`);
+      assert.equal(r.sets.some((s) => s.ch === "'"), false, 'the ember glyph must not also draw');
+    });
+  });
+
   describe('the thrust trail lines up with the hull it pours out of (john.md, owner feedback 12.07 16:10: "the weird teal thruster effeect is not center to ship")', () => {
-    it('resolves to the same screen pixel as the ship for the same world position', () => {
+    it('on a raster backend, dot() resolves to the exact same screen pixel as the ship for the same world position', () => {
       const imgData: GameData = { ...data, images: parseImageTable('sprites/player\tspace/ships/galactica_ranger_a.png\t6\t8.6') };
       const w = new World(imgData, 1);
       // Real particles carry a TAIL/spread offset (world.ts's updateThrust); planting
@@ -1516,14 +1555,29 @@ describe('rendering the world', () => {
 
       const ship = r.drawImages.find((d) => d.w === 6);
       assert.ok(ship !== undefined, `expected the player to draw raster, got ${JSON.stringify(r.drawImages)}`);
-      const trail = r.sets.find((s) => s.ch === "'");
-      assert.ok(trail !== undefined, `expected a thrust particle to draw, got ${JSON.stringify(r.sets)}`);
-      // canvas.test.ts's own "nudges a sub-cell glyph" assertion: setF(V) paints at
-      // pixel (V+0.5)*cellW, while drawImage(V) paints at V*cellW directly. So a
-      // glyph and a raster blit only land on the same pixel when the glyph's
-      // coordinate is the raster one's minus 0.5 — not the same value.
-      assert.equal(trail!.x, ship!.cx - 0.5, 'the trail must paint half a cell left of a naively-equal coordinate to align with the hull');
-      assert.equal(trail!.y, ship!.cy - 0.5);
+      assert.equal(r.dots.length, 1, `expected one thrust dot, got ${JSON.stringify(r.dots)}`);
+      // dot() shares drawImage's own coordinate convention (Surface.dot's doc
+      // comment) — no half-cell correction needed, unlike the old setF path.
+      assert.equal(r.dots[0]!.cx, ship!.cx, 'the dot must land on the exact same pixel as the hull it pours out of');
+      assert.equal(r.dots[0]!.cy, ship!.cy);
+      assert.equal(r.sets.some((s) => s.ch === "'"), false, 'a raster backend must not also draw the glyph fallback');
+    });
+
+    it('on a non-raster (terminal) backend, falls back to the plain glyph, unshifted — the terminal ship is a glyph too, so nothing needs realigning', () => {
+      const w = new World({ ...data, images: emptyImageTable() }, 1);
+      // Offset from the player's own cell so her `@` (drawn last) can't overwrite
+      // the same cell the trail lands on — this test is about the trail's OWN
+      // projection, not about who wins a shared cell.
+      w.thrust.push({ x: w.x + 3, y: w.y, vx: 0, vy: 0, age: 0, life: 1 });
+      const r = new Renderer(100, 34, 'truecolor', { write: () => true } as unknown as NodeJS.WritableStream);
+      r.clear();
+
+      new GameView(new SpriteLoader('/nonexistent'), { get: () => undefined }).render(r, w, FIELD, { dark: false, debug: false });
+
+      // The terminal's own projection: p.col(x) rounds to the nearest cell.
+      const cx = FIELD.x + Math.floor(FIELD.w / 2) + 3;
+      const cy = FIELD.y + Math.floor(FIELD.h / 2);
+      assert.equal(r.getChar(cx, cy), "'", `expected the thrust glyph at its own cell, got '${r.getChar(cx, cy)}'`);
     });
   });
 });

@@ -157,7 +157,12 @@ portraits/gravewarden	space/elites/gravewarden.png	8	8
 # original pick.
 #
 # id	path	w	h
-cards/nova	space/cards/nova.png	9.9	4.5
+# cards/nova re-pointed 13.07: the original round cyan icon became a twin
+# of the Ion Wisp's new orb (two cyan circles side by side on one level-up
+# screen — a fresh mismatch the moment the wisp fix landed). Same cure as
+# the wisp: the card IS the projectile file (§16.4's cannot-drift rule),
+# and "Sanguine" finally looks sanguine.
+cards/nova	space/projectiles/nova_bolt.png	2.6	4.5
 cards/chain	space/cards/chain.png	2.5	5
 cards/censer	space/cards/censer.png	8	4.5
 cards/gravesalt	space/cards/gravesalt.png	4.1	4.5

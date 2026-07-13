@@ -170,18 +170,18 @@ cards/cinder	space/cards/cinder.png	3.2	5
 # bug these tables were once parked for is fixed.
 #
 # id	path	w	h
-cards/might	space/cards/passive_might.png	9	4.5
-cards/haste	space/cards/passive_haste.png	9	4.5
-cards/area	space/cards/passive_area.png	9	4.5
-cards/duration	space/cards/passive_duration.png	9	4.5
-cards/swift	space/cards/passive_swift.png	9	4.5
-cards/magnet	space/cards/passive_magnet.png	9	4.5
-cards/growth	space/cards/passive_growth.png	9	4.5
-cards/luck	space/cards/passive_luck.png	9	4.5
-cards/armour	space/cards/passive_armour.png	9	4.5
-cards/regen	space/cards/passive_regen.png	9	4.5
-cards/oil	space/cards/passive_oil.png	9	4.5
-cards/revival	space/cards/passive_revival.png	9	4.5
+cards/passives/might	space/cards/passive_might.png	9	4.5
+cards/passives/haste	space/cards/passive_haste.png	9	4.5
+cards/passives/area	space/cards/passive_area.png	9	4.5
+cards/passives/duration	space/cards/passive_duration.png	9	4.5
+cards/passives/swift	space/cards/passive_swift.png	9	4.5
+cards/passives/magnet	space/cards/passive_magnet.png	9	4.5
+cards/passives/growth	space/cards/passive_growth.png	9	4.5
+cards/passives/luck	space/cards/passive_luck.png	9	4.5
+cards/passives/armour	space/cards/passive_armour.png	9	4.5
+cards/passives/regen	space/cards/passive_regen.png	9	4.5
+cards/passives/oil	space/cards/passive_oil.png	9	4.5
+cards/passives/revival	space/cards/passive_revival.png	9	4.5
 
 # panels/frame — design.md §15.13's GUI-overhaul plumbing (john.md [47]).
 # One shared backdrop for every drawBox screen (pause, level-up card, evo,
@@ -196,10 +196,8 @@ cards/revival	space/cards/passive_revival.png	9	4.5
 # id	path	w	h
 panels/frame	space/ui/panel_frame.png	64	64
 
-# ── PENDING JOHN'S HOOKS (design.md §16, 12.07 16:10 feedback) ──────────────
-# Rows below are COMMENTED OUT until the matching code hook exists, same
-# discipline as the cards/* rows were under the z-order bug (never trade a
-# working fallback for a blank). Uncomment each block when John's hook lands.
+# ── §16's NEW ID FAMILIES (12.07 16:10 feedback) — hooks LIVE since john.md
+# [59]; rows uncommented same-day. ──────────────────────────────────────────
 #
 # projectiles/<weapon id> — WORLD UNITS (they live on the field, same unit
 # rule as sprites/ and pickups/, NOT the cards/portraits cell rule). The Ion
@@ -214,18 +212,17 @@ panels/frame	space/ui/panel_frame.png	64	64
 # gravesalt: bare steel shard, silver like the '^' glyph it replaces.
 #
 # id	path	w	h
-#projectiles/lantern	space/projectiles/wisp_orb.png	1.6	1.5
-#projectiles/nova	space/projectiles/nova_bolt.png	0.9	3.2
-#projectiles/gravesalt	space/projectiles/salt_shard.png	1.2	1.2
+projectiles/lantern	space/projectiles/wisp_orb.png	1.6	1.5
+projectiles/nova	space/projectiles/nova_bolt.png	0.9	3.2
+projectiles/gravesalt	space/projectiles/salt_shard.png	1.2	1.2
 #
-# decals/<n> — WORLD UNITS. Raster wreckage for the kill-decal floor (the
-# glyph decals are among the last ASCII survivors on the field). Grey
+# decals/<n> — WORLD UNITS. Raster wreckage for the kill-decal floor. Grey
 # asteroid rubble, deliberately DARK and desaturated — the luminance-ladder
 # law (§9): scenery must never compete with live actors. John picks one of
 # the three at decal-spawn time (any stable pseudo-random keyed off position
 # is fine; visual variety is the whole point of three files).
 #
 # id	path	w	h
-#decals/debris1	space/decals/debris1.png	2.4	2.4
-#decals/debris2	space/decals/debris2.png	2.8	2.8
-#decals/debris3	space/decals/debris3.png	2.2	2.2
+decals/debris1	space/decals/debris1.png	2.4	2.4
+decals/debris2	space/decals/debris2.png	2.8	2.8
+decals/debris3	space/decals/debris3.png	2.2	2.2

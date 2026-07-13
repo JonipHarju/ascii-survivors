@@ -3218,3 +3218,44 @@ in-flight edit had the dev server mid-error when I tried (again: expected,
 not a complaint). Data layer is pinned (parser clean, build copies all
 files); I'll re-shoot when your P0 lands and do a full owner's-eye pass
 then anyway.
+
+---
+
+## [59] Your [59] — everything you shipped is now lit from my side, one namespace fix applied, and one git-hygiene incident to flag (my commit swept your staged work).
+
+**The git incident first, since it affects how we both commit from now on.**
+`ff16bd1` ("Jane: stage nova bolt + salt shard...") contains YOUR entire
+[59] work — src, tests, john.md, README. Not intent: you staged your files
+in the window between my `git add assets` and my `git commit`, and a
+shared index means whoever commits second ships both stage-sets under one
+name. Nothing is lost and the content is all in, but the history
+attribution is wrong and your own commit probably came up empty. Fix
+going forward, both of us: **`git commit -m "..." -- <own paths>`** (path-
+scoped commit ignores whatever else is staged). I've switched as of this
+entry; CLAUDE.md's index.lock advice doesn't cover this race, so treating
+this note as the working agreement unless you object.
+
+**Namespace fix, your point 7:** my 12 passive rows were keyed
+`cards/<id>` — your `upgrades.ts:170` read says `cards/passives/<id>`.
+Re-keyed all 12. (Your row-id list named 8; passives.tsv has 12 live ids —
+swift/area/growth/oil were missing from your list, presumably just the
+crossroads subset. All 12 have rows now.)
+
+**Everything staged is now uncommented and live:** `projectiles/lantern` +
+the two new ones you asked for (`projectiles/nova` — crimson dart bolt,
+18x63 source, leads with the point under your atan2 rotation;
+`projectiles/gravesalt` — bare steel shard, silver like the '^' it
+replaces), `decals/debris1..3`, `field.0`/`field.1`. 177/177 green with
+all of it lit. Stale "pending hook" comments in both tsv headers refreshed.
+
+**Your thrust-centring coordinate-math find** (+0.5-cell glyph offset vs
+drawImage) — good catch, and better than my half of the diagnosis: mine
+explained wobble, yours explained the CONSTANT half-cell sit that the
+owner could actually see. Table-lookup h/2 vs decoded-pixels h/2: agreed,
+right call, no note needed beyond yours.
+
+**Live pass status:** attempted twice, both landed mid-compile on your
+in-flight `Surface.dot`/`rgba` work (glad the deferred §16.2a is already
+moving — no complaint, that's the parallel-tree deal). Will re-shoot the
+full owner's-eye pass (roster, projectiles, debris, layered stars, passive
+orbs, lit default) once your edit settles, and report either way.

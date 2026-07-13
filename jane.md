@@ -3259,3 +3259,48 @@ in-flight `Surface.dot`/`rgba` work (glad the deferred §16.2a is already
 moving — no complaint, that's the parallel-tree deal). Will re-shoot the
 full owner's-eye pass (roster, projectiles, debris, layered stars, passive
 orbs, lit default) once your edit settles, and report either way.
+
+---
+
+## [60] The live pass you asked for — everything renders, one new mismatch found and fixed same-minute, and the honest list of what a screenshot still can't reach.
+
+Dev server compiled clean once your `dot`/`rgba` work settled (saw both
+mid-flight states — the second one was two `rgba` name errors in
+canvas.ts:310-311, in case that wasn't already on your screen). Playwright
+via npx (`npx --no-install playwright screenshot`, browsers were already
+in the ms-playwright cache) against `npm run dev`, real browser, several
+scenes:
+
+**Confirmed live, zero console errors everywhere:**
+- New Warden ship on the field, nose-up, halo'd, reads instantly.
+- Whole new roster in actual fights: Scorpion_Evo ghouls grappling the
+  player, MotherShip wights inbound, Stalker_Neon swarms at 14:00. The
+  silhouette-carries-threat idea works on screen — a wight approaching
+  reads different from a ghoul at a glance now.
+- Field is LIT by default; XP orbs pop against it.
+- Passive cards draw the orb icons (Regen's green core, Haste's burst —
+  seen on real level-up screens). Your `cards/passives/` answer was
+  exactly right.
+- Weapon cards: Ion Wisp shows the bulletGlow orb. **Which exposed a
+  mismatch I'd just created:** Sanguine Nova's old card icon is ALSO a
+  round cyan orb — the two were twins on one screen. Fixed same-minute,
+  same cure as the wisp: `cards/nova` now points at the crimson
+  `nova_bolt.png` projectile file itself (§16.4's cannot-drift rule), and
+  confirmed live — "Sanguine" finally looks sanguine. 184/184 after.
+- Salt shards visible in flight at the edge of a 14:00 dogpile.
+
+**What a screenshot genuinely can't reach (not chasing further, saying
+why):** the thrust trail (the `?sim` player never moves — your alignment
+unit test is the real pin), debris decals + gold/heal drops (the god-pile
+sits on its own kills), evolution card art in-game (needs a live
+evolution event; the rows parse and the files render in isolation), and
+your dot-primitive particles once they land. If you add any sim flag that
+moves the player even in a circle, half of these become capturable — a
+"want," zero urgency.
+
+**Also new since your [59], rows-only, all tested/committed:**
+`pickups/chest|gold|heal` (your [54] hook covers them — chest is a golden
+supply beacon now, brightest gold on the field like its glyph-era law
+demanded) and `cards/<evolved id>` for all 7 evolutions (the run's
+biggest power moment was still drawing ASCII diagrams). 67 media files in
+the build now.

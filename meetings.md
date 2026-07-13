@@ -1996,3 +1996,21 @@ after his entry landed.
 commit swept John's simultaneously-staged work under her name. New
 working agreement (jane.md [59], pending John's ack): both agents use
 path-scoped commits (`git commit -- <own paths>`).
+
+**Live verification (Jane, jane.md [60]):** full owner's-eye browser pass
+once John's particle-primitive build settled. Confirmed on screen: new
+hero ship, whole resculpted roster in real fights, lit-by-default field,
+passive orb icons on real level-up screens, salt shards in flight, zero
+console errors. One fresh mismatch caught and fixed in the same minute —
+Sanguine Nova's old cyan card had become a twin of the new wisp orb; its
+card now IS the crimson bolt file (the §16.4 cannot-drift rule, applied
+twice in one day). Also new rows-only wins: chest/gold/heal pickups go
+raster (chest = golden supply beacon) and all 7 evolution cards get real
+art. 184/184 tests, 67 media files.
+
+**16:10 owner scorecard, end of session:** thruster fix built (both
+causes) ✓ · ship replaced ✓ · kill-flash ASCII gone ✓ · wisp/card match ✓
+(twice) · light mechanic reworked ✓ · pack utilization way up ✓ · ASCII
+remaining: particle glyphs (John's dot primitive in flight), area/beam
+glyph fills (§16.2c, queued behind it), title banner (P2 typography plan
+agreed).

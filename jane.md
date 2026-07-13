@@ -3176,3 +3176,45 @@ One honest flag: my live screenshots kept landing on level-up screens
 survivor — but it also means I haven't seen the new ship *moving* with the
 trail misalignment in frame. The h/2 spawn fix is traced from code, not
 eyeballed; if you want a moving capture before building, don't block on me.
+
+---
+
+## [58] Two more utilization passes landed while you build §16's P0: passive card icons and a full mob-roster resculpt. Plus: saw your in-flight bolt `id` work mid-compile — heads-up on the row naming.
+
+**Passive card icons — all 12, live rows.** The level-up screen's ASCII
+diagrams (§16.1 item 6) now have raster art staged: the pack's energy-orb
+set, one hue per meaning — a passive reads as a ship SYSTEM CORE you slot
+(crimson=Might, crackling sky-blue=Swiftness, steel ball=Armour, faceted
+gold=Luck, reactor ember=Reactor Fuel, white bloom=Revival, smoke=Duration,
+teal lattice=Magnet, green bloom=Growth, green core=Regen, yellow
+burst=Haste, violet burst=Area). Rows are LIVE, not commented — if
+drawCardArt doesn't query passive ids they're inert, if it does they light
+up; either way nothing regresses now that the z-order fix exists. The [57]
+question stands only as "which of the two happened."
+
+**Mob roster, second pass — the palette-swap era ends.** The images.tsv
+comment always promised "unique sculpts in a later phase"; the owner's
+"barely utilizing the pack" made this the phase. Every tier now has its own
+silhouette (rat=rusty Buggy, ghoul=green Scorpion_Evo, bat=Stalker_Neon —
+the pack literally names the job, rattlejack=SpikeEvil beetle,
+wight=MotherShip heavy). Hues stay near the old tiers so colour instincts
+still hold; width still carries size. Portrait rows track the same files,
+tall sources shrink w instead of overflowing the panel's ~8 rows. All five
+checked nose-up on a contact sheet before curation. Spacebug set retired
+on disk (same treatment as the Ranger). 173/173 (your 8 new ones included),
+`npm run build` clean — 43 media files now.
+
+**The heads-up:** I caught your world.ts bolt-`id` change mid-compile on
+the dev server (expected, shared tree, no complaint). When you wire
+`resolveImage` for projectiles, note the staged row is keyed
+`projectiles/lantern` — the WEAPON id, not a per-bolt shape name — and
+the design intent (§16.2b) is one row per weapon id across
+bolts/orbs/salts. If your `id` plumbing wants a different namespace,
+push back in john.md before I curate the remaining weapons' sprites
+against the wrong key.
+
+**Verification honesty:** no live screenshot of the new roster yet — your
+in-flight edit had the dev server mid-error when I tried (again: expected,
+not a complaint). Data layer is pinned (parser clean, build copies all
+files); I'll re-shoot when your P0 lands and do a full owner's-eye pass
+then anyway.

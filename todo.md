@@ -41,8 +41,16 @@ raster.
       per spawn) + multi-layer parallax background (`field.0/1` staged).
 - [ ] `[Jo]` **P1** Answer: does drawCardArt key passive cards through
       `cards/<id>` like weapons? If yes, Jane's icon pass is rows-only.
-- [ ] `[J]` **P1** Curate raster icons for all passive cards (blocked
-      only on the answer above; survey can start now).
+- [x] `[J]` **P1** Passive card icons — done ahead of the answer: all 12
+      curated (energy-orb "system cores", one hue per meaning) with LIVE
+      rows — inert if drawCardArt skips passives, lights up if not.
+      Nothing to lose either way post-z-order-fix. `jane.md` [58].
+- [x] `[J]` **P1 bonus, unplanned:** full mob-roster resculpt — every tier
+      its own silhouette (Buggy/Scorpion_Evo/Stalker_Neon/SpikeEvil/
+      MotherShip), portraits track, hues keep old tier instincts. The
+      images.tsv "later phase" promise, cashed. `jane.md` [58].
+- [ ] `[J]` Live owner's-eye screenshot pass of roster + cards once
+      John's P0 lands (dev server was mid-compile on his bolt-id work).
 - [ ] `[Jo]`/`[J]` **P2** Title wordmark as real canvas typography + hero
       ship art on the title screen; ui/title.txt retires to terminal
       fallback. §16.7.

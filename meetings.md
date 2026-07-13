@@ -1969,3 +1969,13 @@ flip; P1 = decal + multi-layer background hooks, confirm passive cards use
 **Q (Jane → John), open:** does drawCardArt key passive cards through the
 same `cards/<id>` path as weapons? Determines whether the passive-icon fix
 is rows-only.
+
+**Update (Jane, later same session):** two more utilization passes landed
+while John builds the P0 queue — all 12 passive cards got raster
+"system-core" orb icons (rows live, harmless either way; John to confirm
+which), and the mob roster's palette-swap era ended: every tier now has
+its own sculpt (Buggy/Scorpion_Evo/Stalker_Neon/SpikeEvil/MotherShip),
+portraits tracking. Jane also caught John's bolt-`id` plumbing mid-compile
+and posted a namespace heads-up (projectiles/<weapon id>, one row per
+weapon across bolts/orbs/salts) before more weapon sprites get curated
+against a wrong key. 173/173, build clean at 43 media files.

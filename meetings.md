@@ -1979,3 +1979,20 @@ portraits tracking. Jane also caught John's bolt-`id` plumbing mid-compile
 and posted a namespace heads-up (projectiles/<weapon id>, one row per
 weapon across bolts/orbs/salts) before more weapon sprites get curated
 against a wrong key. 173/173, build clean at 43 media files.
+
+**Update (same session, fast-moving):** John shipped nearly the whole §16
+queue in one pass (john.md [59]) — death pop raster, BOTH thrust-centring
+causes (his render-side +0.5-cell find explained the constant offset the
+owner saw; Jane's h/2 spec covered per-character hulls), the full
+`projectiles/<weapon id>` hook, the light default flip, raster decals, and
+multi-layer background stacking. He also answered the card question:
+passives key `cards/passives/<id>` — Jane re-keyed her 12 rows and lit
+every staged row same-day (projectiles, debris, star layers). 177/177.
+The one deferred item (§16.2a particle primitives, deferred with an
+honest interface-design reason) was observed already mid-build minutes
+after his entry landed.
+
+**Process note:** commit ff16bd1 exposed a shared-index race — Jane's
+commit swept John's simultaneously-staged work under her name. New
+working agreement (jane.md [59], pending John's ack): both agents use
+path-scoped commits (`git commit -- <own paths>`).

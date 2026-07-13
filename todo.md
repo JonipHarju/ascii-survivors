@@ -27,20 +27,32 @@ raster.
       (already gates stalker tells in code). passives.tsv text updated.
 - [x] `[J]` Curated + committed, rows staged: 3 debris decals (raster
       floor), 2 parallax star layers, wisp orb projectile.
-- [ ] `[Jo]` **P0** Particles → canvas primitives (thrust/embers/sparks),
-      incl. the traced thruster-centring fix: spawn at resolved player
-      image h/2, NOT a constant (per-char hulls differ). §16.2a/§16.3.
-- [ ] `[Jo]` **P0** Death pop → enemy's own raster sprite, white glow,
-      scale-fade. The literal "ascii thing flashed below it." §16.2.
-- [ ] `[Jo]` **P0** Weapon effects: `projectiles/<weapon id>` raster hook
-      (bolts/orbs/salts; `projectiles/lantern` row staged); bands/rings/
-      columns/hazards as glowing translucent primitives. §16.2b/c.
-- [ ] `[Jo]` **P0** Light default flip: browser lit by default, `?dark`
-      opt-in, `w.dusk` still forces. §16.5.
-- [ ] `[Jo]` **P1** Decal raster hook (`decals/debris1..3` staged, pick
-      per spawn) + multi-layer parallax background (`field.0/1` staged).
-- [ ] `[Jo]` **P1** Answer: does drawCardArt key passive cards through
-      `cards/<id>` like weapons? If yes, Jane's icon pass is rows-only.
+- [x] `[Jo]` **P0** Thrust centring — BOTH causes fixed (`john.md` [59]):
+      John independently found the render-side half (+0.5-cell glyph
+      offset vs drawImage — the constant sit the owner could see) and
+      built Jane's h/2 half (table-lookup, per-character hulls each get
+      their own tail). Alignment property pinned by a unit test.
+- [x] `[Jo]` **P0** Death pop → raster, same glow mechanism as telegraph/
+      hit-flash. 2 tests.
+- [x] `[Jo]` **P0** `projectiles/<weapon id>` hook — all three families
+      (bolts rotate to velocity, salts don't — lobbed-arc call), 8 tests.
+      `[J]` rows lit same-day: lantern + nova (crimson dart) + gravesalt
+      (steel shard).
+- [x] `[Jo]` **P0** Light default flip — lit unless `?dark`; dusk still
+      forces; docs/banners updated; terminal build's own flag untouched.
+- [x] `[Jo]` **P1** Decals → raster (stable per-cell variant pick) +
+      multi-layer parallax stacking. `[J]` rows lit same-day.
+- [x] `[Jo]` **P1** Answered: passives already key `cards/passives/<id>`
+      (upgrades.ts:170). `[J]` re-keyed all 12 rows to match.
+- [~] `[Jo]` **P0 leftover, in flight NOW:** §16.2a particles → true
+      canvas primitives (`Surface.dot`, deferred-draw queue) — was
+      deferred with reasoning in [59], observed mid-build minutes later.
+      §16.2c (area/beam primitives) queued behind it, reusing the same
+      mechanism.
+- [ ] `[J]`/`[Jo]` **Process:** path-scoped commits from now on
+      (`git commit -- <own paths>`) — ff16bd1 swept John's staged work
+      under Jane's name via the shared-index race. Jane's switched;
+      working agreement pending John's ack. `jane.md` [59].
 - [x] `[J]` **P1** Passive card icons — done ahead of the answer: all 12
       curated (energy-orb "system cores", one hue per meaning) with LIVE
       rows — inert if drawCardArt skips passives, lights up if not.

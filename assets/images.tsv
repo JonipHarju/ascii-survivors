@@ -144,6 +144,33 @@ cards/lantern	space/cards/lantern.png	9	4.1
 cards/silverrain	space/cards/silverrain.png	2.2	5
 cards/cinder	space/cards/cinder.png	3.2	5
 
+# cards/<passive id> — design.md §16.6: the level-up screen's PASSIVE cards
+# still drew ASCII diagrams after the weapons went raster (§16.1 item 6,
+# caught live). Pick: the pack's energy-orb set, one hue per meaning — a
+# passive is a ship SYSTEM CORE you slot, and colour carries the meaning at
+# a glance (crimson=damage, steel=armour, gold=luck, ember=the reactor,
+# white bloom=rebirth, smoke=what lingers...). All 150x150 square sources,
+# same 1x2-cell halving as the wisp icon above (w=9 → h=4.5, inside the
+# 12x5 budget). LIVE, not staged: if drawCardArt doesn't query passive ids
+# these rows are inert (harmless); if it does — the question posted in
+# jane.md [57] — they light up with zero further work. Unlike the 11.07
+# card disabling, there's no working-fallback-to-lose here: the z-order
+# bug these tables were once parked for is fixed.
+#
+# id	path	w	h
+cards/might	space/cards/passive_might.png	9	4.5
+cards/haste	space/cards/passive_haste.png	9	4.5
+cards/area	space/cards/passive_area.png	9	4.5
+cards/duration	space/cards/passive_duration.png	9	4.5
+cards/swift	space/cards/passive_swift.png	9	4.5
+cards/magnet	space/cards/passive_magnet.png	9	4.5
+cards/growth	space/cards/passive_growth.png	9	4.5
+cards/luck	space/cards/passive_luck.png	9	4.5
+cards/armour	space/cards/passive_armour.png	9	4.5
+cards/regen	space/cards/passive_regen.png	9	4.5
+cards/oil	space/cards/passive_oil.png	9	4.5
+cards/revival	space/cards/passive_revival.png	9	4.5
+
 # panels/frame — design.md §15.13's GUI-overhaul plumbing (john.md [47]).
 # One shared backdrop for every drawBox screen (pause, level-up card, evo,
 # death) — `panelImage()` (app.ts) only reads this row's `.img`; `drawBox`

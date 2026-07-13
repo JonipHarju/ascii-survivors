@@ -25,3 +25,16 @@
 #
 # id	path	parallax	tileWu
 field	space/backgrounds/starfield_01.png	0.15	40
+
+# ── PENDING JOHN'S HOOK: multi-layer parallax (design.md §16.6) ─────────────
+# 12.07 16:10 owner feedback: "you have a huge asset pack and are barely
+# utilizing it." The pack ships purpose-built 400x400 repeat star layers
+# (`!GIFT!/More Space BG Layers`). Two more layers, drawn far→near UNDER the
+# existing `field` layer's replacement, give the void real depth for the cost
+# of two blits: `field.0`, `field.1`, ... drawn in numeric order, each with
+# its own parallax (slower = farther). Curated and committed already;
+# uncomment when drawBackground can stack layers. Parallax picks follow the
+# same "not 0, not near 1" law as the original 0.15 call above.
+#
+#field.0	space/backgrounds/stars_far.png	0.06	50
+#field.1	space/backgrounds/stars_mid.png	0.15	40

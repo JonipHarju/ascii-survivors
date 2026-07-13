@@ -3097,3 +3097,82 @@ workaround.
 No design call needed from me on either — these are restorations of
 existing, already-approved behavior (the ASCII branch's tint math, the
 `juice.tsv` shake captions), not new asks. Nothing sitting with me here.
+
+---
+
+## [57] Fresh owner feedback (12.07 16:10) — the full ruling is design.md §16. Short version: the field goes 100% raster, and most of it is yours.
+
+Eight complaints, one root cause: the pivot moved the actors to raster but
+every *effect* still draws in glyphs. I audited the whole render pass and
+enumerated the survivors (§16.1) so nothing gets found piecemeal again.
+Here's your queue, prioritised (§16.8), with everything design-side already
+decided and every asset already committed:
+
+**P0 — the complaints, verbatim:**
+
+1. **Particles → canvas primitives** (§16.2a). Thrust, embers, sparks
+   become filled circles with radial alpha fade — colours/tuning they
+   already have, just not glyphs. Your §15.9 "7 geometry problems"
+   architecture stands untouched; this changes rasterisation, not
+   ownership. **The thrust trail's "not center to ship" complaint has two
+   real causes I traced (§16.3):** spawn at a constant 2.25 wu behind
+   centre while the hull rear is h/2 (4.3 wu on the old Ranger — the jet
+   lit mid-hull), plus glyph cell-anchoring wobble. Fix: spawn at the
+   RESOLVED player image's h/2 — not a constant, because per-character
+   ships are now live (see below) and every hull has a different tail.
+2. **Death pop → raster** (§16.2). `drawPops` flashing the ASCII sprite
+   bank is, verbatim, the owner's "a ascii thing flashed below it." Flash
+   the enemy's own raster sprite instead — same imageFor() the live enemy
+   just used, white glow (your [56]/[57] mechanism), scale-and-fade over
+   the same death_flash window. Glyph fallback stays for rows without
+   raster, as everywhere.
+3. **Weapon effects** (§16.2b/c). Point projectiles (bolts/orbs/salts) go
+   raster via NEW `projectiles/<weapon id>` rows — world units, rotate to
+   velocity where directional, glyph fallback. One row is already curated,
+   committed, and staged (commented) in images.tsv: `projectiles/lantern`,
+   the Ion Wisp's orb — which is now the SAME FILE as its new card icon,
+   so the owner's "charged wisp image does not match the effect" can never
+   recur (§16.4; the old card was a purple arc that matched nothing — my
+   miss in the original 7-icon pass, corrected). Area/beam shapes (bands,
+   rings, Silver Rain columns, boss hazards) keep their geometry but draw
+   as glowing translucent primitives instead of glyph fills.
+4. **Light mechanic — owner says "pointless", ruling agrees for normal
+   play (§16.5):** flip the browser default to LIT (`?dark` becomes the
+   opt-in; `w.dusk` still forces the collapse — the finale keeps its
+   blackout). `light_radius` survives as sensor range: it already gates
+   the stalker-tell draw distance in your code, sizes the ember ring, and
+   sizes Dusk visibility. passives.tsv text already updated on my side.
+
+**P1 — hooks for art that's already committed:**
+
+5. **Decals → raster**: `decals/debris1..3` rows staged in images.tsv
+   (grey asteroid rubble, dark on purpose — luminance ladder). Pick one of
+   three per decal at spawn; stable pseudo-random by position is fine.
+6. **Multi-layer parallax background**: `field.0`/`field.1`… rows drawn
+   far→near under today's single layer, each with its own parallax. Two
+   layers curated and committed (`stars_far`/`stars_mid`), rows staged in
+   backgrounds.tsv with picked parallax values (0.06/0.15).
+7. **A question, cheap if yes:** does drawCardArt key PASSIVE cards
+   through the same `cards/<id>` imageFor path as weapons? The level-up
+   screen still shows ASCII diagrams for Might/Regen/Armour/Revival etc.
+   (caught live this session — 16.1 item 6). If yes, my next curation
+   pass just adds rows and it lights up; if no, that's the hook to add.
+
+**P2 (after the field is clean):** title wordmark as real canvas
+typography + hero ship art (§16.7) — retires the last big ASCII surface
+and unblocks any future rename from the letterform inventory problem.
+
+**Also live already on my side, no action needed from you:** the Warden
+flies a new hero ship (`Starship_A` — the owner called the Ranger stupid;
+at field size he had a point), and `sprites/ashling`/`sprites/beggar` rows
+now feed the per-character hook your code already had — first time the
+crossroads sells visibly different ships. Verified live: new ship renders
+clean, nose-up, 165/165 tests pass, `npm run build` copies all 37 media
+files. Beggar's source art was nose-down; the committed file is rotated
+180° so nothing in code needs to care.
+
+One honest flag: my live screenshots kept landing on level-up screens
+(god-mode sim levels fast), which is how I caught the passive-diagram
+survivor — but it also means I haven't seen the new ship *moving* with the
+trail misalignment in frame. The h/2 spawn fix is traced from code, not
+eyeballed; if you want a moving capture before building, don't block on me.

@@ -53,5 +53,10 @@ regen	Regen	hp_per_sec	add	0.25	0.5	0.75	1.0	1.25	1.5	1.75	2.0	The wounds close,
 # brighter." — a continuity break post-pivot, since the player is a ship now,
 # not someone carrying a physical lantern. `id` stays `oil` (internal, John's
 # code reads it, not worth the coordination cost of renaming).
-oil	Reactor Fuel	light_radius	add	2	4	6	8	10	12	14	16	The reactor burns brighter.	light radius
+# Reframed 13.07 (design.md §16.5, owner: "this light mechanic is so
+# pointless"): normal play is fully lit now; light_radius survives as SENSOR
+# RANGE — it still gates how far out the Bat's charge tell renders, still
+# widens the reactor's ember ring, and still widens your sight in the boss's
+# Dusk blackout. Text below says sensors; the stat id is untouched.
+oil	Reactor Fuel	light_radius	add	2	4	6	8	10	12	14	16	The reactor feeds the sensors.	sensor range
 revival	Revival	revives	add	1	2	-	-	-	-	-	-	Death is refused. Once, then again.	revivals

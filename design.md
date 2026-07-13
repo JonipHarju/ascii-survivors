@@ -2343,3 +2343,166 @@ posted back to him now that a name exists:** the browser tab `<title>`
 (`web/index.html`), the dev server's startup banner (`serve.ts`), and two
 hardcoded fallback strings in `app.ts` (`drawTooSmall`, `drawTitle`'s
 placeholder-art branch). `jane.md` [55].
+
+## 16. Owner feedback 12.07 16:10 — "this is not an ASCII game anymore": the field goes fully raster
+
+The 16:10 feedback is one complaint wearing eight hats: the pivot moved the
+*actors* to raster art but left every *effect* — and a few surfaces — drawn
+in glyphs. The owner sees a space game with ASCII confetti stuck to it. This
+section is the full ruling; jane.md [57] carries the asks to John.
+
+### 16.1 The audit — every ASCII survivor on the field, enumerated
+
+Went and read the render pass (render.ts) instead of guessing. Glyph art
+still draws in exactly these places:
+
+1. **Thrust trail** — cyan APOSTROPHES (`drawThrust`, `'` hardcoded). Also
+   the "not center to ship" complaint, two real causes: spawn is a constant
+   2.25 wu behind centre while the hull's rear edge sits at h/2 (was 4.3 wu
+   on the Ranger — the jet ignited *mid-hull*), and a glyph anchors to its
+   1×2 wu cell rather than the exact point, adding wobble the rotating
+   raster ship doesn't share.
+2. **Death pop** (`drawPops`) — flashes the dead enemy's ASCII SPRITE from
+   the glyph bank, white. This is, verbatim, "when i kill an enemy a ascii
+   thing flashed below it." Every kill, all game long.
+3. **Weapon effects** — bands `═`/`─` fills, bolts as per-weapon glyphs,
+   the Ion Wisp's orbiting `o`s, Gravesalt's `^`, Silver Rain's `|`
+   columns, the boss's exhaust-trail hazard glyphs.
+4. **Particles** — Reactor Fuel's ember glyphs, hit sparks.
+5. **Floor decals** — the red/near-black wreckage glyph blocks.
+6. **Passive card diagrams** — weapons got raster icons in §15.9; passives
+   (Might, Regen, Armour, Revival, …) still draw ASCII diagrams. Caught
+   live this session on a real level-up screen.
+7. **Title banner** — ui/title.txt's block letterforms (and the small ship
+   figure) are ASCII art on the single most-seen screen in the game.
+
+NOT on the list, deliberately: HUD text, damage numbers, card body text,
+menus. Text rendered as text is typography, not ASCII art — no owner has
+ever complained about a number being made of digits. The ruling below is
+about *pictures made of characters*, not about writing.
+
+### 16.2 The ruling — three rendering classes, and which each effect joins
+
+The field renders **zero glyph art** once John's pass lands. Every current
+glyph effect joins one of three classes:
+
+- **(a) Particles → canvas primitives.** Thrust, embers, sparks become
+  filled circles (radial alpha fade, wu-sized, the colours they already
+  have). NOT sprites: they're sub-wu, motion-dominant, and numerous — a
+  textured blit per spark buys nothing a 2-3px glowing dot doesn't. John's
+  §15.9 architecture answer ("weapon effects are 7 different geometry
+  problems, not 1") STANDS — this changes how a shape is rasterised, not
+  who owns the geometry.
+- **(b) Point projectiles → raster sprites.** Bolts, the Wisp's orbs,
+  salts get `projectiles/<weapon id>` rows (world units — they live on the
+  field; same unit rule as sprites/ and pickups/, the table comment says
+  so). Directional ones rotate to velocity, same drawImage angle the ships
+  already use. Glyph fallback stays, as everywhere. First row is already
+  curated and waiting: the Wisp (see 16.4).
+- **(c) Area/beam shapes → translucent primitives.** Bands, rings, Silver
+  Rain columns, boss hazards keep their exact geometry but draw as
+  glowing translucent rects/arcs/lines instead of glyph fills. The pack's
+  `LaserBeams (for loop compatible)` strips are noted as a future upgrade
+  for beams specifically — not required for this pass.
+- Death pop: class (b) spirit — flash the enemy's own RASTER sprite
+  (same imageFor() the live enemy just used, white glow, scale-and-fade
+  over the same death_flash window). Glyph fallback for rows that lack
+  raster, exactly like the live path.
+- Floor decals: `decals/debris1..3` rows (curated, committed, commented in
+  images.tsv) — grey asteroid rubble, deliberately dark/desaturated so the
+  luminance ladder (§9) keeps scenery under actors. John picks per-decal
+  at spawn (stable pseudo-random by position is fine; variety is the
+  point of three files).
+
+### 16.3 Thrust centring — the fix rides on 16.2(a)
+
+Primitive dots kill the glyph-anchor wobble; the spawn point moves to the
+resolved player image's OWN h/2 (not a constant) — required now, not just
+nice, because per-character ships are live (16.6) and each hull has a
+different tail. Numbers otherwise unchanged from §15.17 (rate/life/speed
+were never the complaint; position and glyph-ness were).
+
+### 16.4 The Wisp mismatch — card and effect now share one file
+
+Owner: "Charged wisp image does not at all match the ascii effect." Both
+directions were wrong: the card showed a purple arc-swoosh (nothing like
+the effect), the effect was a letter `o` (nothing like any art). Fix:
+`bulletGlow.png` (a glowing cyan-blue plasma orb) is now BOTH
+`cards/lantern` (row live, resized 9×4.1 for the square-ish source) AND
+the pending `projectiles/lantern` row — one file, two rows, card and
+effect literally cannot drift apart again. Its blue-white core sits far
+enough from the XP mote's flat cyan+dark-rim orb to keep the reserved-cyan
+law honest; if they read too close on the field the wisp is the one that
+changes (XP legibility outranks a weapon's colour, §15.18).
+
+### 16.5 The light mechanic — "so pointless" is correct, and here's the salvage
+
+The owner is right about the symptom: in normal play the darkness is a mild
+0.4 dim outside a radius nobody can see the edge of, over a starfield, on
+raster sprites that stay perfectly legible anyway. It costs attention and
+gives nothing back — a vestige of the gothic-lantern game this used to be.
+
+**Ruling: normal play is FULLY LIT.** The browser default flips (lit unless
+`?dark` asks for the old look); `w.dusk` still forces the collapse. Dusk —
+the boss's phase-3 blackout — is the one moment the mechanic was ever
+dramatic, and it keeps it: the arena going black at 25% HP with only your
+sensor bubble left is a finale beat, not a chronic tax.
+
+**`light_radius` is not dead — it's reframed as SENSOR RANGE**, which is
+what it already mostly was in code: it gates how far out the Bat's charge
+tell renders (render.ts:563 — a real, live gameplay effect), it sizes the
+reactor's ember ring (the passive's visible payoff), and it sizes your
+Dusk visibility (the endgame payoff). Reactor Fuel's player-facing text
+updated to match ("The reactor feeds the sensors." / "sensor range") —
+stat id untouched, passives.tsv comment explains.
+
+### 16.6 "You have a huge asset pack and are barely utilizing it" — fair; here's the utilization pass
+
+Landed this session (my lane, live now):
+- **New hero ship.** The grey Ranger_A retires ("this ship looks stupid" —
+  he's not wrong; it read as a grey brick at field size). The Warden flies
+  `Starship_A`: classic fighter silhouette, dark hull, glowing blue engine
+  stripe that visually mates with the cyan thrust trail. Verified live —
+  reads instantly against the starfield inside the white halo. Ranger
+  folder trimmed to the single retired file for reference.
+- **Per-character ships, live for the first time.** The hook was ALREADY
+  in code (`w.character?.sprite ?? 'sprites/player'`) and characters.tsv
+  already named `sprites/ashling`/`sprites/beggar` — nobody had ever fed
+  it rows. Ashling: ornate red cruiser ("burns the floor behind her").
+  Beggar: TinyCruiser_Yellow, the gold junker ("rich runs") — source art
+  is nose-down; the committed file is rotated 180° so it obeys the same
+  nose-up contract as everything else. Buying a pilot at the crossroads
+  now buys a visibly different SHIP, which is what that screen always
+  wanted to sell.
+- **Debris decals + two parallax star layers** curated and committed,
+  rows staged (commented) pending John's hooks — multi-layer
+  `drawBackground` (`field.0`, `field.1`, … drawn far→near, each with its
+  own parallax) is the single cheapest "the void has depth" win in the
+  whole pack.
+
+Next curation pass (mine, no code dependency): **raster icons for all
+passive cards** (16.1 item 6) — same `cards/<id>` contract the weapons
+already use, if John confirms drawCardArt keys passives by id the same
+way (asked in jane.md [57]; strongly implied by the shared code path).
+
+### 16.7 The title screen (P2, after the field is clean)
+
+The banner's block letterforms are ASCII art on the most-seen screen in
+the game. Ruling: the wordmark becomes REAL TYPOGRAPHY — canvas text at
+display size (bold, tight tracking, the reserved-white/cyan accent
+palette), with the hero ship's raster art composed beside it. That kills
+the last big ASCII surface, ends the letterform-inventory problem that
+constrained the LONE NIGHT rename (§15.20 — a canvas wordmark has every
+letter, so a future rename is a one-line change), and costs no curated
+art. ui/title.txt retires to fallback duty (terminal build keeps it —
+the terminal is allowed to look like a terminal).
+
+### 16.8 Priorities, so core-first stays honest (owner, 10.07)
+
+- **P0 (the complaints, verbatim):** 16.2(a) particles incl. thrust fix,
+  16.2 death pop, 16.2(b)+(c) weapon effects, 16.5's default flip. All
+  John; jane.md [57].
+- **P1 (utilization, cheap):** decal rows hook, multi-layer background
+  hook (both have art committed and rows staged); my passive-icon pass.
+- **P2 (polish):** title wordmark (16.7), textured beams, boss-hazard
+  flair.

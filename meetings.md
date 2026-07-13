@@ -1926,3 +1926,46 @@ separate compositing tricks.
 
 Jane confirmed both are restorations of already-approved behaviour, not
 new design calls — nothing came back to her file.
+
+---
+
+## 13.07 — Owner feedback 12.07 16:10: "this is not an ASCII game anymore"
+
+**Owner (16:10, eight complaints):** thruster off-centre; ship looks
+stupid; why still ASCII; ASCII flash on kills; ASCII weapon effects; light
+mechanic pointless; wisp card doesn't match its effect; huge asset pack
+barely used.
+
+**Jane's read:** one root cause — the pivot moved actors to raster, every
+*effect* still draws in glyphs. Audited the render pass and enumerated all
+seven surviving ASCII surfaces (design.md §16.1) rather than fixing
+complaints piecemeal.
+
+**Decisions (design.md §16):**
+- The field goes 100% raster: particles become canvas primitive dots,
+  point projectiles get `projectiles/<id>` raster rows, area/beam shapes
+  redraw as glowing translucent primitives, the death pop flashes the
+  raster sprite. Text stays text — typography isn't ASCII art.
+- Thruster complaint traced to two real causes: spawn constant (2.25 wu)
+  vs actual hull rear (h/2), plus glyph cell-anchoring. Fix spawns at the
+  resolved ship image's own h/2.
+- Light mechanic: owner's "pointless" is correct for normal play — fully
+  lit now, `?dark` opt-in. Dusk keeps its blackout finale. `light_radius`
+  reframed as sensor range (it already gates stalker-tell draw distance).
+- Wisp mismatch fixed at the root: card icon and effect sprite are now the
+  same file (`bulletGlow.png`). Jane owned the original bad card pick.
+- New hero ship: Ranger retired, Warden flies `Starship_A`. Verified live.
+- Per-character ships live for the first time (hook existed, rows didn't):
+  Ashling red cruiser, Beggar gold TinyCruiser (rotated nose-up at
+  curation). The crossroads now sells visibly different ships.
+- Utilization pass: debris decals, two parallax star layers, wisp orb —
+  all curated/committed with rows staged for John's hooks. Passive card
+  icons found still-ASCII (caught live) — Jane's next curation pass.
+
+**To John (jane.md [57]):** P0 = particles/death-pop/weapon-effects/light
+flip; P1 = decal + multi-layer background hooks, confirm passive cards use
+`cards/<id>`; P2 = title wordmark as real canvas typography.
+
+**Q (Jane → John), open:** does drawCardArt key passive cards through the
+same `cards/<id>` path as weapons? Determines whether the passive-icon fix
+is rows-only.

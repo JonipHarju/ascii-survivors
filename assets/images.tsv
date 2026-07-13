@@ -36,8 +36,21 @@
 # `OverlordNightmare` art: a radial crystalline horror, unmistakably not a
 # mob or an elite at a glance — "size is threat" needs no help here.
 #
+# Ships (12.07 16:10 owner feedback — "this ship looks stupid"): the grey
+# Ranger_A is retired as the hero. The Warden now flies `Starship_A` — the
+# pack's classic hero-fighter silhouette, dark hull, glowing blue engine
+# stripe that ties directly into the cyan thrust trail. And the per-character
+# hook (`w.character?.sprite ?? 'sprites/player'`, render.ts:161) was ALREADY
+# in code + characters.tsv (`sprites/ashling`/`sprites/beggar`) — these two
+# rows light it up for the first time. Ashling: ornate red cruiser ("burns
+# the floor behind her"). Beggar: TinyCruiser_Yellow, gold junker ("rich
+# runs") — source art is nose-DOWN, rotated 180° at curation time so the
+# committed file obeys the same nose-up contract as everything else.
+#
 # id	path	w	h
-sprites/player	space/ships/ranger/Galactica_Ranger_A.png	6	8.6
+sprites/player	space/ships/warden.png	5.5	6.9
+sprites/ashling	space/ships/ashling.png	5.5	5.4
+sprites/beggar	space/ships/beggar.png	5	5
 sprites/mobs/rat	space/mobs/spacebug/spacebug_brown.png	2.6	2.5
 sprites/mobs/ghoul	space/mobs/spacebug/spacebug_green.png	3.0	2.9
 sprites/mobs/bat	space/mobs/spacebug/spacebug_purp.png	3.0	2.9
@@ -127,7 +140,7 @@ cards/nova	space/cards/nova.png	9.9	4.5
 cards/chain	space/cards/chain.png	2.5	5
 cards/censer	space/cards/censer.png	8	4.5
 cards/gravesalt	space/cards/gravesalt.png	4.1	4.5
-cards/lantern	space/cards/lantern.png	11	2.1
+cards/lantern	space/cards/lantern.png	9	4.1
 cards/silverrain	space/cards/silverrain.png	2.2	5
 cards/cinder	space/cards/cinder.png	3.2	5
 
@@ -143,3 +156,29 @@ cards/cinder	space/cards/cinder.png	3.2	5
 #
 # id	path	w	h
 panels/frame	space/ui/panel_frame.png	64	64
+
+# ── PENDING JOHN'S HOOKS (design.md §16, 12.07 16:10 feedback) ──────────────
+# Rows below are COMMENTED OUT until the matching code hook exists, same
+# discipline as the cards/* rows were under the z-order bug (never trade a
+# working fallback for a blank). Uncomment each block when John's hook lands.
+#
+# projectiles/<weapon id> — WORLD UNITS (they live on the field, same unit
+# rule as sprites/ and pickups/, NOT the cards/portraits cell rule). The Ion
+# Wisp's orbs go first (16:10: "charged wisp image does not match the ascii
+# effect") — same bulletGlow.png art as the NEW cards/lantern icon above, so
+# card and effect now literally share a file and cannot drift apart again.
+#
+# id	path	w	h
+#projectiles/lantern	space/projectiles/wisp_orb.png	1.6	1.5
+#
+# decals/<n> — WORLD UNITS. Raster wreckage for the kill-decal floor (the
+# glyph decals are among the last ASCII survivors on the field). Grey
+# asteroid rubble, deliberately DARK and desaturated — the luminance-ladder
+# law (§9): scenery must never compete with live actors. John picks one of
+# the three at decal-spawn time (any stable pseudo-random keyed off position
+# is fine; visual variety is the whole point of three files).
+#
+# id	path	w	h
+#decals/debris1	space/decals/debris1.png	2.4	2.4
+#decals/debris2	space/decals/debris2.png	2.8	2.8
+#decals/debris3	space/decals/debris3.png	2.2	2.2

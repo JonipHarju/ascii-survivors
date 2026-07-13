@@ -2,6 +2,51 @@
 
 Newest block at top. `[J]` Jane's, `[Jo]` John's. Struck through = done.
 
+## 12.07, 16:10 — "THIS IS NOT AN ASCII GAME ANYMORE" (owner; 8 complaints, one root cause)
+
+Full ruling: `design.md` §16. Handoff: `jane.md` [57]. The pivot moved the
+actors to raster; every *effect* still draws in glyphs. Field goes 100%
+raster.
+
+- [x] `[J]` Audit — every ASCII survivor on the field enumerated (§16.1):
+      thrust apostrophes, death-pop ASCII sprite flash, all weapon effects,
+      ember/spark glyphs, floor decals, passive card diagrams, title banner.
+- [x] `[J]` New hero ship — Ranger_A retired ("this ship looks stupid"),
+      Warden flies `Starship_A` (dark fighter, blue engine stripe that
+      mates with the cyan trail). Verified live in a real browser.
+- [x] `[J]` Per-character ships live for the first time — the code hook
+      existed, nobody had fed it rows. Ashling: red ornate cruiser.
+      Beggar: gold TinyCruiser (source art nose-down; committed file
+      rotated 180° to obey the nose-up contract). Crossroads now sells
+      visibly different ships.
+- [x] `[J]` Wisp mismatch fixed at the root (§16.4): `bulletGlow.png` is
+      now BOTH the card icon and the staged projectile row — one file,
+      can't drift. Old purple-arc card was my miss, owned in [57].
+- [x] `[J]` Light mechanic ruling (§16.5): normal play fully lit; Dusk
+      keeps its blackout finale; `light_radius` reframed as sensor range
+      (already gates stalker tells in code). passives.tsv text updated.
+- [x] `[J]` Curated + committed, rows staged: 3 debris decals (raster
+      floor), 2 parallax star layers, wisp orb projectile.
+- [ ] `[Jo]` **P0** Particles → canvas primitives (thrust/embers/sparks),
+      incl. the traced thruster-centring fix: spawn at resolved player
+      image h/2, NOT a constant (per-char hulls differ). §16.2a/§16.3.
+- [ ] `[Jo]` **P0** Death pop → enemy's own raster sprite, white glow,
+      scale-fade. The literal "ascii thing flashed below it." §16.2.
+- [ ] `[Jo]` **P0** Weapon effects: `projectiles/<weapon id>` raster hook
+      (bolts/orbs/salts; `projectiles/lantern` row staged); bands/rings/
+      columns/hazards as glowing translucent primitives. §16.2b/c.
+- [ ] `[Jo]` **P0** Light default flip: browser lit by default, `?dark`
+      opt-in, `w.dusk` still forces. §16.5.
+- [ ] `[Jo]` **P1** Decal raster hook (`decals/debris1..3` staged, pick
+      per spawn) + multi-layer parallax background (`field.0/1` staged).
+- [ ] `[Jo]` **P1** Answer: does drawCardArt key passive cards through
+      `cards/<id>` like weapons? If yes, Jane's icon pass is rows-only.
+- [ ] `[J]` **P1** Curate raster icons for all passive cards (blocked
+      only on the answer above; survey can start now).
+- [ ] `[Jo]`/`[J]` **P2** Title wordmark as real canvas typography + hero
+      ship art on the title screen; ui/title.txt retires to terminal
+      fallback. §16.7.
+
 ## 12.07, 13:14 — "SHIP IS SO SLOW, BORING" + "WHY IS MENU SCREEN LONG NIGHT" (owner)
 
 Full design writeup: `design.md` §15.19 (speed) / §15.20 (title). John's

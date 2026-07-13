@@ -22,11 +22,19 @@
 #       (design.md §10's "sprite size is cosmetic" law, unchanged by the
 #       pivot).
 #
-# Mob->colour mapping is arbitrary (the pack ships one bug silhouette in 5
-# palette swaps, no separate sculpts per tier) — width alone carries "size is
-# threat" here until elites/unique sculpts land in a later phase. Rationale
-# is a flavour note, not a rule: rusty/brown reads as the scrappy swarmer,
-# steel-blue reads as the armoured line-walker.
+# Mob roster, second pass (design.md §16.6 follow-on, 13.07): the "later
+# phase" the original comment promised. The 5-palette-swaps-of-one-bug era
+# is over — every tier now has its OWN SCULPT, so silhouette carries threat
+# class at a glance and width keeps carrying size. Hues stay near each
+# tier's old palette so returning players' colour instincts still hold:
+#   rat        -> Buggy_Orange (rusty egg-crawler; the scrappy swarmer)
+#   ghoul      -> Scorpion_Evo (green winged scorpion; the standard walker)
+#   bat        -> Stalker_Neon (magenta; the pack literally names the job)
+#   rattlejack -> SpikeEvil (armoured beetle, green cockpit; the mid bruiser)
+#   wight      -> MotherShip blue (spired heavy; the armoured line-walker)
+# All read nose-up in source, checked on the contact sheet before curation.
+# The old spacebug 5-swap set stays on disk under mobs/spacebug/ as retired
+# reference (same treatment as the Ranger).
 #
 # Elite/boss: John confirmed sprites/elites/<id> and sprites/countess run
 # through the exact same imageFor() path as mobs — no code needed, just rows.
@@ -51,11 +59,11 @@
 sprites/player	space/ships/warden.png	5.5	6.9
 sprites/ashling	space/ships/ashling.png	5.5	5.4
 sprites/beggar	space/ships/beggar.png	5	5
-sprites/mobs/rat	space/mobs/spacebug/spacebug_brown.png	2.6	2.5
-sprites/mobs/ghoul	space/mobs/spacebug/spacebug_green.png	3.0	2.9
-sprites/mobs/bat	space/mobs/spacebug/spacebug_purp.png	3.0	2.9
-sprites/mobs/rattlejack	space/mobs/spacebug/spacebug_greenblue.png	3.6	3.5
-sprites/mobs/wight	space/mobs/spacebug/spacebug_blue.png	4.2	4.1
+sprites/mobs/rat	space/mobs/rat_buggy.png	2.6	2.8
+sprites/mobs/ghoul	space/mobs/ghoul_scorpion.png	3.0	2.7
+sprites/mobs/bat	space/mobs/bat_stalker.png	3.0	3.6
+sprites/mobs/rattlejack	space/mobs/rattlejack_spike.png	3.6	4.6
+sprites/mobs/wight	space/mobs/wight_mothership.png	4.2	5.8
 sprites/elites/gravewarden	space/elites/gravewarden.png	6.5	6.5
 sprites/countess	space/boss/overlord_01.png	16	14.4
 
@@ -98,11 +106,15 @@ sprites/countess/hunt	space/boss/overlord_hunt.png	16	13.3
 # doesn't use the first-encounter panel), so there's nothing to shadow.
 #
 # id	path	w	h
-portraits/ghoul	space/mobs/spacebug/spacebug_green.png	8	7.8
-portraits/rat	space/mobs/spacebug/spacebug_brown.png	8	7.8
-portraits/bat	space/mobs/spacebug/spacebug_purp.png	8	7.8
-portraits/rattlejack	space/mobs/spacebug/spacebug_greenblue.png	8	7.8
-portraits/wight	space/mobs/spacebug/spacebug_blue.png	8	7.8
+# Portrait rows track the roster's new sculpts (same free-reuse rule as
+# ever — the portrait IS the field sprite, bigger). Each row keeps the
+# source aspect the way the original 8x7.8 did, capped at the panel's ~8
+# rows tall: tall sources shrink w instead of overflowing h.
+portraits/ghoul	space/mobs/ghoul_scorpion.png	8	7.3
+portraits/rat	space/mobs/rat_buggy.png	7.1	7.8
+portraits/bat	space/mobs/bat_stalker.png	6.5	7.8
+portraits/rattlejack	space/mobs/rattlejack_spike.png	6.1	7.8
+portraits/wight	space/mobs/wight_mothership.png	5.6	7.8
 portraits/gravewarden	space/elites/gravewarden.png	8	8
 
 # cards/<weapon id> — John (john.md [41]): drawCardArt tries this as raster

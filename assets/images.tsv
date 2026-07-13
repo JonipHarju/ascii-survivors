@@ -207,8 +207,16 @@ panels/frame	space/ui/panel_frame.png	64	64
 # effect") — same bulletGlow.png art as the NEW cards/lantern icon above, so
 # card and effect now literally share a file and cannot drift apart again.
 #
+# Full point-projectile set staged (design.md §16.2b — one row per WEAPON
+# id across bolts/orbs/salts; jane.md [58]'s namespace heads-up applies):
+# nova: crimson plasma bolt, dart-nosed, leads with the point when rotated
+# to velocity (18x63 source — genuinely elongated, keep the aspect).
+# gravesalt: bare steel shard, silver like the '^' glyph it replaces.
+#
 # id	path	w	h
 #projectiles/lantern	space/projectiles/wisp_orb.png	1.6	1.5
+#projectiles/nova	space/projectiles/nova_bolt.png	0.9	3.2
+#projectiles/gravesalt	space/projectiles/salt_shard.png	1.2	1.2
 #
 # decals/<n> — WORLD UNITS. Raster wreckage for the kill-decal floor (the
 # glyph decals are among the last ASCII survivors on the field). Grey

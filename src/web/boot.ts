@@ -120,7 +120,12 @@ async function boot(): Promise<void> {
   addEventListener('pointerdown', () => audio.resume(), { once: true });
 
   const app = new App(data, sprites, input, {
-    dark: !flag('nodark'),
+    // design.md §16.5, owner feedback 12.07 16:10 ("this light mechanic is so
+    // pointless"): normal play is fully lit now — `?dark` opts INTO the old
+    // gothic-lantern look instead of `?nodark` opting out of it. `w.dusk`
+    // (the boss's phase-3 blackout) is untouched, forced regardless
+    // (render.ts's `dark = opts.dark || w.dusk`).
+    dark: flag('dark'),
     debug: flag('debug'),
     seed: numberParam('seed'),
     startTime: numberParam('start'),
@@ -269,7 +274,12 @@ function benchSync(frames: number): void {
 
   const surface = new CanvasSurface(canvas, flag('noglow') ? { glow: 0 } : {});
   const app = new App(data, sprites, new WebInput(), {
-    dark: !flag('nodark'),
+    // design.md §16.5, owner feedback 12.07 16:10 ("this light mechanic is so
+    // pointless"): normal play is fully lit now — `?dark` opts INTO the old
+    // gothic-lantern look instead of `?nodark` opting out of it. `w.dusk`
+    // (the boss's phase-3 blackout) is untouched, forced regardless
+    // (render.ts's `dark = opts.dark || w.dusk`).
+    dark: flag('dark'),
     debug: flag('debug'),
     seed: numberParam('seed'),
     startTime: numberParam('start'),

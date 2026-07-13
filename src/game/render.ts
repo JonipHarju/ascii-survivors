@@ -15,6 +15,7 @@ import { frameAt } from '../assets/sprite.ts';
 import type { SpriteBank } from '../assets/bank.ts';
 import { NULL_IMAGE_SOURCE, resolveImage, type ImageSource } from '../assets/imagesource.ts';
 import type { DecalDef } from '../data/entities.ts';
+import type { BackgroundEntry } from '../data/backgrounds.ts';
 import { param } from '../data/director.ts';
 import { countessParam } from '../data/countess.ts';
 import { juice, juiceGlyph } from '../data/juice.ts';
@@ -195,14 +196,30 @@ export class GameView {
    * has to cover the whole viewport regardless of size, tiling to do it, and
    * it can drift slower than the world scrolls under it (`parallax`) rather
    * than sitting at one world position like every positioned sprite here.
-   * Returns false (drawing nothing) the instant any link is missing — no row,
-   * no loaded image, no raster backend — so `render()` falls back to the old
-   * procedural scatter exactly as if this method didn't exist.
+   *
+   * Multi-layer (backgrounds.tsv's "PENDING JOHN'S HOOK", design.md §16.6,
+   * owner feedback 12.07 16:10: "you have a huge asset pack and are barely
+   * utilizing it"). `field.<n>` ids stack under the plain `field` id — far to
+   * near, ascending `n`, `field` itself always nearest/last since it's the
+   * layer that already shipped. Each layer draws independently: a still-
+   * loading `field.0` doesn't block `field` from drawing, or vice versa.
+   * Only falls back to the procedural scatter (returns false) if NOT ONE
+   * layer could draw — no row, nothing loaded yet, or a backend that can't
+   * blit at all.
    */
   private drawBackground(r: Surface, w: World, field: Rect): boolean {
     if (!r.caps.raster) return false;
-    const entry = w.data.backgrounds.byId.get('field');
-    if (entry === undefined) return false;
+
+    const layers = [...w.data.backgrounds.byId.values()]
+      .filter((e) => e.id === 'field' || /^field\.\d+$/.test(e.id))
+      .sort((a, b) => rank(a.id) - rank(b.id));
+
+    let drewAny = false;
+    for (const entry of layers) drewAny = this.drawBackgroundLayer(r, entry, w, field) || drewAny;
+    return drewAny;
+  }
+
+  private drawBackgroundLayer(r: Surface, entry: BackgroundEntry, w: World, field: Rect): boolean {
     const img = this.images.get(entry.path);
     if (img === undefined) return false;
 
@@ -219,7 +236,7 @@ export class GameView {
 
     const cols = maxTx - minTx + 1;
     const rows = maxTy - minTy + 1;
-    if (cols * rows > GameView.MAX_BG_TILES) return false; // tileWu is set too small for this field; fall back rather than stall a frame
+    if (cols * rows > GameView.MAX_BG_TILES) return false; // tileWu is set too small for this field; skip this layer rather than stall a frame
 
     const wCells = tile;
     const hCells = tile / WU_PER_ROW;
@@ -273,6 +290,23 @@ export class GameView {
       const sx = p.col(d.cx);
       const sy = p.row(d.cy * WU_PER_ROW);
       if (!p.inside(sx, sy)) continue;
+
+      // Raster wreckage (images.tsv's "PENDING JOHN'S HOOKS" block, owner
+      // feedback 12.07 16:10: ASCII decals were "among the last ASCII
+      // survivors on the field"). One of three debris pieces, picked once
+      // per cell off a position hash — the same patch of ground always
+      // shows the same piece (no per-frame flicker) without adding a
+      // variant field to `Decal` itself. Jane's art is deliberately
+      // dark/desaturated already, so this skips the glyph path's colour
+      // ramp below rather than fake an opacity fade `Surface.drawImage` has
+      // no hook for — still gated on the same `stageFor` lifetime above, so
+      // wreckage still clears on schedule, just doesn't dim first.
+      const variant = 1 + Math.floor(hash2(d.cx, d.cy, 41) * 3);
+      const img = this.imageFor(r, w, `decals/debris${variant}`);
+      if (img !== null) {
+        r.drawImage(p.colF(d.cx), p.rowF(d.cy * WU_PER_ROW), img.img, img.wCells, img.hCells);
+        continue;
+      }
 
       // Fade within the stage as well as between stages, so the carpet thins
       // continuously instead of stepping through five discrete looks.
@@ -341,7 +375,24 @@ export class GameView {
       const sy = p.row(t.y);
       if (!p.inside(sx, sy)) continue;
       const fade = 1 - Math.min(1, t.age / Math.max(0.0001, t.life));
-      r.setF(p.colF(t.x), p.rowF(t.y), "'", shade(cyan, fade));
+      // Owner feedback 12.07 16:10: "the weird teal thruster effeect is not
+      // center to ship." Real bug, not a hull/nozzle judgement call — a grid
+      // convention mismatch between the two draw families `canvas.ts` grew as
+      // raster rows shipped. `setF`/`set` bake a half-cell offset into every
+      // glyph (`CanvasSurface.tile()` centers the glyph *within* its cell, so
+      // coordinate V paints at pixel (V+0.5)*cellW — see canvas.test.ts's own
+      // "nudges a sub-cell glyph" assertion). `drawImage` never got that
+      // offset — coordinate V paints at pixel V*cellW directly, dead centre,
+      // no cell-index concept. The player's ship (`drawImage`, this file's
+      // own `render()`) and her thrust trail (`setF`, right here) both feed
+      // the *same* `p.colF(w.x)`/`p.rowF(w.y))`-derived value through this
+      // loop, so the trail always painted half a cell right-and-down of the
+      // hull it's meant to pour out of. `- 0.5` cancels the glyph family's
+      // baked offset so both land on the same pixel for the same world
+      // position. (Likely not the only spot this bites — weapon effects and
+      // damage numbers share the same two-family split against raster
+      // enemies; flagged in john.md rather than swept in wholesale here.)
+      r.setF(p.colF(t.x) - 0.5, p.rowF(t.y) - 0.5, "'", shade(cyan, fade));
     }
   }
 
@@ -362,6 +413,18 @@ export class GameView {
       const k = Math.max(0, 1 - pop.age / life);
       const white = shade(FLASH_COLOR, 0.6 + 0.4 * k);
       const id = pop.elite ? `sprites/elites/${pop.def.id}` : `sprites/mobs/${pop.def.id}`;
+      // Raster first, same convention as the live enemy (spriteIdFor/drawEnemies)
+      // — the whole roster is raster now, so falling through to the old ASCII
+      // sprite/glyph here painted a leftover gothic glyph where a Spacebug's
+      // corpse should be (owner feedback 12.07 16:10: "an ascii thing flashed
+      // below it"). `glow` reuses the same white-flash mechanism hit-flash and
+      // the boss telegraph already use, so the pop is still "bright white",
+      // just on the raster sprite instead of a fabricated recolour.
+      const img = this.imageFor(r, w, id);
+      if (img !== null) {
+        r.drawImage(p.colF(pop.x), p.rowF(pop.y), img.img, img.wCells, img.hCells, 0, white);
+        continue;
+      }
       const sprite = this.sprites.get(id);
       if (!sprite.placeholder) {
         drawSprite(r, frameAt(sprite, 0, pop.phase), sx, sy, field, white);
@@ -652,24 +715,69 @@ export class GameView {
     }
   }
 
+  /**
+   * design.md §16.2b: point projectiles (bolts, the Wisp's orbs — `drawOrbs`
+   * — and salts) go raster via `projectiles/<weapon id>`, same namespace and
+   * fallback order as everywhere else. A bolt travels somewhere, so it
+   * rotates to its own velocity, the same `drawImage` angle convention
+   * `movePlayer`/`World.heading` already use (0 = the art's own "up" =
+   * `(sin h, -cos h)`, so `h = atan2(vx, -vy)` inverts that for a velocity
+   * vector). A salt is a lobbed arc, not a straight line — no natural single
+   * heading — so it stays unrotated, same as the boss's radially-symmetric
+   * art.
+   */
   private drawBolts(r: Surface, w: World, p: Proj): void {
     for (const b of w.bolts) {
       const sx = p.col(b.x);
       const sy = p.row(b.y);
-      if (p.inside(sx, sy)) r.setF(p.colF(b.x), p.rowF(b.y), b.glyph, b.color);
+      if (!p.inside(sx, sy)) continue;
+      const img = this.imageFor(r, w, `projectiles/${b.id}`);
+      if (img !== null) {
+        const heading = Math.atan2(b.vx, -b.vy);
+        r.drawImage(p.colF(b.x), p.rowF(b.y), img.img, img.wCells, img.hCells, heading);
+        continue;
+      }
+      r.setF(p.colF(b.x), p.rowF(b.y), b.glyph, b.color);
     }
     for (const s of w.salts) {
       const sx = p.col(s.x);
       const sy = p.row(s.y);
-      if (p.inside(sx, sy)) r.setF(p.colF(s.x), p.rowF(s.y), '^', s.color);
+      if (!p.inside(sx, sy)) continue;
+      const img = this.imageFor(r, w, `projectiles/${s.id}`);
+      if (img !== null) {
+        r.drawImage(p.colF(s.x), p.rowF(s.y), img.img, img.wCells, img.hCells);
+        continue;
+      }
+      r.setF(p.colF(s.x), p.rowF(s.y), '^', s.color);
     }
   }
 
+  /**
+   * Owner feedback 12.07 16:10: "Charged wisp image does not at all match
+   * the ascii effect it has in the game." True as filed — the Ion Wisp's
+   * card icon (`cards/lantern`, raster since [41]/[42]) orbits the player as
+   * a single lowercase `o`, no shape, no colour beyond `weapons.tsv`'s flat
+   * pick. `band`/`bolt`/`cone` etc. stay procedural for the real geometry
+   * reasons [41]/[42] already gave (arcs, directional cones, travelling
+   * bolts — genuinely different shapes each), but an orbiting mote is just a
+   * positioned point, the same shape of problem `drawPickups` solved for XP
+   * motes: raster first, glyph fallback second. `projectiles/<weapon id>` —
+   * Jane's own namespace pick (images.tsv's "PENDING JOHN'S HOOKS" block,
+   * `projectiles/lantern` already commented in, pointing at the same
+   * bulletGlow art as the new `cards/lantern` icon so the two can't drift
+   * apart again).
+   */
   private drawOrbs(r: Surface, w: World, p: Proj): void {
     for (const o of w.orbs) {
       const sx = p.col(o.x);
       const sy = p.row(o.y);
-      if (p.inside(sx, sy)) r.setF(p.colF(o.x), p.rowF(o.y), 'o', o.color);
+      if (!p.inside(sx, sy)) continue;
+      const img = this.imageFor(r, w, `projectiles/${o.id}`);
+      if (img !== null) {
+        r.drawImage(p.colF(o.x), p.rowF(o.y), img.img, img.wCells, img.hCells);
+        continue;
+      }
+      r.setF(p.colF(o.x), p.rowF(o.y), 'o', o.color);
     }
   }
 
@@ -731,6 +839,12 @@ export class GameView {
  */
 function spriteIdFor(e: Enemy): string {
   return e.elite ? `sprites/elites/${e.def.id}` : `sprites/mobs/${e.def.id}`;
+}
+
+/** `field.<n>` sorts by `n` (far layers first); plain `field` always sorts last — the nearest, already-shipped layer. */
+function rank(id: string): number {
+  if (id === 'field') return Infinity;
+  return Number(id.slice('field.'.length));
 }
 
 function stageFor(stages: readonly DecalDef[], age: number): DecalDef | null {

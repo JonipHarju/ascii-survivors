@@ -64,7 +64,7 @@ no Node in it, because the output is just a file.
 | `?sim=9000` | fast-forward N simulated ticks, fighting, before drawing |
 | `?bench=300` | measure frame cost and print it (ignores the display refresh) |
 | `?seed=123` | deterministic run |
-| `?nodark` · `?noglow` · `?nosave` | disable the lantern / bloom / persistence |
+| `?dark` · `?noglow` · `?nosave` | old gothic-lantern look (normal play is fully lit) / disable bloom / disable persistence |
 
 ## Performance
 

@@ -112,6 +112,8 @@ export type Bolt = {
   life: number;
   color: Color;
   glyph: string;
+  /** Which weapon fired it — `render.ts`'s `projectiles/<id>` raster lookup, design.md §16.2b. */
+  id: string;
   /** Chain-to-next-target budget, for Hemorrhage. */
   chains: number;
   hits: Set<Enemy>;
@@ -131,6 +133,8 @@ export type Salt = {
   radius: number;
   knock: number;
   color: Color;
+  /** Which weapon lobbed it — `render.ts`'s `projectiles/<id>` raster lookup, design.md §16.2b. */
+  id: string;
   /** Bonemeal: the burst raises XP motes. */
   raisesMotes: boolean;
 };
@@ -159,7 +163,7 @@ export type Column = {
 
 export type Hazard = { x: number; y: number; life: number; dmg: number; color: Color };
 
-export type Orb = { x: number; y: number; radius: number; dmg: number; knock: number; color: Color };
+export type Orb = { x: number; y: number; radius: number; dmg: number; knock: number; color: Color; id: string };
 
 export type Effect =
   | { kind: 'band'; xLeft: number; xRight: number; yCenter: number; halfRows: number; age: number; color: Color }
@@ -298,7 +302,16 @@ export class World {
   private static readonly THRUST_LIFE = 0.4; // seconds — trails off like a jet, doesn't linger like a rising ember
   private static readonly THRUST_SPEED = 10; // wu/s backward along -heading
   private static readonly THRUST_SPREAD = 3; // wu/s perpendicular jitter — a cone, not a laser line
-  private static readonly THRUST_TAIL = 2.25; // wu behind centre; the Ranger's own hull is 6x8.6 wu (images.tsv)
+  /**
+   * Fallback wu behind centre, used only when the player has no `images.tsv`
+   * row yet (glyph rendering). design.md §16.3: a fixed 2.25 lit the jet
+   * mid-hull once real hull art existed (the Ranger's own rear edge was
+   * h/2 = 4.3 wu, nearly double this) — worse now that per-character ships
+   * (§16.6) each have a different length. `updateThrust` resolves the
+   * player's OWN `images.tsv` h/2 first and only falls back to this constant
+   * when no row exists at all.
+   */
+  private static readonly THRUST_TAIL_FALLBACK = 2.25;
   private static readonly THRUST_MAX = 40;
 
   /**
@@ -1311,6 +1324,15 @@ export class World {
 
     if (!this.thrusting) return; // no idle-hold: a stopped engine stops visibly, unlike `heading`
 
+    // design.md §16.3: the hull's own rear edge, not a constant — every
+    // per-character ship (§16.6) is a different length. `images.tsv`'s `h` is
+    // already isotropic wu (data/images.ts), so half of it is the tail
+    // distance regardless of whether the row has actually decoded yet — this
+    // is table lookup, not a render-time concern.
+    const playerId = this.character?.sprite ?? 'sprites/player';
+    const hullH = this.data.images.byId.get(playerId)?.h;
+    const tail = hullH !== undefined ? hullH / 2 : World.THRUST_TAIL_FALLBACK;
+
     this.thrustDebt += World.THRUST_RATE * dt;
     while (this.thrustDebt >= 1) {
       this.thrustDebt -= 1;
@@ -1326,8 +1348,8 @@ export class World {
       const jitter = this.rng.range(-World.THRUST_SPREAD, World.THRUST_SPREAD);
 
       this.thrust.push({
-        x: this.x + bx * World.THRUST_TAIL,
-        y: this.y + by * World.THRUST_TAIL,
+        x: this.x + bx * tail,
+        y: this.y + by * tail,
         vx: bx * World.THRUST_SPEED + px * jitter,
         vy: by * World.THRUST_SPEED + py * jitter,
         age: 0,
@@ -1740,6 +1762,7 @@ export class World {
         life: def.dur,
         color: def.color,
         glyph: def.glyph,
+        id: w.id,
         chains,
         hits: new Set(),
       });
@@ -1800,6 +1823,7 @@ export class World {
         radius: def.ax,
         knock: def.knock,
         color: def.color,
+        id: w.id,
         raisesMotes: raises,
       });
     }
@@ -1852,7 +1876,7 @@ export class World {
       const a = w.angle + (i / count) * Math.PI * 2;
       const ox = this.x + Math.cos(a) * radius;
       const oy = this.y + Math.sin(a) * radius;
-      this.orbs.push({ x: ox, y: oy, radius: def.ay, dmg: def.dmg, knock: def.knock, color: def.color });
+      this.orbs.push({ x: ox, y: oy, radius: def.ay, dmg: def.dmg, knock: def.knock, color: def.color, id: w.id });
 
       for (const e of this.enemies) {
         if (e.orbCd > 0 || e.hp <= 0) continue;

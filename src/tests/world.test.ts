@@ -1008,7 +1008,7 @@ describe('rendering the world', () => {
     readonly caps = { smoothLight: true, subCell: true, raster: true };
     readonly width = 100;
     readonly height = 34;
-    drawImages: { cx: number; cy: number; w: number; h: number; glow?: Color }[] = [];
+    drawImages: { cx: number; cy: number; w: number; h: number; angle?: number; glow?: Color }[] = [];
     sets: { x: number; y: number; ch: string }[] = [];
     clear(): void {}
     set(x: number, y: number, ch: string): void {
@@ -1030,8 +1030,8 @@ describe('rendering the world', () => {
     }
     invalidate(): void {}
     setLight(): void {}
-    drawImage(cx: number, cy: number, _img: CanvasImageSource, w: number, h: number, _angle?: number, glow?: Color): void {
-      this.drawImages.push({ cx, cy, w, h, glow });
+    drawImage(cx: number, cy: number, _img: CanvasImageSource, w: number, h: number, angle?: number, glow?: Color): void {
+      this.drawImages.push({ cx, cy, w, h, angle, glow });
     }
     flush(): number {
       return 0;
@@ -1072,6 +1072,62 @@ describe('rendering the world', () => {
 
     assert.equal(r.drawImages.length, 0);
     assert.ok(r.sets.some((s) => s.ch === '"' || s.ch === ',' || s.ch === '`'), 'the old ground scatter still drew');
+  });
+
+  describe('multi-layer parallax (backgrounds.tsv "PENDING JOHN\'S HOOK", owner feedback 12.07 16:10: "barely utilizing" the asset pack)', () => {
+    function layeredData(): GameData {
+      return {
+        ...data,
+        backgrounds: parseBackgroundTable(
+          ['field\tspace/backgrounds/starfield_01.png\t0.15\t40', 'field.0\tspace/backgrounds/stars_far.png\t0.06\t50', 'field.1\tspace/backgrounds/stars_mid.png\t0.15\t40'].join(
+            '\n',
+          ),
+        ),
+      };
+    }
+
+    it('stacks every loaded field.<n> layer under the plain field layer, farthest first', () => {
+      const w = new World(layeredData(), 1);
+      const paths: string[] = [];
+      const images: ImageSource = {
+        get: (path) => {
+          paths.push(path);
+          return FAKE_IMG;
+        },
+      };
+      const r = new FakeRasterSurface();
+
+      new GameView(new SpriteLoader('/nonexistent'), images).render(r, w, FIELD, { dark: false, debug: false });
+
+      assert.ok(r.drawImages.length > 0, 'at least one layer drew');
+      const first = paths.findIndex((p) => p.includes('stars_far'));
+      const mid = paths.findIndex((p) => p.includes('stars_mid'));
+      const near = paths.findIndex((p) => p.includes('starfield_01'));
+      assert.ok(first >= 0 && mid >= 0 && near >= 0, `expected all three layers to be looked up, got ${JSON.stringify(paths)}`);
+      assert.ok(first < mid && mid < near, 'far layers must paint before near ones, or the near layer would be hidden underneath them');
+    });
+
+    it('draws whichever layers have loaded so far without waiting on the rest', () => {
+      const w = new World(layeredData(), 1);
+      // Only the base `field` layer has decoded; field.0/field.1 are still mid-fetch.
+      const images: ImageSource = { get: (path) => (path.includes('starfield_01') ? FAKE_IMG : undefined) };
+      const r = new FakeRasterSurface();
+
+      new GameView(new SpriteLoader('/nonexistent'), images).render(r, w, FIELD, { dark: false, debug: false });
+
+      assert.ok(r.drawImages.length > 0, 'the one loaded layer must still draw');
+      assert.equal(r.sets.filter((s) => s.ch === '"' || s.ch === ',' || s.ch === '`').length, 0, 'one live layer is enough to skip the procedural fallback');
+    });
+
+    it('still falls back to the procedural scatter if not one layer has loaded', () => {
+      const w = new World(layeredData(), 1);
+      const r = new FakeRasterSurface();
+
+      new GameView(new SpriteLoader('/nonexistent'), { get: () => undefined }).render(r, w, FIELD, { dark: false, debug: false });
+
+      assert.equal(r.drawImages.length, 0);
+      assert.ok(r.sets.some((s) => s.ch === '"' || s.ch === ',' || s.ch === '`'), 'the old ground scatter still drew');
+    });
   });
 
   /** jane.md [49]/design.md §15.14: the boss's art can shadow by phase, `sprites/countess/<phase>` over the base id. */
@@ -1218,6 +1274,256 @@ describe('rendering the world', () => {
 
       assert.equal(r.drawImages.length, 0);
       assert.ok(r.sets.some((s) => s.ch === '·'), 'the glyph mote still drew');
+    });
+  });
+
+  describe('the death pop goes raster too (john.md, owner feedback 12.07 16:10: "an ascii thing flashed below it")', () => {
+    it('flashes the raster sprite, not the leftover ASCII glyph, once a sprites/mobs/<id> row exists', () => {
+      const imgData: GameData = { ...data, images: parseImageTable('sprites/mobs/ghoul\tspace/mobs/spacebug/spacebug_green.png\t3\t2.9') };
+      const w = new World(imgData, 1);
+      w.pops.push({ def: data.glyphs.entities.get('ghoul')!, x: w.x + 4, y: w.y, age: 0, phase: 0, elite: false });
+      const images: ImageSource = { get: (path) => (path.includes('spacebug_green') ? FAKE_IMG : undefined) };
+      const r = new FakeRasterSurface();
+
+      new GameView(new SpriteLoader('/nonexistent'), images).render(r, w, FIELD, { dark: false, debug: false });
+
+      const pop = r.drawImages.find((d) => d.w === 3);
+      assert.ok(pop !== undefined, `expected the pop to draw raster, got ${JSON.stringify(r.drawImages)}`);
+      assert.notEqual(pop!.glow, undefined, 'the pop must still read as a bright flash, just on the raster sprite');
+    });
+
+    it('falls back to the old ASCII flash when no raster row exists for the dead thing', () => {
+      const w = new World({ ...data, images: emptyImageTable() }, 1);
+      w.pops.push({ def: data.glyphs.entities.get('ghoul')!, x: w.x + 4, y: w.y, age: 0, phase: 0, elite: false });
+      const r = new FakeRasterSurface();
+
+      new GameView(new SpriteLoader('/nonexistent'), { get: () => undefined }).render(r, w, FIELD, { dark: false, debug: false });
+
+      assert.equal(r.drawImages.length, 0);
+    });
+  });
+
+  describe('orbit weapon effects (the Ion Wisp) go raster when a projectiles/<id> row exists (owner feedback 12.07 16:10: "charged wisp image does not match the ascii effect")', () => {
+    it('draws a raster mote instead of the bare `o` glyph', () => {
+      const imgData: GameData = { ...data, images: parseImageTable('projectiles/lantern\tspace/projectiles/wisp_orb.png\t1.6\t1.5') };
+      const w = new World(imgData, 1);
+      w.orbs.push({ x: w.x + 3, y: w.y, radius: 1, dmg: 1, knock: 0, color: 0xffffff, id: 'lantern' });
+      const images: ImageSource = { get: (path) => (path.includes('wisp_orb') ? FAKE_IMG : undefined) };
+      const r = new FakeRasterSurface();
+
+      new GameView(new SpriteLoader('/nonexistent'), images).render(r, w, FIELD, { dark: false, debug: false });
+
+      assert.equal(r.drawImages.some((d) => d.w === 1.6), true, 'the wisp drew as raster');
+      assert.equal(r.sets.some((s) => s.ch === 'o'), false, 'the glyph fallback must not also draw');
+    });
+
+    it('falls back to the `o` glyph when no projectiles/<id> row exists — today, before Jane\'s row is uncommented', () => {
+      const w = new World({ ...data, images: emptyImageTable() }, 1);
+      w.orbs.push({ x: w.x + 3, y: w.y, radius: 1, dmg: 1, knock: 0, color: 0xffffff, id: 'lantern' });
+      const r = new FakeRasterSurface();
+
+      new GameView(new SpriteLoader('/nonexistent'), { get: () => undefined }).render(r, w, FIELD, { dark: false, debug: false });
+
+      assert.equal(r.drawImages.length, 0);
+      assert.ok(r.sets.some((s) => s.ch === 'o'), 'the glyph wisp still drew');
+    });
+  });
+
+  describe('bolts go raster when a projectiles/<weapon id> row exists (design.md §16.2b)', () => {
+    it('draws the raster sprite, rotated to its own velocity, instead of the glyph', () => {
+      const imgData: GameData = { ...data, images: parseImageTable('projectiles/nova\tspace/projectiles/nova_bolt.png\t2\t2') };
+      const w = new World(imgData, 1);
+      // Straight east: forward = (sin h, -cos h), so east (vx=1, vy=0) is h = +90deg (pi/2).
+      w.bolts.push({
+        x: w.x + 4,
+        y: w.y,
+        vx: 6,
+        vy: 0,
+        dmg: 1,
+        radius: 1,
+        pierce: 1,
+        knock: 0,
+        life: 1,
+        color: 0xffffff,
+        glyph: '*',
+        id: 'nova',
+        chains: 0,
+        hits: new Set(),
+      });
+      const images: ImageSource = { get: (path) => (path.includes('nova_bolt') ? FAKE_IMG : undefined) };
+      const r = new FakeRasterSurface();
+
+      new GameView(new SpriteLoader('/nonexistent'), images).render(r, w, FIELD, { dark: false, debug: false });
+
+      const bolt = r.drawImages.find((d) => d.w === 2);
+      assert.ok(bolt !== undefined, `expected the bolt to draw raster, got ${JSON.stringify(r.drawImages)}`);
+      assert.ok(Math.abs((bolt!.angle ?? 0) - Math.PI / 2) < 1e-9, `expected a 90deg heading for due-east velocity, got ${bolt!.angle}`);
+      assert.equal(r.sets.some((s) => s.ch === '*'), false, 'the glyph fallback must not also draw');
+    });
+
+    it('falls back to the glyph when no projectiles/<id> row exists for that weapon', () => {
+      const w = new World({ ...data, images: emptyImageTable() }, 1);
+      w.bolts.push({
+        x: w.x + 4,
+        y: w.y,
+        vx: 6,
+        vy: 0,
+        dmg: 1,
+        radius: 1,
+        pierce: 1,
+        knock: 0,
+        life: 1,
+        color: 0xffffff,
+        glyph: '*',
+        id: 'nova',
+        chains: 0,
+        hits: new Set(),
+      });
+      const r = new FakeRasterSurface();
+
+      new GameView(new SpriteLoader('/nonexistent'), { get: () => undefined }).render(r, w, FIELD, { dark: false, debug: false });
+
+      assert.equal(r.drawImages.length, 0);
+      assert.ok(r.sets.some((s) => s.ch === '*'), 'the glyph bolt still drew');
+    });
+  });
+
+  describe('salts go raster when a projectiles/<weapon id> row exists (design.md §16.2b)', () => {
+    it('draws the raster sprite instead of the `^` glyph', () => {
+      const imgData: GameData = { ...data, images: parseImageTable('projectiles/gravesalt\tspace/projectiles/salt.png\t1.5\t1.5') };
+      const w = new World(imgData, 1);
+      w.salts.push({
+        x: w.x + 4,
+        y: w.y,
+        sx: w.x,
+        sy: w.y,
+        tx: w.x + 8,
+        ty: w.y,
+        t: 0.5,
+        flight: 1,
+        dmg: 1,
+        radius: 1,
+        knock: 0,
+        color: 0xffffff,
+        id: 'gravesalt',
+        raisesMotes: false,
+      });
+      const images: ImageSource = { get: (path) => (path.includes('salt.png') ? FAKE_IMG : undefined) };
+      const r = new FakeRasterSurface();
+
+      new GameView(new SpriteLoader('/nonexistent'), images).render(r, w, FIELD, { dark: false, debug: false });
+
+      assert.equal(r.drawImages.some((d) => d.w === 1.5), true, 'the salt drew as raster');
+      assert.equal(r.sets.some((s) => s.ch === '^'), false, 'the glyph fallback must not also draw');
+    });
+
+    it('falls back to the `^` glyph when no projectiles/<id> row exists for that weapon', () => {
+      const w = new World({ ...data, images: emptyImageTable() }, 1);
+      w.salts.push({
+        x: w.x + 4,
+        y: w.y,
+        sx: w.x,
+        sy: w.y,
+        tx: w.x + 8,
+        ty: w.y,
+        t: 0.5,
+        flight: 1,
+        dmg: 1,
+        radius: 1,
+        knock: 0,
+        color: 0xffffff,
+        id: 'gravesalt',
+        raisesMotes: false,
+      });
+      const r = new FakeRasterSurface();
+
+      new GameView(new SpriteLoader('/nonexistent'), { get: () => undefined }).render(r, w, FIELD, { dark: false, debug: false });
+
+      assert.equal(r.drawImages.length, 0);
+      assert.ok(r.sets.some((s) => s.ch === '^'), 'the glyph salt still drew');
+    });
+  });
+
+  describe('kill decals go raster when decals/debris<n> rows exist (owner feedback 12.07 16:10: ASCII decals were "among the last ASCII survivors on the field")', () => {
+    it('draws one of the three debris pieces instead of the glyph, deterministically per cell', () => {
+      const imgData: GameData = {
+        ...data,
+        images: parseImageTable(
+          ['decals/debris1\tspace/decals/debris1.png\t2.4\t2.4', 'decals/debris2\tspace/decals/debris2.png\t2.8\t2.8', 'decals/debris3\tspace/decals/debris3.png\t2.2\t2.2'].join(
+            '\n',
+          ),
+        ),
+      };
+      const w = new World(imgData, 1);
+      w.decals.push({ cx: Math.round(w.x) + 3, cy: Math.round(w.y / WU_PER_ROW), born: w.time });
+      const images: ImageSource = { get: (path) => (path.includes('debris') ? FAKE_IMG : undefined) };
+      const r = new FakeRasterSurface();
+
+      new GameView(new SpriteLoader('/nonexistent'), images).render(r, w, FIELD, { dark: false, debug: false });
+
+      assert.equal(r.drawImages.length, 1, 'exactly one debris piece drew');
+      // '※' is this fixture's decal glyph (GLYPHS' `decal0` row); the ground
+      // scatter's own `"`/`,`/`` ` `` glyphs draw regardless and aren't the thing
+      // under test here.
+      assert.equal(r.sets.some((s) => s.ch === '※'), false, 'the glyph decal must not also draw');
+    });
+
+    it('picks the same variant on repeat renders of the same cell (stable, not per-frame random)', () => {
+      const imgData: GameData = {
+        ...data,
+        images: parseImageTable(
+          ['decals/debris1\tspace/decals/debris1.png\t2.4\t2.4', 'decals/debris2\tspace/decals/debris2.png\t2.8\t2.8', 'decals/debris3\tspace/decals/debris3.png\t2.2\t2.2'].join(
+            '\n',
+          ),
+        ),
+      };
+      const w = new World(imgData, 1);
+      w.decals.push({ cx: Math.round(w.x) + 3, cy: Math.round(w.y / WU_PER_ROW), born: w.time });
+      const images: ImageSource = { get: (path) => (path.includes('debris') ? FAKE_IMG : undefined) };
+
+      const r1 = new FakeRasterSurface();
+      new GameView(new SpriteLoader('/nonexistent'), images).render(r1, w, FIELD, { dark: false, debug: false });
+      const r2 = new FakeRasterSurface();
+      new GameView(new SpriteLoader('/nonexistent'), images).render(r2, w, FIELD, { dark: false, debug: false });
+
+      assert.deepEqual(r1.drawImages[0], r2.drawImages[0]);
+    });
+
+    it('falls back to the glyph carpet when no decals/debris<n> rows exist', () => {
+      const w = new World({ ...data, images: emptyImageTable() }, 1);
+      w.decals.push({ cx: Math.round(w.x) + 3, cy: Math.round(w.y / WU_PER_ROW), born: w.time });
+      const r = new FakeRasterSurface();
+
+      new GameView(new SpriteLoader('/nonexistent'), { get: () => undefined }).render(r, w, FIELD, { dark: false, debug: false });
+
+      assert.equal(r.drawImages.length, 0);
+      assert.ok(r.sets.some((s) => s.ch === '※'), 'the glyph decal still drew');
+    });
+  });
+
+  describe('the thrust trail lines up with the hull it pours out of (john.md, owner feedback 12.07 16:10: "the weird teal thruster effeect is not center to ship")', () => {
+    it('resolves to the same screen pixel as the ship for the same world position', () => {
+      const imgData: GameData = { ...data, images: parseImageTable('sprites/player\tspace/ships/galactica_ranger_a.png\t6\t8.6') };
+      const w = new World(imgData, 1);
+      // Real particles carry a TAIL/spread offset (world.ts's updateThrust); planting
+      // one exactly at the hull's own centre isolates the coordinate-family bug from
+      // that deliberate offset.
+      w.thrust.push({ x: w.x, y: w.y, vx: 0, vy: 0, age: 0, life: 1 });
+      const images: ImageSource = { get: (path) => (path.includes('galactica_ranger_a') ? FAKE_IMG : undefined) };
+      const r = new FakeRasterSurface();
+
+      new GameView(new SpriteLoader('/nonexistent'), images).render(r, w, FIELD, { dark: false, debug: false });
+
+      const ship = r.drawImages.find((d) => d.w === 6);
+      assert.ok(ship !== undefined, `expected the player to draw raster, got ${JSON.stringify(r.drawImages)}`);
+      const trail = r.sets.find((s) => s.ch === "'");
+      assert.ok(trail !== undefined, `expected a thrust particle to draw, got ${JSON.stringify(r.sets)}`);
+      // canvas.test.ts's own "nudges a sub-cell glyph" assertion: setF(V) paints at
+      // pixel (V+0.5)*cellW, while drawImage(V) paints at V*cellW directly. So a
+      // glyph and a raster blit only land on the same pixel when the glyph's
+      // coordinate is the raster one's minus 0.5 — not the same value.
+      assert.equal(trail!.x, ship!.cx - 0.5, 'the trail must paint half a cell left of a naively-equal coordinate to align with the hull');
+      assert.equal(trail!.y, ship!.cy - 0.5);
     });
   });
 });

@@ -1911,3 +1911,151 @@ desktop GPU besides. Not chasing micro-optimisation with no active
 complaint behind it; recording the honest number now so "is it still fast"
 has a real answer instead of a stale terminal-only one next time it comes
 up.
+
+---
+
+## [59] Your [57]/design.md §16 — worked through the P0 list plus most of P1. Full status below; two items genuinely deferred, with reasoning.
+
+Found the 16:10 feedback unaddressed at session start (before I'd read your
+[57] — I'd independently audited the same render pass and traced the same
+thrust-centring bug from the coordinate-math side while you were tracing it
+from the art side; more on that below). Then caught your [57]/design.md §16
+mid-session via `git status` showing your asset edits in flight, and
+re-planned around your ruling rather than duplicate it. Everything below is
+built, unit-tested (177/177, up from 162), and typechecks clean on both
+configs.
+
+**P0, done:**
+
+1. **Death pop → raster.** `drawPops` now tries `imageFor(r, w, id)` (the
+   same id `spriteIdFor` computes for the live enemy) before falling to the
+   ASCII sprite bank — white glow, same mechanism [56]/[57] built for the
+   boss telegraph and hit-flash. Exactly your §16.2 spec. 2 new tests.
+2. **Thrust centring — both causes, not just mine.** I'd independently
+   found and fixed the coordinate-math half: `canvas.ts`'s `setF`/`set`
+   bake a +0.5-cell offset into every glyph (`tile()` centres the glyph
+   *within* its cell — proved it against `canvas.test.ts`'s own "nudges a
+   sub-cell glyph" assertion), but `drawImage` never got that offset —
+   coordinate V paints at pixel V·cellW for images, (V+0.5)·cellW for
+   glyphs. The player ship and her thrust trail fed the same
+   `p.colF(w.x)`-derived value through those two different paths, so the
+   trail always sat half a cell off the hull regardless of hull length.
+   That's your "glyph anchors to its cell, adding wobble" — same root
+   cause, described from the render side rather than the art side. Fixed
+   at the one call site (`drawThrust`'s `setF` now takes `p.colF(t.x) -
+   0.5`, cancelling the glyph family's baked offset) rather than touching
+   `CanvasSurface` globally — a global fix would also shift `drawBox`'s
+   panel texture and the card icon, which position by direct box math
+   through the *same* `drawImage` and are already verified working.
+   Then read your [57] and built the other cause: `THRUST_TAIL` was a
+   constant 2.25 wu, independent of the actual hull. `updateThrust` now
+   reads `this.data.images.byId.get(playerId)?.h` (a table lookup, not a
+   render-time concern — works even before the image has decoded) and
+   spawns at `h / 2`, falling back to the old constant only if the player
+   has no raster row at all. Per-character hulls (your Warden/Ashling/
+   Beggar rows) each get their own correct tail now, automatically. 1 new
+   test pins the coordinate-alignment property directly (thrust and hull
+   must resolve to the same pixel for the same world position) so nobody
+   can silently reintroduce either half.
+3. **Point projectiles → raster, all three, not just the Wisp.** Built the
+   `projectiles/<weapon id>` hook generically: `drawOrbs` (the Ion Wisp),
+   `drawBolts` (bolts — Sanguine Nova etc.) and salts (Gravesalt) all try
+   `imageFor(r, w, \`projectiles/${id}\`)` first, glyph fallback second,
+   same order as everywhere. Had to add an `id: string` field to `Orb`,
+   `Bolt`, and `Salt` (previously carried color/dmg/etc. but not which
+   weapon spawned them — nothing to key the lookup on). Bolts rotate to
+   their own velocity (`atan2(vx, -vy)`, inverting the same forward-vector
+   convention `movePlayer`/`World.heading` already use); salts don't — a
+   lobbed arc has no single natural heading, same call as the boss's own
+   "radially symmetric, nothing to turn" precedent. Your `projectiles/
+   lantern` row (already staged, commented, in images.tsv) will light up
+   the instant you uncomment it — no further code needed. `projectiles/
+   nova` and `projectiles/gravesalt` are new asks if you want them lit too;
+   same row shape. 8 new tests (2 each: raster hit, glyph-fallback miss,
+   plus the angle assertion for bolts).
+4. **Light default flip.** `boot.ts`'s two `App` constructions (real boot +
+   the bench harness) now read `dark: flag('dark')` instead of `dark:
+   !flag('nodark')` — normal play is lit by default, `?dark` opts into the
+   old look. `w.dusk` untouched (`render.ts`'s `dark = opts.dark ||
+   w.dusk` already ORs it in, so the boss's phase-3 blackout still fires
+   regardless of the URL). Updated the three places that documented the
+   old flag name for a player/dev: `serve.ts`'s startup banner, root
+   `README.md`'s flag table. The terminal build (`main.ts`'s `--no-dark`)
+   is untouched on purpose — your §16.7 framing ("the terminal is allowed
+   to look like a terminal") reads as scoped to the browser default, not
+   the CLI's own separate flag.
+
+**P1, done:**
+
+5. **Decals → raster.** `drawDecals` picks one of `decals/debris1..3` via
+   `hash2(d.cx, d.cy, 41)` — stable per cell, no flicker, no new field on
+   `Decal` needed. Gated on the same `stageFor` lifetime the glyph path
+   uses (wreckage still clears on schedule), but skips the glyph path's
+   colour ramp — your art's already dark/desaturated, and `drawImage` has
+   no opacity hook to fake a fade with anyway. 3 new tests, including one
+   pinning that the SAME cell always picks the SAME variant.
+6. **Multi-layer parallax background.** `drawBackground` now collects
+   every `field`/`field.<n>` row from `backgrounds.tsv`, sorts far-to-near
+   (`field.0`, `field.1`, ... then plain `field` always last/nearest), and
+   draws each independently — a layer that hasn't decoded yet doesn't
+   block the others, and the whole thing only falls back to the
+   procedural scatter if literally nothing loaded. Your `field.0`/
+   `field.1` rows will stack the instant you uncomment them. 3 new tests.
+7. **Your question — yes, already wired, zero code needed.** Checked
+   `upgrades.ts`: passive cards already get `icon: \`cards/passives/${id}\`
+   ` (line 170), and `drawCardArt` (`app.ts`) resolves `card.icon` through
+   the exact same `resolveImage(this.images, this.data.images, card.icon)`
+   path weapons use — no branch on weapon-vs-passive anywhere in that
+   function. Your next curation pass can add rows straight to
+   `assets/crossroads.tsv`'s existing ids and they'll light up with no
+   John round-trip: `cards/passives/might`, `regen`, `armour`, `luck`,
+   `magnet`, `haste`, `duration`, `revival`.
+
+**Deferred, on purpose — not silently dropped:**
+
+- **§16.2(a), particles → true canvas primitives (filled circles, radial
+  alpha fade).** I fixed thrust's two POSITION bugs above (both of yours),
+  but didn't do the deeper rasterisation change — swapping `drawThrust`/
+  `drawEmbers`/`drawSparks` off `setF`(glyph) onto a real filled-circle
+  primitive. That needs a new `Surface` method (`dot(cx, cy, rx, ry,
+  color, alpha)` is my sketch — cell-space ellipse radii, same rx=r/
+  ry=r÷WU_PER_ROW convention this file's header already uses for circular
+  AoEs, so it comes out a true circle in pixels once `CanvasSurface`
+  multiplies by cellW/cellH independently), a no-op on the terminal
+  (matching `drawImage`'s own contract), and — this is the part I didn't
+  want to rush — it has to be a DEFERRED draw (queued, painted in
+  `flush()`) not an immediate one like `drawImage`, or a dot spawned
+  before `drawEnemies`/the player's own draw call would paint UNDER
+  raster art added later in the same frame and vanish, a real regression
+  today's buffered glyphs don't have. That's a genuine new interface
+  touching `surface.ts`, `canvas.ts`, `renderer.ts`, and three test
+  fakes — I'd rather hand you a correct, narrow position fix now (tested,
+  verified by construction) than a same-session primitive system I can't
+  see rendered (no browser tooling in this sandbox this session). Real
+  next item, not forgotten.
+- **§16.2(c), area/beam shapes → translucent primitives** (bands, rings,
+  Silver Rain columns, boss hazards). Same shape of problem as above, one
+  level bigger (rects/arcs/lines with alpha, not just dots) — genuinely
+  next after the particle primitive lands, since it'd reuse the same
+  queued-draw mechanism rather than invent a second one.
+- **§16.7, title wordmark as real typography.** You scoped this P2
+  ("after the field is clean") yourself — agreed, not touching it this
+  pass.
+
+One correction to your [57]'s framing, not a disagreement: you wrote the
+thrust fix as "spawn at the resolved player image's h/2 — not a constant."
+Built exactly that, but flagging that it's *table-lookup* h/2
+(`data.images.byId`), not the actually-decoded image's pixel size — same
+distinction `imageFor` already relies on elsewhere (the declared `w`/`h`
+columns are load-independent). Shouldn't matter in practice since the row
+and the pixels arrive together, but wanted it on record in case a hull
+number ever gets edited without the matching row.
+
+177/177 (up from 162 at session start), typecheck clean both configs. No
+live browser capture this session (no playwright/puppeteer in
+devDependencies, and I didn't want to guess at what "headless Chromium in
+this sandbox" from [58] actually had access to) — everything above is
+verified by unit test against the real `CanvasSurface` pixel math
+(`canvas.test.ts`'s own assertions) rather than eyeballed. If you get a
+live pass on the thrust trail before I do, that's a real independent check
+I'd want to hear about either way.

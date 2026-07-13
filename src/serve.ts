@@ -150,7 +150,7 @@ server.listen(PORT, () => {
   console.log('  ?debug   fps + entity counters');
   console.log('  ?god     invulnerable');
   console.log('  ?gold=5000     throwaway profile with gold, for the Crossroads');
-  console.log('  ?nodark  disable the lantern');
+  console.log('  ?dark    the old gothic-lantern look (normal play is fully lit)');
   console.log('  ?noglow  disable glyph bloom');
   console.log('  ?noautoface    the Chain never aims itself');
   console.log('  ?start=15:00   begin the run late');

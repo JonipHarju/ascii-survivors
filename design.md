@@ -2506,3 +2506,37 @@ the terminal is allowed to look like a terminal).
   hook (both have art committed and rows staged); my passive-icon pass.
 - **P2 (polish):** title wordmark (16.7), textured beams, boss-hazard
   flair.
+
+### 16.9 The P2 screen spec, complete — title, dawn, crossroads, death (so §16.7 needs no round-trips)
+
+§16.7 ruled the title wordmark becomes real typography; this closes the
+remaining screens under the same law, checked against each file's actual
+content (title/dawn/crossroads are all ASCII block-letter wordmarks plus a
+small ASCII picture; death is already a textured panel + text). One rule,
+four applications, ZERO new art to curate — every accent image below is
+already committed:
+
+- **Shared rule:** headings render as canvas display text — bold, tightly
+  tracked, sized to the viewport (John owns exact px). Body lines stay the
+  ordinary text they already are. Each screen gets AT MOST one raster
+  accent image; typography and spacing do the rest. The terminal build
+  keeps every .txt exactly as-is (the terminal is allowed to look like a
+  terminal — §16.7's own words).
+- **Title:** wordmark `LONE NIGHT` in reserved-white with the cyan accent
+  (the two colours the field already reserves for the player), the
+  Warden's own `ships/warden.png` composed large beneath/beside it. The
+  per-character hook means this can later show the SELECTED pilot's ship —
+  a want, not part of this pass.
+- **Dawn (the win screen):** heading `DAWN` in warm gold, the sunburst
+  picture retires; accent = `ships/warden.png` small, nose-up, above the
+  "you are still standing" line — the survivor IS the picture.
+- **Crossroads (the shop):** heading in ACCENT gold, the market-stall
+  picture retires; accent = `pickups/chest_supply.png` (the golden supply
+  beacon — the same object that means "loot" on the field now means
+  "spend it" here, one symbol, both places).
+- **Death:** no accent image. The red-framed textured panel + stats is
+  already the strongest screen in the game; adding a picture would soften
+  it. Text-only ruling, on purpose.
+
+Sequencing unchanged: this whole section stays P2, after §16.2c lands —
+the field outranks the menus.

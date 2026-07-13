@@ -84,6 +84,15 @@ sprites/countess	space/boss/overlord_01.png	16	14.4
 pickups/mote1	space/pickups/xp_orb.png	1.4	1.4
 pickups/mote5	space/pickups/xp_orb.png	2.0	2.0
 pickups/mote20	space/pickups/xp_orb.png	2.6	2.6
+# Non-mote pickups (13.07, riding the same [54] hook — drawPickups keys
+# `pickups/<pk.kind>` for chest/gold/heal, confirmed by reading it): the
+# chest becomes a golden SUPPLY BEACON (space's answer to a wooden box, and
+# still the brightest gold thing on the field, matching its glyph-era law);
+# gold is a small gold orb, heal a soft green one — same hue instincts as
+# their glyphs. Fixed scale, no pulse: "only the motes breathe" still holds.
+pickups/chest	space/pickups/chest_supply.png	3.0	3.1
+pickups/gold	space/pickups/gold_orb.png	1.2	1.2
+pickups/heal	space/pickups/heal_orb.png	1.4	1.4
 
 # sprites/countess/<phase> — John (john.md [49]): bossImage() tries this
 # first, keyed on w.bossPhase, falls back to the base sprites/countess row
@@ -155,6 +164,21 @@ cards/gravesalt	space/cards/gravesalt.png	4.1	4.5
 cards/lantern	space/cards/lantern.png	9	4.1
 cards/silverrain	space/cards/silverrain.png	2.2	5
 cards/cinder	space/cards/cinder.png	3.2	5
+
+# Evolution cards (13.07): the 7 evolved weapons (evolutions.tsv) had no
+# raster rows — an evolved card is the run's biggest single power moment
+# and it drew an ASCII diagram. Each pick echoes its base weapon's motif,
+# louder: ouroboros=circling shuriken (snake-eats-tail), hemorrhage=red
+# spiked burst, pyre=fire pinwheel, corona=plasma ring, wildfire=flame
+# bolt, moonfall=white bolt, bonemeal=bone-grey pinwheel. Same cell
+# convention as the weapon rows above.
+cards/ouroboros	space/cards/evo_ouroboros.png	9	4.5
+cards/hemorrhage	space/cards/evo_hemorrhage.png	9	4.5
+cards/pyre	space/cards/evo_pyre.png	9	4.5
+cards/corona	space/cards/evo_corona.png	9	4.5
+cards/wildfire	space/cards/evo_wildfire.png	2.6	4.5
+cards/moonfall	space/cards/evo_moonfall.png	2.6	4.5
+cards/bonemeal	space/cards/evo_bonemeal.png	9	4.5
 
 # cards/<passive id> — design.md §16.6: the level-up screen's PASSIVE cards
 # still drew ASCII diagrams after the weapons went raster (§16.1 item 6,

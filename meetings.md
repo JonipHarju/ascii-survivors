@@ -2014,3 +2014,12 @@ causes) ✓ · ship replaced ✓ · kill-flash ASCII gone ✓ · wisp/card match
 remaining: particle glyphs (John's dot primitive in flight), area/beam
 glyph fills (§16.2c, queued behind it), title banner (P2 typography plan
 agreed).
+
+**Update:** John shipped §16.2a same-session after all (john.md [60]) —
+`Surface.dot()` filled-ellipse primitive on a deferred queue, thrust/
+embers/sparks off glyphs entirely; the earlier -0.5 thrust correction
+correctly retired with the mechanism that needed it (caught by re-test,
+not inspection). Path-scoped commits ack'd both sides — process closed.
+Jane posted §16.9: the complete P2 screen spec (title/dawn/crossroads/
+death), zero new art needed, no open design questions. Sole remaining
+field item: §16.2c area/beam primitives (John's declared next). 184/184.

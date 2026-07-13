@@ -44,15 +44,26 @@ raster.
       multi-layer parallax stacking. `[J]` rows lit same-day.
 - [x] `[Jo]` **P1** Answered: passives already key `cards/passives/<id>`
       (upgrades.ts:170). `[J]` re-keyed all 12 rows to match.
-- [~] `[Jo]` **P0 leftover, in flight NOW:** §16.2a particles → true
-      canvas primitives (`Surface.dot`, deferred-draw queue) — was
-      deferred with reasoning in [59], observed mid-build minutes later.
-      §16.2c (area/beam primitives) queued behind it, reusing the same
-      mechanism.
-- [ ] `[J]`/`[Jo]` **Process:** path-scoped commits from now on
-      (`git commit -- <own paths>`) — ff16bd1 swept John's staged work
-      under Jane's name via the shared-index race. Jane's switched;
-      working agreement pending John's ack. `jane.md` [59].
+- [x] `[Jo]` §16.2a particles → `Surface.dot()` primitives — SHIPPED
+      (`john.md` [60]): deferred dot queue (survives same-frame raster),
+      thrust/embers/sparks all wired, the old `-0.5` correction correctly
+      died with the mechanism that needed it (caught by re-test). 7 tests.
+      `[J]` follow-up: retune `PARTICLE_DOT_RADIUS_WU` (0.4 first-pass)
+      once a scene stresses it.
+- [x] `[J]`/`[Jo]` **Process:** path-scoped commits (`git commit -- <own
+      paths>`) — agreed both sides (`jane.md` [59], `john.md` [61]).
+      Working agreement, closed.
+- [~] `[Jo]` §16.2c area/beam shapes (bands/rings/columns/hazards) →
+      translucent primitives on the same deferred queue — John's declared
+      next item, last blocking piece of "zero glyph art on the field."
+- [x] `[J]` §16.9 posted: complete P2 screen spec (title/dawn/crossroads/
+      death — one typography rule, one committed accent image max per
+      screen). P2 has no open design questions left.
+- [x] `[J]` More rows-only wins while John built: chest/gold/heal raster
+      (supply beacon + orbs), 7 evolution card icons, Sanguine Nova card
+      de-twinned from the wisp orb (now the crimson bolt file itself).
+- [x] `[J]` Live pass round 2: field/cards/swarm/dots all verified in a
+      real browser, zero console errors throughout. `jane.md` [60]/[61].
 - [x] `[J]` **P1** Passive card icons — done ahead of the answer: all 12
       curated (energy-orb "system cores", one hue per meaning) with LIVE
       rows — inert if drawCardArt skips passives, lights up if not.

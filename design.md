@@ -2662,3 +2662,120 @@ off only when all are true:
 Only after this run is captured and judged by eye **and ear** do we unfreeze the
 next polish target. The next target will be another broken link in an existing
 weapon's feedback chain, not another item for the content list.
+
+### 17.6 The acceptance run, captured and judged — VERDICT: PASS
+
+Run on 15.07 against John's [63] build (the `dist/` single-file build of
+`11b53c0`): one ordinary 95-second run, `?play&seed=21`, WASD driven, no cheats,
+no late-game start. Two instruments, because I can't literally sit in a chair
+with speakers: the **eye** is playwright screenshots timed off real sound
+events plus a 20s video of the opening whose frames I examined one by one; the
+**ear** is a WebAudio tap that logged every sample start with its timestamp,
+so the mix could be judged as an event timeline rather than trusted from the
+code. 202 sound events, zero console errors, run survived to 1:35.
+
+Per criterion:
+
+1. **PASS.** Frame-by-frame over the video: at fire time a crimson-white bloom
+   ignites on the hull for ~2–3 frames (the §17.3 discharge, visibly expanding),
+   then the bolt detaches and streaks away with a dim crimson wake; the
+   projectile stays the brightest thing on the path exactly as specced. Fire
+   instant, path, and impact all read with the HUD covered.
+2. **PASS.** Kill outnumbers hit in the log (46 vs 29) — before [63] every kill
+   also queued a hit, so this is the suppress rule visible in data. Only 1 of
+   29 hits landed within 20ms of a kill (a different enemy surviving the same
+   tick — legal chatter). Death pops are raster; no ASCII at any kill site.
+3. **PASS.** The hurt halo is unmistakable: captures at 0:33 (93/100 HP) and
+   1:25 (76/100) show the ship's rest-white halo gone fully red. 8 hurt cues
+   at 0.6 vol over the run, each clearly above the 0.12/0.18 chatter.
+4. **PASS.** The 0:26–0:40 window: 7 kill + 3 hit starts in 14 seconds against
+   caps that would allow ~200. Max observed rate anywhere in the run: 2/s for
+   each. Music beds stayed under; combat reads as punctuation, not a wall.
+5. **PASS.** Level-up at 0:37: sim stops, raster orb cards, levelup cue at 0.8
+   vol — structurally and audibly above all combat.
+6. **PASS as written** — the field shows zero picture-glyph effects. But see
+   the finding below: the *HUD* still has picture-glyphs.
+7. **PASS.** Nothing new was added; [63] shipped VFX + audio rules only.
+
+**The Nova slice is signed off. The §17.1 freeze is lifted** — next target per
+the rule above is §19, after the §18 purge items.
+
+**Finding, folded into §18:** the bottom-bar weapon slots draw `* | ^ .`
+glyphs — icon-glyphs, not typography. They pass §17.5.6's letter (not the
+field) but they are exactly what the owner's "why is there still ascii??"
+keeps pointing at, third strike 23:31. Fix specced in §18.
+
+Sound-event cadence, for the record: 64 `weapon/nova` cues in 95s, minimum gap
+1390ms, median 1402ms — exactly one per 1.4s volley, never per bolt.
+
+## 18. Owner feedback 15.07 23:31 — "scrap it, start from scratch, no ASCII": the ruling
+
+The message cuts off mid-sentence ("…without any ASCII art and just use the").
+John read the missing end as "the space assets" and started building. **His
+reading is endorsed as the design ruling**, with the reasoning made explicit:
+
+**What gets scrapped: the game's ASCII identity — every place a player can
+still SEE it.** What does not get scrapped: the simulation, the roster, the
+weapons, the audio pipeline, the run structure. The owner's own 10.07 note
+said the game runs well, and 22:23 demanded feel, not different mechanics.
+Retyping `world.ts` from zero would burn the remaining budget to produce a
+visibly identical game — that is being blinded by the project in the opposite
+direction. "Start from scratch" is what it looks like from the owner's chair:
+every launch still *opens* on a text-mode game. So we scrap what he sees.
+
+The purge list, audited (everything ASCII a web player can still meet):
+
+1. **Title / dawn / crossroads screens** — full-screen ASCII wordmarks and
+   pictures, the first thing seen on every launch. John is mid-build on the
+   §16.9 typography treatment (`Surface.displayText`, deferred like `dot()`,
+   terminal keeps its `.txt` banners). This was the right call to start with.
+2. **The `⛁` gold readout glyph** — John's own [64] audit; plain "N gold"
+   text on the raster path. Endorsed. No raster coin needed — a coin icon next
+   to a number is HUD noise; the number is the information.
+3. **Bottom-bar weapon slots** (`* | ^ .`) — found in my 1:25 acceptance
+   capture. These are picture-glyphs on the web HUD. Fix: draw the existing
+   `cards/<id>` raster art as slot icons (every weapon and evolution already
+   has a committed card PNG — zero new art), glyph fallback on the terminal,
+   same raster-shadows-glyph contract as everything else. **John: this needs a
+   hook in the bottom-bar draw; the art side costs nothing, it's already in
+   `images.tsv`.** Level pips next to slots stay typography.
+4. **The game keeps its name.** "LONE NIGHT" contains no ASCII identity, and
+   renaming mid-crisis is churn the owner didn't ask for. The repo folder
+   being called `ascii-vampire-survivors` is owner infrastructure, not ours.
+5. **Death screen** stays text-only by §16.9's explicit ruling — typography is
+   allowed to be typography; it's ASCII *pictures* that are banned.
+6. **The terminal build is exempt**, as always: "the terminal is allowed to
+   look like a terminal." It is a fallback, not the product the owner demos.
+
+Priority: items 1–3 are P0 and together they are "the ASCII identity is gone."
+Nothing else unfreezes ahead of them except §19, which may proceed in parallel
+because it touches `world.ts` feel surfaces John isn't holding.
+
+## 19. Next feedback-chain target: the Ion Wisp's silent contact
+
+Per §17.5's closing rule, the next polish target is a broken link in an
+existing weapon's chain, and the Wisp is the run's most common second weapon.
+Its chain today: presence reads (orbiting raster orb + the existing spark
+system), travel is the orbit itself, death/reward are shared and fixed — but
+**contact is mute**: an enemy touching the orb just starts its 60ms rim flash.
+No shape at the contact point, nothing between "orb overlaps enemy" and
+"enemy blinks." Same hobby-project gap Nova had, one weapon over.
+
+The pass, `Surface.dot()` queue only, no new systems:
+
+1. **Contact spark:** on each damaging contact, **3 dots** burst from the
+   contact point over **0.08s**, radius clamp **0.25 wu**, speed **4–7 wu/s**,
+   in the wisp's own cyan (match the orb PNG, not Nova's crimson — the two
+   weapons must stay tellable apart by color alone). Hard cap **40** alive,
+   drop oldest dim, never an actor/projectile/XP/number.
+2. **No new audio id.** Wisp contact keeps riding the generic `hit`/`kill`
+   lanes under the existing 8/6 caps — the §17.4 hierarchy already covers it,
+   and a second per-weapon cue this soon would rebuild the wall we just tore
+   down. (Assumption recorded: if the Wisp ever feels mute *with* sparks, the
+   fix is a quiet dedicated contact cue at ~0.10, not a louder hit.)
+3. **Numbers land in `juice.tsv` section 8** as `wisp_*` rows once John has a
+   reader, same contract as `nova_*`: Jane pre-tunes, John reads.
+
+Acceptance is one capture of a run where the Wisp is taken at first level-up:
+contact visibly cracks, colors never confuse the two weapons, hit-rate caps
+hold. Small slice on purpose — it reuses every §17.3 convention.

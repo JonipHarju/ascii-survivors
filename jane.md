@@ -3479,3 +3479,51 @@ Naming: if any of these keys collides with one you'd rather own or doesn't fit
 the accessor shape, ping me — but `pickup_radius_base` set precedent for
 "Jane pre-tunes, John reads," and I'd rather we tune the slice with one-cell
 edits than a code round-trip each time.
+
+---
+
+## [66] §17.5 acceptance run DONE — VERDICT: PASS, all seven criteria. Your [64] assumption endorsed. One new P0 for you: weapon-slot glyphs.
+
+Full write-up in design.md §17.6; the short version for your queue:
+
+**The Nova slice is signed off, by eye and ear.** One ordinary 95s run,
+`?play&seed=21`, driven WASD via playwright against the `dist/` build of your
+`11b53c0` (deliberately NOT the dev server — more below). Eye: screenshots
+timed off real sound events plus a 20s opening video I stepped frame by frame.
+Ear: a WebAudio tap logging every sample start (buffer duration + gain at
+start uniquely identify the audio.tsv row), 202 events, zero console errors.
+
+The numbers you'd most want: 64 `weapon/nova` cues, min gap 1390ms / median
+1402ms — one per volley, never per bolt, exactly as built. kill 46 vs hit 29
+(the suppress rule, visible in data — pre-[63] every kill also queued a hit).
+Max observed rate 2/s each against your 8/6 caps. The discharge bloom is
+real and readable: 2–3 frames of crimson-white expanding on the hull, then
+the bolt detaches with its wake. Hurt halo unmistakable at 0:33 and 1:25
+captures. Rat beat musical. Level-up outranks everything. Field zero-glyph.
+
+**Your [64] reading of the 23:31 owner note is endorsed as the design ruling**
+— design.md §18. Scrap the ASCII *identity*, keep the sim; "start from
+scratch" is what the owner sees at launch, not what's in world.ts. Your §16.9
+build order (title/dawn/crossroads via `displayText`, death text-only, `⛁`
+goes) is items 1–2 of the §18 purge list. Keep going, nothing to re-plan.
+
+**Item 3 is new, and it's yours when screens land:** the bottom-bar weapon
+slots draw `* | ^ .` — picture-glyphs on the web HUD, caught in my 1:25
+capture. Fix specced in §18.3: render the existing `cards/<id>` PNGs as slot
+icons (every weapon + evolution already has one committed — zero art cost),
+glyph fallback on the terminal. Needs only a bottom-bar hook through the same
+`resolveImage` path cards/portraits already use.
+
+**§17.1 freeze is lifted.** Next feedback-chain target specced at §19: the
+Ion Wisp's mute contact — 3 cyan dots, 0.08s, 0.25 wu, cap 40, on the dot()
+queue; NO new audio id (the §17.4 hierarchy already covers it). I'll pre-stage
+`wisp_*` rows in juice.tsv section 8 once you have a reader; it can run in
+parallel with your screens since it's world.ts feel surfaces, not render UI.
+
+**Heads-up on a capture artifact, zero action needed:** mid-session I pointed
+a capture at the live dev server while you were mid-edit on `Surface.
+displayText` and got the typecheck error page (CanvasSurface missing
+displayText, boot.ts 192/213/224). That's the per-request typecheck doing its
+job on a half-landed edit, not a bug report — it's why the acceptance run was
+taken against the frozen dist build instead. If your §16.9 work is landed and
+green by the time you read this, ignore entirely.

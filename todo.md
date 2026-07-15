@@ -2,6 +2,32 @@
 
 Newest block at top. `[J]` Jane's, `[Jo]` John's. Struck through = done.
 
+## 15.07, 23:31 — "SCRAP IT, NO ASCII" (owner) + §17.5 acceptance PASSED
+
+Ruling: `design.md` §18 (John's [64] reading endorsed: scrap the ASCII
+*identity*, keep the sim). Acceptance verdict: `design.md` §17.6 — all seven
+criteria pass, freeze lifted. Handoff: `jane.md` [66].
+
+- [x] `[J]` §17.5 acceptance run captured and judged, eye AND ear: 95s
+      ordinary run vs the `11b53c0` dist build, playwright screenshots +
+      frame-stepped opening video + WebAudio event tap (202 events, 0
+      console errors). All 7 criteria PASS; numbers in §17.6.
+- [ ] `[Jo]` P0 (in flight, endorsed): §16.9 typography screens via
+      `Surface.displayText` — title/dawn/crossroads; death stays text-only;
+      `⛁` gold glyph → plain text. John's [64], purge items 1–2.
+- [ ] `[Jo]` P0 (new, §18.3): bottom-bar weapon slots draw `* | ^ .`
+      picture-glyphs on the web HUD — replace with the already-committed
+      `cards/<id>` PNGs via the same `resolveImage` path; terminal keeps
+      glyphs. Zero art cost, needs a bottom-bar hook.
+- [ ] `[Jo]` P1 (§19, may run parallel to screens): Ion Wisp contact spark
+      — 3 cyan dots, 0.08s, 0.25 wu clamp, speed 4–7, cap 40, `dot()`
+      queue; NO new audio id. Acceptance: one capture with Wisp taken at
+      first level-up.
+- [ ] `[J]` Pre-stage `wisp_*` params in `juice.tsv` §8 once John has a
+      reader (same contract as `nova_*`: Jane pre-tunes, John reads).
+- [ ] `[J]` Re-verify the §16.9 screens + slot icons live once John lands
+      them (same playwright rig; it's reusable in the scratchpad).
+
 ## 15.07, 22:23 — URGENT: FUN BEFORE CONTENT (owner; vertical slice only)
 
 Full ruling: `design.md` §17. Handoff: `jane.md` [62]. This supersedes the
@@ -15,11 +41,13 @@ open P2 screen work below until the first 90 seconds pass by eye and ear.
       queue both. Immediate containment in `audio.tsv`: hit .12, kill .18.
 - [x] `[Jo]` Finish §16.2c: shipped concurrently as `fe538c4` — deferred
       `glowRect`/`glowRing`/`dot`, 189/189. Zero web-field picture glyphs.
-- [ ] `[Jo]` Nova vertical VFX slice (§17.3): radial discharge pulse,
-      four-dot bolt wake, four-dot impact burst, red player-hurt halo.
-- [ ] `[Jo]` Combat audio hierarchy (§17.4): kill suppresses hit; hit max
-      8 starts/s, kill max 6; one `weapon/nova` event per volley; reward/
-      player cues outrank chatter.
+- [x] `[Jo]` Nova vertical VFX slice (§17.3): shipped in `11b53c0`
+      (john.md [63]), 200/200 tests. Verified live in the §17.6 acceptance
+      run — discharge/wake/impact/hurt-halo all read on screen.
+- [x] `[Jo]` Combat audio hierarchy (§17.4): shipped in `11b53c0`.
+      Verified in the acceptance event log: kill 46 vs hit 29 (suppress
+      rule visible in data), max 2 starts/s observed vs 8/6 caps, 64
+      `weapon/nova` cues at min-gap 1390ms — once per volley.
 - [x] `[J]` Curated `weapon/nova` discharge sample: `Laser_shoot 84.wav`
       (0.11s) from the `SFX_Laser-Shoot` bank (8bit-Nintendo-Extended) into
       tracked `assets/space/audio/sfx_nova.wav`. `audio.tsv` row added at
@@ -31,8 +59,9 @@ open P2 screen work below until the first 90 seconds pass by eye and ear.
       containment (already shipped in 4587ae7; carried here for the audit
       trail). The event-rate caps (8/s, 6/s) and kill-suppresses-hit rule
       remain John's pending `[Jo]` item.
-- [ ] `[Jo]`/`[J]` Capture and judge one normal first-90-seconds run with
-      sound against §17.5. No cheats and no late-game start.
+- [x] `[Jo]`/`[J]` Capture and judge one normal first-90-seconds run with
+      sound against §17.5. Done by Jane, 15.07 — VERDICT: PASS on all
+      seven criteria. Full evidence in `design.md` §17.6.
 
 ## 12.07, 16:10 — "THIS IS NOT AN ASCII GAME ANYMORE" (owner; 8 complaints, one root cause)
 

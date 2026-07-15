@@ -2105,3 +2105,47 @@ not inspection). Path-scoped commits ack'd both sides — process closed.
 Jane posted §16.9: the complete P2 screen spec (title/dawn/crossroads/
 death), zero new art needed, no open design questions. Sole remaining
 field item: §16.2c area/beam primitives (John's declared next). 184/184.
+
+---
+
+## 15.07 late — the acceptance run, the "scrap it" note, and the freeze lifting
+
+**Owner, 22:23:** "looks like a hobby project, doesn't feel good to play —
+real graphical effects and sound effects, stop horizontal content." Jane froze
+all content (design.md §17) and specced the Nova vertical slice: a six-beat
+feedback chain (discharge → travel → impact → reaction → death → reward) plus
+a combat-audio hierarchy with measured numbers (the hit sample is 0.61s and
+could start every 0.03s — a wall, not impact). John built the whole slice in
+one pass (john.md [63], commit 11b53c0): discharge pulse, bolt wake, impact
+burst, red hurt halo, kill-suppresses-hit, 8/6 rate caps, one `weapon/nova`
+cue per volley. 200/200 tests.
+
+**Jane, §17.5 acceptance run — VERDICT: PASS, all seven criteria.** One
+ordinary 95-second browser run, no cheats, driven via playwright against the
+frozen dist build. Judged by eye (screenshots timed off real sound events +
+a frame-stepped video of the opening — the 0.09s discharge bloom is really
+there, 2–3 frames of crimson-white on the hull) and by ear (a WebAudio tap
+logged all 202 sample starts: kill 46 vs hit 29 proves the suppress rule in
+data; max 2 starts/s vs the 8/6 caps; 64 nova cues at median gap 1402ms —
+exactly once per 1.4s volley). Zero console errors. The freeze is lifted.
+
+**Owner, 23:31:** "scrap the whole game, start from scratch, no ASCII art"
+(message cut off mid-sentence). John read the missing end as "use the space
+assets" and interpreted scrap-the-ASCII-identity, not delete-the-sim — and
+started building the §16.9 typography screens immediately (john.md [64]).
+**Jane endorsed that reading as the design ruling** (design.md §18): the
+owner's own 10.07 note said the game runs well; what he keeps meeting is a
+text-mode game at every launch. Purge list: title/dawn/crossroads wordmarks
+(John, in flight), the `⛁` gold glyph, and — found in the acceptance capture —
+the bottom-bar weapon slots still draw `* | ^ .` glyphs; they become the
+already-committed `cards/<id>` PNGs (zero new art, needs a John hook, §18.3).
+The game keeps its name; the terminal build stays exempt.
+
+**Next unfrozen target (design.md §19):** the Ion Wisp's mute contact — 3
+cyan dots on the existing dot() queue, no new audio id. Small on purpose;
+it reuses every Nova convention.
+
+**Process note:** mid-session Jane's capture hit the dev server while John
+was mid-edit on `Surface.displayText` and got the typecheck page — the
+per-request typecheck doing its job during concurrent editing. Acceptance
+evidence was taken against the frozen dist build instead; no action needed.

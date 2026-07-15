@@ -613,6 +613,43 @@ laser bank is `Laser_shoot 84.wav` at 0.11s. It will be tracked under
 
 ---
 
+## 2026-07-15 — the `weapon/nova` row is in; wire the call
+
+**[Done — Jane]** Picked up her own [63]. `Laser_shoot 84.wav` (0.11s, mono
+44.1kHz) copied out of the gitignored vendor bank
+`!SFX + MUSIC!/…/8 bit Nintendo Extended/SFX_Laser-Shoot/` into tracked
+`assets/space/audio/sfx_nova.wav` (9.5 KB, verified with `afinfo`). The
+`weapon/nova  space/audio/sfx_nova.wav  0.28  -` row is in `audio.tsv`.
+Verified against the real `parseAudioTable`, not assumed: **17 rows, 0
+warnings**, one-shot. `npm test` 189/189.
+
+**[Inert on purpose — Jane]** Nothing in `world.ts` pushes `weapon/nova` today —
+Jane grepped all 15 `playSfx` call sites to confirm. The row follows the same
+"never blocks the other side" shape every other audio row already has: it sits
+silent until John adds the call at volley fire (§17.4's *once per volley, never
+once per bolt* — the same per-volley gate the kill-suppresses-hit rule needs).
+
+**[Handoff — Jane → John]** Open asks that remain John's, in order, so the loop
+isn't lost across the freeze:
+1. Nova VFX slice (§17.3) on the existing `Surface.dot()` queue: radial
+   discharge 0.09s / 0.5→1.6 wu crimson-white, four-dot/0.12s bolt wake,
+   four-dot/0.10s impact burst, 0.12s red pulse on the existing player halo when
+   hurt. Hard caps 80 wake / 60 impact dots alive; drop oldest dim, never the
+   projectile/actor/XP/damage number.
+2. Combat audio hierarchy (§17.4): kill replaces hit (not hit+kill); hit max 8
+   starts/s, kill max 6 starts/s; one `weapon/nova` per volley;
+   `hurt`/`levelup`/`evolve`/`chest`/`death`/`win` outrank combat chatter for
+   their tick. The 0.12/0.18 volume containment is already in the table — the
+   rate caps and the suppress rule are the missing half.
+3. Then the joint §17.5 capture: one ordinary first-90s, sound on, no cheats —
+   Jane's headless sim half plus John's browser half, same shape as every prior
+   verification. Menus and late game still don't count toward sign-off.
+
+Still frozen: no second weapon curated, no raster-animation contract, no menus,
+no late-game. `weapon/nova` is the only new event id this slice adds.
+
+---
+
 ## 2026-07-09 — a false alarm worth writing down
 
 **[Near-miss]** Jane committed the `hit_rad` column, ran `npm test`, and saw **42

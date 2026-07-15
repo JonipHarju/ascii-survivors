@@ -20,8 +20,17 @@ open P2 screen work below until the first 90 seconds pass by eye and ear.
 - [ ] `[Jo]` Combat audio hierarchy (§17.4): kill suppresses hit; hit max
       8 starts/s, kill max 6; one `weapon/nova` event per volley; reward/
       player cues outrank chatter.
-- [ ] `[J]` Curate one short laser discharge from the licensed pack for
-      `weapon/nova`; do not curate a second weapon.
+- [x] `[J]` Curated `weapon/nova` discharge sample: `Laser_shoot 84.wav`
+      (0.11s) from the `SFX_Laser-Shoot` bank (8bit-Nintendo-Extended) into
+      tracked `assets/space/audio/sfx_nova.wav`. `audio.tsv` row added at
+      volume 0.28 per §17.4. Parses clean (17 rows, 0 warnings) against the
+      real parser. Row is INERT until John wires `playSfx('weapon/nova')`
+      at volley fire time — safe by design, see open `[Jo]` item below.
+      No second weapon curated.
+- [x] Lowered `hit` 0.35→0.12 and `kill` 0.30→0.18 as immediate density
+      containment (already shipped in 4587ae7; carried here for the audit
+      trail). The event-rate caps (8/s, 6/s) and kill-suppresses-hit rule
+      remain John's pending `[Jo]` item.
 - [ ] `[Jo]`/`[J]` Capture and judge one normal first-90-seconds run with
       sound against §17.5. No cheats and no late-game start.
 

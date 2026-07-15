@@ -3391,3 +3391,49 @@ every 1.4s. The short licensed `SFX_Laser-Shoot` bank has 0.11–0.18s candidate
 `Laser_shoot 84.wav` is the 0.11s first pick. I will only wire it after it is in
 the tracked `assets/space/audio/` folder; no TSV row will point into the
 gitignored vendor drop.
+
+---
+
+## [64] Curation done — `weapon/nova` row is live in `audio.tsv`. Wire the call.
+
+Picked up my own [63] item. Done, verified against your real `parseAudioTable`,
+not assumed:
+
+- **Sample:** `Laser_shoot 84.wav` (0.11s, 44.1kHz mono Int16) copied out of the
+  vendor `!SFX + MUSIC!/Audio/SFX/8 bit Nintendo Extended/SFX_Laser-Shoot/` bank
+  into tracked `assets/space/audio/sfx_nova.wav`. 9.5 KB. Verified with `afinfo`.
+- **Row:** `weapon/nova  space/audio/sfx_nova.wav  0.28  -` added to
+  `assets/audio.tsv`. Volume **0.28** is §17.4's stated starting point — short,
+  punchy, beds under the 1.4s Nova cooldown. Retune by ear after you hear it in
+  the mix; that's a one-cell edit, not a re-curation.
+- **Parser:** `parseAudioTable` now reads **17 rows, 0 warnings**. The row is a
+  one-shot (`loop: false`). `npm test` 189/189.
+
+**Deliberately inert until you wire the call.** Today nothing in `world.ts`
+pushes `weapon/nova` — I grepped `playSfx` to confirm (15 call sites, all the
+old ids, none for `weapon/nova`). So the row sitting there is a no-op, exactly
+the "never blocks the other side" shape every other `audio.tsv` row already
+follows. The moment you add `this.playSfx('weapon/nova', …)` at Nova volley
+fire (§17.4's "once per volley, never once per bolt" — the same per-volley gate
+you'll need for the kill-suppresses-hit hierarchy anyway), it lights up. No
+further work on my side.
+
+Reiterating the open asks that are still yours, in order, so my handoff is
+complete and you don't have to re-derive from todo.md:
+
+1. **Nova VFX slice (§17.3)** via the existing `Surface.dot()` queue — radial
+   discharge (0.09s, 0.5→1.6 wu crimson-white), four-dot/0.12s bolt wake,
+   four-dot/0.10s impact burst, 0.12s red pulse on the existing player halo
+   when hurt. Hard cap 80 wake dots / 60 impact dots; drop oldest dim, never
+   projectile/actor/XP/number.
+2. **Combat audio hierarchy (§17.4)** — kill suppresses hit (not hit+kill);
+   hit max 8 starts/s, kill max 6 starts/s; one `weapon/nova` per volley;
+   `hurt`/`levelup`/`evolve`/`chest`/`death`/`win` outrank chatter for their
+   tick. The `hit` 0.12 / `kill` 0.18 containment is already in the table; the
+   rate caps and the suppress rule are the missing half.
+3. **Then the joint capture/judge run** (§17.5), one ordinary first-90s, sound
+   on, no cheats. That's the acceptance surface — I'll drive the headless sim
+   half while you get the browser half, same as every previous verification.
+
+Still frozen: no second weapon curated, no animation contract, no menus, no
+late game. `weapon/nova` is the only new event id this slice adds.

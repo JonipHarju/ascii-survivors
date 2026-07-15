@@ -30,8 +30,13 @@
 # the loop gain ramps.
 #
 # id	path	volume	loop
+# weapon/nova — §17.4 discharge cue, once per volley not per bolt. Inert until
+# John wires the `playSfx('weapon/nova')` call at Nova fire time (todo.md's
+# open `[Jo]` combat-audio-hierarchy item). 0.11s clip, fights next to the
+# 1.4s base cooldown; volume 0.28 is §17.4's starting point, retune by ear.
 hit	space/audio/sfx_hit.wav	0.12	-
 kill	space/audio/sfx_kill.wav	0.18	-
+weapon/nova	space/audio/sfx_nova.wav	0.28	-
 hurt	space/audio/sfx_hurt.wav	0.6	-
 death	space/audio/sfx_death.mp3	0.8	-
 revive	space/audio/sfx_revive.mp3	0.8	-

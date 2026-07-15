@@ -97,6 +97,31 @@ param	ember_level	0.45	brightness ceiling. ALWAYS dimmer than a mote. beauty doe
 param	mote_trail	2	cells of trail behind an absorbing mote
 param	mote_trail_level	0.40	trail brightness, relative to the mote
 
+# 8. NOVA VFX -- the §17 vertical slice. A weapon must read all six beats
+#    (discharge -> travel -> impact -> reaction -> death -> reward); Nova is the
+#    first one to be finished. Every value here is design.md §17.3's authored
+#    number, not a John eyeballed default. Read these via `param('nova_…', dflt)`.
+#    The discharge/wake/impact COLOUR is Crimson (the bolt's own plasma hue, a
+#    crimson-white at the discharge's peak; dim crimson for the trailing dots).
+#    Do NOT derive red from `ember`'s `y`->`r`->`e` palette -- that's Cinder.
+#    INERT TODAY: nothing in world.ts reads these yet (John's open `[Jo]` Nova
+#    VFX slice, todo.md). The moment the fire/impact calls read `param('nova_*')`,
+#    these win over any code default; `param()`'s fallback keeps the build green
+#    in the meantime. Tune by editing a cell, not a recompile.
+param	nova_discharge_life	0.09	seconds the radial bloom lives at fire time
+param	nova_discharge_r0	0.5	start radius, world units (isotropic; ry = r/WU_PER_ROW)
+param	nova_discharge_r1	1.6	end radius, world units
+param	nova_wake_dots	4	max dots per bolt; total wake over the life below
+param	nova_wake_life	0.12	seconds of history a bolt's wake shows
+param	nova_wake_max	80	hard cap live wake dots. over budget, drop the OLDEST DIM. never the bolt
+param	nova_impact_dots	4	count burst outward on contact
+param	nova_impact_life	0.10	seconds
+param	nova_impact_radius	0.35	wu burst radius
+param	nova_impact_speed_min	5	wu/s
+param	nova_impact_speed_max	9	wu/s
+param	nova_impact_max	60	hard cap live impact dots. over budget, drop the OLDEST DIM
+param	nova_hurt_halo	0.12	seconds the existing player halo pulses red on contact damage. no knockback, no stun -- §6's control rule
+
 
 # ---- shake rows: shake <event> <amp_cells> <seconds> -------------------------
 #

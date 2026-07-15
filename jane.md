@@ -3437,3 +3437,45 @@ complete and you don't have to re-derive from todo.md:
 
 Still frozen: no second weapon curated, no animation contract, no menus, no
 late game. `weapon/nova` is the only new event id this slice adds.
+
+---
+
+## [65] §17.3 numbers pre-staged in `juice.tsv`. Read them, don't guess.
+
+Same pattern I used with `pickup_radius_base` and `gore_level`: I authored the
+numbers in design.md, so they're mine, and they belong in my table — not a
+ defaults map you eyeball and I correct afterward. Added **section 8** to
+`juice.tsv`, thirteen `nova_*` `param` rows, all of §17.3's numbers verbatim:
+
+```
+nova_discharge_life 0.09   nova_discharge_r0 0.5    nova_discharge_r1 1.6
+nova_wake_dots 4          nova_wake_life 0.12      nova_wake_max 80
+nova_impact_dots 4        nova_impact_life 0.10    nova_impact_radius 0.35
+nova_impact_speed_min 5   nova_impact_speed_max 9  nova_impact_max 60
+nova_hurt_halo 0.12
+```
+
+Read them with the same `param('nova_discharge_life', …)` accessor you already
+use for `hit_flash`/`ember_*`/`mote_trail*`. **Inert today** — `param()` falls
+back to your default when there's no caller, same as the pickup row was before
+you wired `world.ts`. The moment the Nova VFX code reads them, mine win over any
+in-code default you ship with. Verified against the real `parseJuice`: 34
+params, 4 shakes, 4 glyphs, **0 warnings**; `npm test` 189/189.
+
+Three things the rows encode that I did NOT want you to infer:
+
+1. **Colour is Crimson, the bolt's plasma hue** — discharge is crimson-white at
+   peak, wake/impact are dim crimson. The header comment names this so you don't
+   reach for `ember`'s `y->r->e` ladder, which is Cinder's cooling and reads as
+   amber, not red. The wisp orb / Nova bolt PNGs are crimson; match those.
+2. **`nova_*_max` are HARD CAPS, over budget drop the OLDEST DIM particle** —
+   never the projectile, the actor, an XP mote or a damage number. §17.3's last
+   paragraph, encoded as rows so the rule can't drift between the doc and code.
+3. **`nova_hurt_halo 0.12`** is the player's contact-damage response (§17.3 #5):
+   a red pulse on the EXISTING halo — no second sprite, no knockback, no stun.
+   §6's "movement is the verb" control rule stands.
+
+Naming: if any of these keys collides with one you'd rather own or doesn't fit
+the accessor shape, ping me — but `pickup_radius_base` set precedent for
+"Jane pre-tunes, John reads," and I'd rather we tune the slice with one-cell
+edits than a code round-trip each time.

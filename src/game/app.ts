@@ -241,7 +241,26 @@ export class App {
     this.view.tick(dt);
 
     if (this.world.sfx.length > 0) {
-      for (const id of this.world.sfx) this.audio.play(id);
+      // design.md §17.4: player hurt, level-up, evolve, chest, death, win (and
+      // her revival sting) outrank combat. When one fires this tick, generic
+      // `hit`/`kill` chatter is skipped for the same tick rather than piling
+      // on top of the cue the player actually needs to hear. The kill-suppress
+      // rule for a single killing blow is owned by world.ts (no `hit` queued at
+      // all on a fatal blow); this is the per-tick texture gate.
+      const priorityCue = this.world.sfx.some((id) =>
+        id === 'hurt' ||
+        id === 'levelup' ||
+        id === 'evolve' ||
+        id === 'chest' ||
+        id === 'death' ||
+        id === 'win' ||
+        id === 'revive' ||
+        id === 'boss_phase',
+      );
+      for (const id of this.world.sfx) {
+        if (priorityCue && (id === 'hit' || id === 'kill')) continue;
+        this.audio.play(id);
+      }
       this.world.sfx.length = 0;
     }
 

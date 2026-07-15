@@ -2197,3 +2197,81 @@ and no glyph carpets for all four effect families, while one terminal test
 proves every fallback remains. `npm test` 189/189; `npm run typecheck` clean in
 both configs; `npm run build` emits the 403 KB single-file app plus all 66 media
 files. `git diff --check` clean.
+
+---
+
+## [63] §17 Nova vertical VFX slice + combat-audio hierarchy — shipped.
+
+Jane's [62]/[63] is the whole spec; I built straight through it. No horizontal
+content, no new weapon/enemy/passive, no P2 screen work, no new art family.
+Six new code surfaces, all on existing primitives:
+
+**VFX (design.md §17.3), all on the `Surface.dot()` deferred queue:**
+1. **Discharge pulse** — one radial crimson-white bloom per Nova *volley*
+   (not per bolt), 0.5→1.6 wu over 0.09s, fading to zero. Radial on purpose:
+   Nova seeks behind the ship, so a nose muzzle would lie about where the
+   shot came from. `fireBolt` pushes one `Discharge` when `w.id === 'nova'`.
+2. **Bolt wake** — ≤4 dim crimson dots per bolt over 0.12s (emit cadence
+   0.03s via `b.wakeTimer`), dropped at the bolt's pre-move position so they
+   trail where it came from. Hard pool cap 80, drop oldest. Dim on purpose
+   — the projectile sprite stays the brightest thing on the path.
+3. **Impact burst** — 4 outward dots per contact, 0.10s, 5–9 wu/s, **clamped
+   to a 0.35 wu radius from the burst origin** (speed×life would otherwise
+   overshoot the spec cap; the dot stops at the radius and fades). Hard pool
+   cap 60. The killing-impact variant is the SAME burst plus the existing
+   raster death pop (`drawPops`) — no second explosion sprite, no fork.
+4. **Player hurt halo** — `World.playerHurt` (0.12s) set in `damagePlayer`;
+   the renderer mixes `PLAYER_COLOR` toward 0xff3b3b by the age ratio and
+   passes that as `drawImage`'s `glow`. Pure visual — no knockback, no
+   stun, no movement (§6 stands). The reserved-bright-white law still owns
+   the rest state.
+
+**Audio (§17.4):**
+- **`weapon/nova`** cue at volley fire (`playSfx('weapon/nova')` in
+  `fireBolt`). Jane has the row + the 0.11s clip already staged in
+  `audio.tsv`; lights up the moment the volley fires, once per volley.
+- **Kill suppresses hit** — `damageEnemy` now only queues `hit` when
+  `e.hp > 0` after the blow. A fatal blow queues `kill` alone (in
+  `killEnemy`), so the once-per-enemy event is one coordinated sound.
+- **Rate caps** — `hit` cooldown 1/8s, `kill` cooldown 1/6s (constants
+  `HIT_COOLDOWN`/`KILL_COOLDOWN`). The kill cooldown also coalesces ten
+  same-tick deaths into one sound (they share `this.time`, so `playSfx`'s
+  existing guard drops the rest).
+- **Priority outranks chatter** — `App`'s sfx drain skips `hit`/`kill` for
+  the tick when `hurt`/`levelup`/`evolve`/`chest`/`death`/`win`/`revive`/
+  `boss_phase` fired. Same-tick texture gate, not a crossfade.
+
+**Where the numbers live:** the §17.3/§17.4 tuning constants are private
+statics on `World` (`DISCHARGE_LIFE`, `WAKE_*`, `IMPACT_*`, `HURT_HALO_TIME`)
+next to the thrust constants, same lane call as [53]: brand-new feel numbers,
+not yet Jane's, and `juice.tsv`'s `DEFAULT_PARAMS` mirrors her already-
+committed numbers rather than staging new ones. Easy to move into her table
+once she owns the values.
+
+**Verification:** 11 new tests in `world.test.ts` (the §17 describe block),
+pinning every spec invariant — one discharge per volley, one `weapon/nova`
+per volley, discharge fades in 0.09s, wake ≤4 dots per bolt and ages out in
+0.12s, wake/impact caps 80/60, impact radius clamped to 0.35 wu, impact+
+pop fire on a kill, kill-suppresses-hit, hit-not-kill on a survived blow,
+8/6 starts-per-second caps, ten-deaths-one-sound, and the hurt halo (set on
+damage, fades in 0.12s, no movement). The two tests that caught real bugs
+during writing: the wake "aged out" assertion initially failed because the
+test kept firing new volleys while ageing the old bolt (fixed by clearing
+`w.weapons` mid-test), and the impact "pop" assertion failed because the
+0.05s `death_flash` pop ages out inside a 0.2s step (fixed by capturing
+mid-flight). `npm test` 200/200; `npm run typecheck` clean both configs;
+`npm run build` emits the 416 KB single-file app + 67 media files. The new
+VFX symbols (`DISCHARGE_`, `pushWake`, `burstImpact`, `drawDischarges`,
+`playerHurt`, `weapon/nova`, `updateDischarges`) are all present in the
+bundled `dist/index.html`.
+
+**What I did NOT touch:** the terminal fallback path. `drawDischarges`/
+`drawWakeDots`/`drawImpactDots` early-return when `!r.caps.raster`, so the
+TTY build is unchanged — same contract as §16.2a/c. The hurt halo degrades
+gracefully too: on a glyph player it just tints the `@`, same as the
+existing level-up gold flash.
+
+**The acceptance run (§17.5) is Jane's to capture and judge** — I can't view
+screenshots (model has no image input), and the spec is explicit that the
+sign-off is by eye *and ear*, not a test suite. The hooks are all live;
+`?play&seed=21` drops straight into an ordinary run with sound.

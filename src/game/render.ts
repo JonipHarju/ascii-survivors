@@ -152,6 +152,11 @@ export class GameView {
     this.drawBands(r, w, p);
     this.drawBolts(r, w, p);
     this.drawOrbs(r, w, p);
+    // design.md §17.3 Nova vertical VFX slice — all on Surface.dot()'s
+    // deferred queue, sibling to thrust/embers/sparks above.
+    this.drawDischarges(r, w, p);
+    this.drawWakeDots(r, w, p);
+    this.drawImpactDots(r, w, p);
 
     // The player is drawn last and is the only bright white thing on the field.
     // Her head is still the `@`; the sprite carries the rest of the silhouette.
@@ -161,12 +166,17 @@ export class GameView {
     const goldFlash = w.playerFlash > 0 ? ACCENT : null;
     const playerId = w.character?.sprite ?? 'sprites/player';
     const playerImg = this.imageFor(r, w, playerId);
+    // design.md §17.3.5: pulse the existing halo red for 0.12s on contact
+    // damage. The reserved-bright-white law still owns the rest state — the
+    // hurt ratio drives `PLAYER_COLOR` toward crimson, fading back out.
+    const hurtRatio = Math.min(1, w.playerHurt / 0.12);
+    const playerGlow: Color = hurtRatio > 0 ? mix(PLAYER_COLOR, 0xff3b3b, hurtRatio) : PLAYER_COLOR;
     if (playerImg !== null) {
       // design.md §15.7: a bare raster blit reads as part of the void — the
       // reserved-bright-white-player law needs a code answer on this medium
       // too. `PLAYER_COLOR` (0xffffff) haloes the ship the same way it used to
       // be the one glyph nothing else could draw in.
-      r.drawImage(p.colF(w.x), p.rowF(w.y), playerImg.img, playerImg.wCells, playerImg.hCells, w.heading, PLAYER_COLOR);
+      r.drawImage(p.colF(w.x), p.rowF(w.y), playerImg.img, playerImg.wCells, playerImg.hCells, w.heading, playerGlow);
       // The level-up flash still needs to read on a raster ship; a white full-field
       // flash effect already exists below (`drawWhiteFlash`) for bigger moments, so
       // this one frame of colour just isn't drawn on raster yet — a placeholder
@@ -832,6 +842,70 @@ export class GameView {
         continue;
       }
       r.setF(p.colF(o.x), p.rowF(o.y), 'o', o.color);
+    }
+  }
+
+  /**
+   * design.md §17.3 Nova vertical VFX slice — three pools on the
+   * `Surface.dot()` deferred queue. No new engine; the deferred contract
+   * (painted at `flush()` after buffered glyphs and immediate raster actors)
+   * is exactly what [60] established for thrust/embers/sparks, reused verbatim.
+   *
+   * Discharge: a tight crimson-white bloom expanding 0.5 → 1.6 wu over 0.09s,
+   * fading to zero. Radial, not a nose muzzle — Nova seeks behind the ship, so
+   * pointing the discharge at a facing would lie about where the shot came
+   * from. Drawn as a single filled `dot` whose radius interpolates from the
+   * spec's min to max; alpha fades by the age ratio so the bloom reads even
+   * though `dot` is a fixed-centre radial falloff.
+   */
+  private drawDischarges(r: Surface, w: World, p: Proj): void {
+    if (!r.caps.raster || w.discharges.length === 0) return;
+    const MIN_R = 0.5;
+    const MAX_R = 1.6;
+    for (const d of w.discharges) {
+      const t = Math.min(1, d.age / Math.max(0.0001, d.life));
+      const radius = MIN_R + (MAX_R - MIN_R) * t;
+      const alpha = (1 - t) * 0.85;
+      if (alpha <= 0) continue;
+      r.dot(p.colF(d.x), p.rowF(d.y), radius, radius / WU_PER_ROW, d.color, alpha);
+    }
+  }
+
+  /**
+   * §17.3 bolt wake: ≤4 dim crimson dots per bolt over 0.12s. Motion, not
+   * brightness — kept dim so the projectile sprite stays the brightest thing
+   * on the path (the object doing the damage). Alpha rises from low and fades
+   * with age so the trail reads as a comet tail, not a string of beads.
+   */
+  private drawWakeDots(r: Surface, w: World, p: Proj): void {
+    if (!r.caps.raster || w.wakeDots.length === 0) return;
+    const rx = GameView.PARTICLE_DOT_RADIUS_WU;
+    const ry = rx / WU_PER_ROW;
+    for (const d of w.wakeDots) {
+      const t = Math.min(1, d.age / Math.max(0.0001, d.life));
+      const alpha = (1 - t) * 0.5;
+      if (alpha <= 0) continue;
+      r.dot(p.colF(d.x), p.rowF(d.y), rx, ry, d.color, alpha);
+    }
+  }
+
+  /**
+   * §17.3 impact burst: 4 outward dots over 0.10s, ≤0.35 wu, in the bolt's
+   * crimson. The missing visual punctuation between projectile disappearance
+   * and enemy flash; the killing-impact variant is the SAME dots plus the
+   * existing raster death pop (drawPops), no separate explosion sprite. Shrinks
+   * as it fades — radius from the spec's cap toward zero.
+   */
+  private drawImpactDots(r: Surface, w: World, p: Proj): void {
+    if (!r.caps.raster || w.impacts.length === 0) return;
+    const maxR = GameView.PARTICLE_DOT_RADIUS_WU;
+    const maxRy = maxR / WU_PER_ROW;
+    for (const d of w.impacts) {
+      const t = Math.min(1, d.age / Math.max(0.0001, d.life));
+      const alpha = 1 - t;
+      if (alpha <= 0) continue;
+      const k = 1 - t;
+      r.dot(p.colF(d.x), p.rowF(d.y), maxR * k, maxRy * k, d.color, alpha);
     }
   }
 

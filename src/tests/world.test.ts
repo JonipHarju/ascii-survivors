@@ -1361,6 +1361,7 @@ describe('rendering the world', () => {
         id: 'nova',
         chains: 0,
         hits: new Set(),
+        wakeTimer: 0,
       });
       const images: ImageSource = { get: (path) => (path.includes('nova_bolt') ? FAKE_IMG : undefined) };
       const r = new FakeRasterSurface();
@@ -1390,6 +1391,7 @@ describe('rendering the world', () => {
         id: 'nova',
         chains: 0,
         hits: new Set(),
+        wakeTimer: 0,
       });
       const r = new FakeRasterSurface();
 
@@ -1637,5 +1639,165 @@ describe('rendering the world', () => {
       const cy = FIELD.y + Math.floor(FIELD.h / 2);
       assert.equal(r.getChar(cx, cy), "'", `expected the thrust glyph at its own cell, got '${r.getChar(cx, cy)}'`);
     });
+  });
+});
+
+// design.md §17 — the Nova vertical VFX slice + combat-audio hierarchy.
+// Purpose-built: every beat of the six-link chain (`discharge → travel →
+// impact → reaction → death → reward`) reads without a HUD, and combat
+// audio is a hierarchy (kill suppresses hit, capped rate, priority cues
+// outrank chatter) rather than a wall of overlapping samples.
+describe('Nova vertical VFX slice and combat-audio hierarchy (design.md §17)', () => {
+  /** Snapshot the sfx queue and reset it so each assertion sees one update's worth. */
+  function drain(w: World): string[] {
+    const ids = [...w.sfx];
+    w.sfx.length = 0;
+    return ids;
+  }
+
+  it('a Nova volley emits exactly one discharge pulse and one weapon/nova cue, regardless of bolt count', () => {
+    // level 3 nova fires count=2 bolts; the discharge must still be one.
+    const w = quietWorld();
+    w.weapons = [{ id: 'nova', level: 3, timer: 0, angle: 0, evolved: null }];
+    w.spawnEnemy(data.glyphs.entities.get('ghoul')!, w.x + 30, w.y);
+
+    w.update(TICK_DT, { x: 0, y: 0 });
+
+    assert.equal(w.discharges.length, 1, 'one discharge per volley, not per bolt');
+    assert.ok(drain(w).includes('weapon/nova'), 'one weapon/nova cue per volley');
+    // discharge originates on the player (radial, not a nose muzzle).
+    assert.equal(w.discharges[0]!.x, w.x);
+    assert.equal(w.discharges[0]!.y, w.y);
+  });
+
+  it('discharge pulses fade within 0.09s and never linger', () => {
+    const w = quietWorld();
+    w.weapons = [{ id: 'nova', level: 1, timer: 0, angle: 0, evolved: null }];
+    w.spawnEnemy(data.glyphs.entities.get('ghoul')!, w.x + 30, w.y);
+
+    w.update(TICK_DT, { x: 0, y: 0 });
+    assert.equal(w.discharges.length, 1);
+    // Step past the discharge lifetime with no further fire (timer > 0 now).
+    step(w, 0.12);
+    assert.equal(w.discharges.length, 0, 'discharge cleared after 0.09s');
+  });
+
+  it('bolt wake emits dim dots while travelling and ages out within 0.12s', () => {
+    const w = quietWorld();
+    w.weapons = [{ id: 'nova', level: 1, timer: 0, angle: 0, evolved: null }];
+    // Park a tanky ghoul out of bolt contact range so the bolt keeps travelling
+    // long enough for steady-state wake to read.
+    w.spawnEnemy(data.glyphs.entities.get('ghoul')!, w.x + 60, w.y);
+    w.update(TICK_DT, { x: 0, y: 0 });
+    assert.ok(w.bolts.length > 0, 'the volley fired');
+
+    step(w, 0.06, { x: 0, y: 0 });
+    assert.ok(w.wakeDots.length > 0, 'wake dots accumulated as the bolt travelled');
+    // Steady-state history: ≤4 dots per bolt at the 0.12s/0.03s cadence.
+    assert.ok(w.wakeDots.length <= 4, `one bolt holds ≤4 wake dots, got ${w.wakeDots.length}`);
+
+    // Stop further volleys so we can age out the one bolt in isolation.
+    w.weapons = [];
+    step(w, 2.4, { x: 0, y: 0 });
+    assert.equal(w.bolts.length, 0, 'the travelling bolt has expired');
+    assert.equal(w.wakeDots.length, 0, 'wake dots aged out within 0.12s of their bolt dying');
+  });
+
+  it('wake and impact pools are hard-capped at 80 and 60 dots respectively', () => {
+    const w = quietWorld();
+    // Drive the cap directly: these are the budgets the spec promises.
+    for (let i = 0; i < 100; i++) (w as unknown as { pushWake: (x: number, y: number, c: Color) => void }).pushWake(0, 0, 0xff3b3b);
+    assert.equal(w.wakeDots.length, 80, 'wake pool caps at 80 by dropping oldest');
+    for (let i = 0; i < 100; i++) (w as unknown as { burstImpact: (x: number, y: number, c: Color) => void }).burstImpact(0, 0, 0xff3b3b);
+    // burstImpact spawns 4 dots per call, cap 60 — must clamp, not overshoot.
+    assert.ok(w.impacts.length <= 60, `impact pool never exceeds 60, got ${w.impacts.length}`);
+    assert.ok(w.impacts.length > 0, 'and it did accept spawns up to the cap');
+  });
+
+  it('impact dots never escape the 0.35 wu burst radius despite a 5–9 wu/s outward speed', () => {
+    const w = quietWorld();
+    (w as unknown as { burstImpact: (x: number, y: number, c: Color) => void }).burstImpact(10, 10, 0xff3b3b);
+    // Step past the 0.10s life — every dot should have hit the radius cap and stopped.
+    step(w, 0.2, { x: 0, y: 0 });
+    for (const p of w.impacts) {
+      const d = Math.hypot(p.x - p.ox, p.y - p.oy);
+      assert.ok(d <= 0.35 + 1e-6, `impact dot stayed within 0.35 wu of origin, got ${d}`);
+    }
+  });
+
+  it('an impact burst spawns on contact and a killing blow reaps the rat (§17.3.4)', () => {
+    const w = quietWorld();
+    w.weapons = [{ id: 'nova', level: 1, timer: 0, angle: 0, evolved: null }];
+    // A rat (2 HP) dies to a level-1 nova hit (8 dmg) — the killing-impact case.
+    const rat = w.spawnEnemy(data.glyphs.entities.get('rat')!, w.x + 3, w.y);
+
+    w.update(TICK_DT, { x: 0, y: 0 });
+    // Advance until the bolt crosses the 3 wu to the rat. Impact dots only
+    // live 0.10s, so check mid-flight before they age out.
+    step(w, 0.05, { x: 0, y: 0 });
+    assert.ok(w.impacts.length > 0, 'impact burst spawned on contact');
+    assert.ok(w.kills > 0, 'the rat was reaped — killing impact + the existing pop path both fire');
+    assert.ok(!w.enemies.includes(rat), 'the rat is no longer in the live enemy list');
+  });
+
+  it('a killing blow plays kill and suppresses generic hit (§17.4 kill-over-hit)', () => {
+    const w = quietWorld();
+    const rat = w.spawnEnemy(data.glyphs.entities.get('rat')!, w.x + 3, w.y);
+    // damageEnemy directly: a fatal blow must queue `kill` only, not `hit`.
+    w.damageEnemy(rat, 9999);
+    // reap() runs in update; flush the killing blow through the kill path.
+    w.update(TICK_DT, { x: 0, y: 0 });
+    const ids = drain(w);
+    assert.ok(ids.includes('kill'), 'a killing blow queues kill');
+    assert.ok(!ids.includes('hit'), 'the weaker `hit` cue is suppressed on a fatal blow');
+  });
+
+  it('a non-killing blow plays hit, not kill', () => {
+    const w = quietWorld();
+    const ghoul = w.spawnEnemy(data.glyphs.entities.get('ghoul')!, w.x + 3, w.y);
+    w.damageEnemy(ghoul, 1); // 10 HP ghoul, scratch damage — survives.
+    const ids = drain(w);
+    assert.ok(ids.includes('hit'), 'a survived hit queues hit');
+    assert.ok(!ids.includes('kill'), 'kill is reserved for actual deaths');
+  });
+
+  it('hit is capped at 8 starts/s and kill at 6 starts/s (§17.4)', () => {
+    const w = quietWorld();
+    const ghoul = w.spawnEnemy(data.glyphs.entities.get('ghoul')!, w.x + 3, w.y);
+    // 20 damage events on one surviving ghoul in the same tick: cooldown makes
+    // only the first `hit` queue (same-tick coalescing, the texture gate).
+    for (let i = 0; i < 20; i++) w.damageEnemy(ghoul, 0.001);
+    let ids = drain(w);
+    const hits = ids.filter((s) => s === 'hit');
+    assert.equal(hits.length, 1, 'one hit start per cooldown window, not twenty');
+
+    // Across multiple ticks within the 1/8s window, hit stays gated.
+    w.update(TICK_DT, { x: 0, y: 0 });
+    for (let i = 0; i < 20; i++) w.damageEnemy(ghoul, 0.001);
+    ids = drain(w);
+    assert.equal(ids.filter((s) => s === 'hit').length, 0, 'hit stays suppressed inside the 1/8s window');
+  });
+
+  it('ten deaths in one tick collapse to a single kill cue (§17.4)', () => {
+    const w = quietWorld();
+    for (let i = 0; i < 10; i++) {
+      const rat = w.spawnEnemy(data.glyphs.entities.get('rat')!, w.x + 3 + i, w.y);
+      w.damageEnemy(rat, 9999);
+    }
+    w.update(TICK_DT, { x: 0, y: 0 });
+    const kills = drain(w).filter((s) => s === 'kill');
+    assert.equal(kills.length, 1, 'ten same-tick deaths → one kill sound, not ten');
+  });
+
+  it('taking contact damage pulses the player halo (§17.3.5) without moving the ship', () => {
+    const w = quietWorld();
+    assert.equal(w.playerHurt, 0, 'no hurt halo at rest');
+    const xBefore = w.x, yBefore = w.y;
+    w.damagePlayer(4);
+    assert.ok(w.playerHurt > 0, 'damagePlayer set the hurt halo timer');
+    assert.equal(w.x, xBefore, 'the halo is pure visual — no knockback');
+    assert.equal(w.y, yBefore, 'the halo is pure visual — no movement');
+    step(w, 0.2);
+    assert.equal(w.playerHurt, 0, 'halo fades back out within 0.12s');
   });
 });

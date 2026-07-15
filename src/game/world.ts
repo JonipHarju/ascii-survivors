@@ -48,6 +48,16 @@ const AURA_COOLDOWN = 0.3;
 const EMBER_TICK = 0.5;
 const TIDE_DURATION = 90;
 
+/**
+ * design.md §17.4 combat-audio hierarchy. Cooldowns are 1/rate caps, not
+ * equal-loudness guesses: `hit` max 8 starts/s, `kill` max 6 starts/s. The
+ * kill cooldown also coalesces ten deaths in one sim tick into one sound —
+ * they all share `this.time`, so the first call sets the gate and the rest
+ * drop through `playSfx`'s existing cooldown guard.
+ */
+const HIT_COOLDOWN = 1 / 8;
+const KILL_COOLDOWN = 1 / 6;
+
 export type Vec = { x: number; y: number };
 
 export type Enemy = {
@@ -117,6 +127,35 @@ export type Bolt = {
   /** Chain-to-next-target budget, for Hemorrhage. */
   chains: number;
   hits: Set<Enemy>;
+  /**
+   * design.md §17.3: bolt-wake emitter countdown. A dim crimson dot drops
+   * behind the bolt every time this hits zero (≈0.03s, 4 dots per 0.12s of
+   * history). Per-bolt so a volley of N bolts each lays its own short trail
+   * — the global wake array owns the dots themselves, since one should keep
+   * fading after the bolt that emitted it has impacted.
+   */
+  wakeTimer: number;
+};
+
+/**
+ * design.md §17.3 Nova vertical VFX slice. Three short-lived particle pools,
+ * every one of them on the existing `Surface.dot()` deferred primitive queue
+ * — no new engine, the same `dot()`/`glowRect()`/`glowRing()` queue §16.2a/c
+ * introduced. Hard budgets from the spec are enforced here, not in render.
+ */
+export type Discharge = { x: number; y: number; age: number; life: number; color: Color };
+export type WakeDot = { x: number; y: number; age: number; life: number; color: Color };
+export type ImpactDot = {
+  x: number;
+  y: number;
+  /** Origin of the burst — used to enforce the ≤0.35 wu radius cap (§17.3). */
+  ox: number;
+  oy: number;
+  vx: number;
+  vy: number;
+  age: number;
+  life: number;
+  color: Color;
 };
 
 export type Salt = {
@@ -315,6 +354,29 @@ export class World {
   private static readonly THRUST_MAX = 40;
 
   /**
+   * design.md §17.3 Nova vertical VFX slice tuning. Same lane call as the
+   * thrust constants above: these are brand-new, not-yet-tuned feel numbers,
+   * and `juice.tsv` mirrors Jane's already-committed numbers rather than
+   * staging new ones — easy to move there once she owns the values.
+   *
+   * Discharge: one radial bloom per volley, 0.09s, radius 0.5 → 1.6 wu fading
+   * to zero. Wake: ≤4 dim dots per bolt over 0.12s, emit cadence 0.03s.
+   * Impact: 4 dots per contact, 0.10s, speed 5–9 wu/s, radius spread ≤0.35 wu.
+   * Hard pools: 80 wake dots / 60 impact dots alive — drop oldest past that.
+   */
+  private static readonly DISCHARGE_LIFE = 0.09;
+  private static readonly DISCHARGE_RADIUS_MIN = 0.5;
+  private static readonly DISCHARGE_RADIUS_MAX = 1.6;
+  private static readonly WAKE_LIFE = 0.12;
+  private static readonly WAKE_EMIT = 0.03;
+  private static readonly WAKE_MAX = 80;
+  private static readonly IMPACT_LIFE = 0.1;
+  private static readonly IMPACT_SPEED_MIN = 5;
+  private static readonly IMPACT_SPEED_MAX = 9;
+  private static readonly IMPACT_RADIUS = 0.35;
+  private static readonly IMPACT_MAX = 60;
+
+  /**
    * Owner feedback 09.07: "the first weapon feels clunky because you have to
    * [walk] towards enemies to aim it, meaning that you easily walk to the
    * enemies when trying to damage them."
@@ -373,6 +435,17 @@ export class World {
   hazards: Hazard[] = [];
   orbs: Orb[] = [];
 
+  /**
+   * design.md §17.3 — the Nova vertical VFX slice's three pools. All deferred
+   * `Surface.dot()` primitives at render, all hard-capped here so the slice
+   * can never cost more than the spec budget regardless of volley size or
+   * sim tick rate: 80 wake dots, 60 impact dots, discharges (one per volley,
+   * so effectively self-capping over their 0.09s life).
+   */
+  discharges: Discharge[] = [];
+  wakeDots: WakeDot[] = [];
+  impacts: ImpactDot[] = [];
+
   /** The juice layer (design.md §14). Numbers, death pops, and lantern sparks. */
   numbers: DamageNumber[] = [];
   pops: Pop[] = [];
@@ -402,6 +475,14 @@ export class World {
   private hitstopCd = 0;
   /** Seconds the player's `@` burns gold, after a level-up. */
   playerFlash = 0;
+  /**
+   * design.md §17.3.5: seconds the player's halo pulses red after taking
+   * contact damage. `damagePlayer` sets it; the renderer reads it as a 0..1
+   * ratio. Pure visual — no knockback, no stun, no movement (§6 stands).
+   */
+  playerHurt = 0;
+  /** The duration `playerHurt` is set to on each contact hit (§17.3.5). */
+  private static readonly HURT_HALO_TIME = 0.12;
 
   /**
    * Screen shake. `amp` is in cells and is always < 1 — a whole-cell shake is an
@@ -697,6 +778,7 @@ export class World {
     }
 
     this.playerFlash = Math.max(0, this.playerFlash - dt);
+    this.playerHurt = Math.max(0, this.playerHurt - dt);
     this.timeAlive += dt;
     if (this.clockRunning) this.time += dt;
 
@@ -721,6 +803,11 @@ export class World {
     this.updateEmbers(dt);
     this.updateColumns(dt);
     this.updateHazards(dt);
+    // §17.3 Nova VFX slice pools — advance after the projectiles/effects they
+    // decorate so impact dots spawn at the same-frame collision point.
+    this.updateDischarges(dt);
+    this.updateWakeDots(dt);
+    this.updateImpacts(dt);
     this.reap();
     this.updatePickups(dt);
     this.updateEffects(dt);
@@ -1362,7 +1449,13 @@ export class World {
     e.hp -= amount;
     e.flash = this.j('hit_flash');
     e.flashMax = e.flash;
-    this.playSfx('hit', 0.03);
+
+    // design.md §17.4: a killing blow plays `kill`, not `hit` + `kill`. The
+    // weaker cue is the one to drop, so the once-per-enemy event is a single
+    // coordinated sound. `hit` is also capped at 8 starts/s (cooldown 1/8s)
+    // — texture, not impact — and only fires for an enemy that survived the
+    // blow. `killEnemy` owns the kill cue below.
+    if (e.hp > 0) this.playSfx('hit', HIT_COOLDOWN);
 
     // The corpse is the number. Skip the digits on a killing blow.
     if (e.hp > 0) this.addDamageNumber(e, amount);
@@ -1394,7 +1487,7 @@ export class World {
     this.kills++;
     this.killsThisMinute++;
     this.addDecal(e.x, e.y);
-    this.playSfx('kill', 0.02);
+    this.playSfx('kill', KILL_COOLDOWN);
 
     // The corpse is the number: retire any number this enemy was still carrying.
     if (e.num !== null) e.num.dead = true;
@@ -1455,6 +1548,8 @@ export class World {
     const reduced = Math.max(1, amount - this.stats().flat_reduce);
     this.hp -= reduced;
     this.playSfx('hurt', 0.15);
+    // §17.3.5: pulse the existing halo red — no knock/stun/movement (§6 stands).
+    this.playerHurt = World.HURT_HALO_TIME;
 
     if (hitstop && this.hitstopCd <= 0) {
       this.hitstopT = Math.max(this.hitstopT, this.j('hitstop'));
@@ -1747,6 +1842,17 @@ export class World {
     const targets = this.nearestEnemies(def.count);
     const chains = w.evolved?.intoId === 'hemorrhage' ? 4 : 0;
 
+    // design.md §17.3 discharge pulse + §17.4 `weapon/nova` cue: one of each
+    // per volley (this call), never per bolt. Nova may seek behind the ship,
+    // so the discharge is a radial bloom from the player's own centre rather
+    // than a muzzle on the nose — putting a muzzle here would lie about where
+    // the shot came from. The spec gates the slice to Nova; other bolt
+    // weapons don't exist in the starting roster, and the cue is named.
+    if (w.id === 'nova') {
+      this.discharges.push({ x: this.x, y: this.y, age: 0, life: World.DISCHARGE_LIFE, color: def.color });
+      this.playSfx('weapon/nova');
+    }
+
     for (let i = 0; i < def.count; i++) {
       const t = targets[i] ?? targets[0];
       const a = t !== undefined ? Math.atan2(t.y - this.y, t.x - this.x) : this.rng.next() * Math.PI * 2;
@@ -1765,6 +1871,7 @@ export class World {
         id: w.id,
         chains,
         hits: new Set(),
+        wakeTimer: 0,
       });
     }
   }
@@ -1916,6 +2023,17 @@ export class World {
         b.vy += (Math.sin(a) * speed - b.vy) * Math.min(1, 6 * dt);
       }
 
+      // design.md §17.3 bolt wake: ≤4 dim crimson dots behind the bolt over a
+      // 0.12s history (emit cadence 0.03s). Dropped at the bolt's pre-move
+      // position so they trail where it came from, not where it's going. The
+      // pool is hard-capped at WAKE_MAX below; the oldest dot is dropped when
+      // over budget — never the bolt itself.
+      b.wakeTimer -= dt;
+      if (b.wakeTimer <= 0) {
+        b.wakeTimer = World.WAKE_EMIT;
+        this.pushWake(b.x, b.y, b.color);
+      }
+
       b.x += b.vx * dt;
       b.y += b.vy * dt;
 
@@ -1924,6 +2042,11 @@ export class World {
         if (Math.hypot(e.x - b.x, e.y - b.y) > b.radius) continue;
 
         this.damageEnemy(e, b.dmg, b.knock);
+        // design.md §17.3 impact burst: 4 dots outward over 0.10s, ≤0.35 wu,
+        // 5–9 wu/s, in the bolt's crimson. The killing-impact variant is the
+        // SAME burst plus the existing raster death pop (§17.3.4) — no second
+        // explosion, no code fork here.
+        this.burstImpact(b.x, b.y, b.color);
         b.hits.add(e);
         b.pierce--;
 
@@ -1939,6 +2062,59 @@ export class World {
       }
     }
     this.bolts = this.bolts.filter((b) => b.life > 0);
+  }
+
+  /** §17.3 wake dot emit, with the 80-dot hard budget. */
+  private pushWake(x: number, y: number, color: Color): void {
+    if (this.wakeDots.length >= World.WAKE_MAX) this.wakeDots.shift();
+    this.wakeDots.push({ x, y, age: 0, life: World.WAKE_LIFE, color });
+  }
+
+  /**
+   * §17.3 impact burst: 4 outward dots at the contact point. The radius cap is
+   * enforced by the dots' own life × speed (≤0.35 wu), so we just spawn and
+   * let the budget manager cull oldest past `IMPACT_MAX` (60).
+   */
+  private burstImpact(x: number, y: number, color: Color): void {
+    for (let i = 0; i < 4; i++) {
+      const a = this.rng.next() * Math.PI * 2;
+      const speed = this.rng.range(World.IMPACT_SPEED_MIN, World.IMPACT_SPEED_MAX);
+      if (this.impacts.length >= World.IMPACT_MAX) this.impacts.shift();
+      this.impacts.push({ x, y, ox: x, oy: y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, age: 0, life: World.IMPACT_LIFE, color });
+    }
+  }
+
+  private updateDischarges(dt: number): void {
+    for (const d of this.discharges) d.age += dt;
+    this.discharges = this.discharges.filter((d) => d.age < d.life);
+  }
+
+  private updateWakeDots(dt: number): void {
+    for (const w of this.wakeDots) w.age += dt;
+    this.wakeDots = this.wakeDots.filter((w) => w.age < w.life);
+  }
+
+  private updateImpacts(dt: number): void {
+    // §17.3: impact dots travel outward at 5–9 wu/s for 0.10s, bounded to a
+    // 0.35 wu radius from the burst origin. Speed × life would otherwise
+    // overshoot the cap (9 × 0.10 = 0.9 wu), so the dot stops at the radius
+    // and just fades there — a punch, not a fizzle.
+    for (const p of this.impacts) {
+      p.age += dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      const dx = p.x - p.ox;
+      const dy = p.y - p.oy;
+      const dist = Math.hypot(dx, dy);
+      if (dist > World.IMPACT_RADIUS) {
+        const k = World.IMPACT_RADIUS / dist;
+        p.x = p.ox + dx * k;
+        p.y = p.oy + dy * k;
+        p.vx = 0;
+        p.vy = 0;
+      }
+    }
+    this.impacts = this.impacts.filter((p) => p.age < p.life);
   }
 
   private updateSalts(dt: number): void {

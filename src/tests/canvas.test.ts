@@ -235,6 +235,30 @@ describe('CanvasSurface', () => {
     assert.deepEqual(ctx.arcs[0], { tx: 40, ty: 40, sx: 30, sy: 30 }, '3 wu is circular in pixels after the row correction');
   });
 
+  it('displayText(): deferred until flush(), then renders at hCells rows in the display face', () => {
+    const { surface, ctx } = makeSurface();
+    surface.clear();
+
+    surface.displayText(5, 3, 'LONE NIGHT', 2, 0xffffff, { weight: 800 });
+    assert.equal(ctx.texts.length, 0, 'a heading must not paint immediately — it sits above the whole frame');
+    surface.flush();
+
+    assert.deepEqual(ctx.texts, ['LONE NIGHT']);
+    // 2 rows at cellH=20 -> a 40px face; bold weight and the display family, not the cell monospace.
+    assert.ok(ctx.font.startsWith('800 40px'), `font was ${ctx.font}`);
+    assert.ok(!ctx.font.includes('JetBrains'), 'headings use the display face, not the grid font');
+  });
+
+  it('displayText(): clear() drops queued headings — a screen switch never leaks a title', () => {
+    const { surface, ctx } = makeSurface();
+    surface.clear();
+    surface.displayText(5, 3, 'DAWN', 2, 0xffffff);
+    surface.clear();
+    surface.flush();
+
+    assert.equal(ctx.texts.length, 0);
+  });
+
   it('backdrop-fills on clear(), not flush() — an image drawn between them survives', () => {
     const { surface, ctx } = makeSurface();
     surface.clear();

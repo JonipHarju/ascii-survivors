@@ -307,6 +307,7 @@ describe('drawBox', () => {
     dot(): void {}
     glowRect(): void {}
     glowRing(): void {}
+    displayText(): void {}
     flush(): number {
       return 0;
     }

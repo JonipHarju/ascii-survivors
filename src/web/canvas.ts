@@ -33,6 +33,12 @@ export type CanvasOptions = {
   /** Width of one cell in CSS pixels. Height is `cellWidth * CELL_ASPECT`. */
   cellWidth: number;
   fontFamily: string;
+  /**
+   * The face `displayText()` headings render in (design.md §16.9). A real
+   * display sans, not the cell grid's monospace — the whole point of the
+   * typography pass is that a heading stops looking like terminal output.
+   */
+  displayFontFamily: string;
   /** Glow radius in pixels, baked into the glyph cache. 0 disables it. */
   glow: number;
   background: Color;
@@ -60,6 +66,7 @@ export const GRID_MAX_ROWS = 60;
 export const DEFAULT_OPTIONS: CanvasOptions = {
   cellWidth: 12,
   fontFamily: '"JetBrains Mono", "Fira Code", "SF Mono", Menlo, Consolas, monospace',
+  displayFontFamily: '"Avenir Next", Futura, "Segoe UI", system-ui, -apple-system, sans-serif',
   glow: 6,
   background: 0x07070a,
   measure: () => ({ width: window.innerWidth, height: window.innerHeight }),
@@ -70,6 +77,18 @@ export const DEFAULT_OPTIONS: CanvasOptions = {
 };
 
 type Light = { cx: number; cy: number; radius: number } | null;
+
+type DisplayTextItem = {
+  cx: number;
+  cy: number;
+  text: string;
+  hCells: number;
+  color: Color;
+  weight: number;
+  trackingEm: number;
+  alpha: number;
+  glow?: Color | undefined;
+};
 
 function css(c: Color): string {
   return `#${(c & 0xffffff).toString(16).padStart(6, '0')}`;
@@ -116,6 +135,9 @@ export class CanvasSurface implements Surface {
     | { kind: 'rect'; cx: number; cy: number; w: number; h: number; color: Color; alpha: number }
     | { kind: 'ring'; cx: number; cy: number; rx: number; ry: number; thickness: number; color: Color; alpha: number }
   )[] = [];
+
+  /** `displayText()` headings, painted dead last in `flush()` (see Surface). */
+  private displayQueue: DisplayTextItem[] = [];
 
   /** (glyph, colour) -> pre-rendered tile. Bounded; the game uses few combos. */
   private glyphCache = new Map<string, HTMLCanvasElement>();
@@ -214,6 +236,7 @@ export class CanvasSurface implements Surface {
     this.light = null;
     this.onTopQueue.length = 0;
     this.primitiveQueue.length = 0;
+    this.displayQueue.length = 0;
 
     // Paint the flat backdrop immediately, not in flush(). drawImage() below is
     // an immediate draw too — GameView calls it between clear() and flush(), and
@@ -309,6 +332,56 @@ export class CanvasSurface implements Surface {
   glowRing(cx: number, cy: number, rx: number, ry: number, thickness: number, color: Color, alpha: number): void {
     if (!Number.isFinite(cx) || !Number.isFinite(cy)) return;
     this.primitiveQueue.push({ kind: 'ring', cx, cy, rx, ry, thickness, color, alpha });
+  }
+
+  /** See `Surface.displayText` — deferred, painted above everything in `flush()`. */
+  displayText(
+    cx: number,
+    cy: number,
+    text: string,
+    hCells: number,
+    color: Color,
+    opts: { weight?: number; trackingEm?: number; alpha?: number; glow?: Color } = {},
+  ): void {
+    if (!Number.isFinite(cx) || !Number.isFinite(cy) || hCells <= 0 || text === '') return;
+    this.displayQueue.push({
+      cx,
+      cy,
+      text,
+      hCells,
+      color,
+      weight: opts.weight ?? 700,
+      trackingEm: opts.trackingEm ?? 0,
+      alpha: opts.alpha ?? 1,
+      glow: opts.glow,
+    });
+  }
+
+  /**
+   * The pixel-pushing behind `displayText`. Size is `hCells` rows of this
+   * grid, so a heading scales with the window exactly like the field does.
+   * Tracking rides `ctx.letterSpacing` where the browser has it (Chromium 99+,
+   * Safari 17+); elsewhere the heading just renders untracked — a degrade,
+   * not a break, and not worth a hand-rolled per-glyph layout to avoid.
+   */
+  private paintDisplayText(q: DisplayTextItem): void {
+    const { ctx, cellW, cellH } = this;
+    const px = q.hCells * cellH;
+
+    ctx.save();
+    ctx.font = `${q.weight} ${Math.round(px)}px ${this.opts.displayFontFamily}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    if ('letterSpacing' in ctx && q.trackingEm !== 0) {
+      (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = `${q.trackingEm * px}px`;
+    }
+    if (q.glow !== undefined) {
+      ctx.shadowColor = css(q.glow);
+      ctx.shadowBlur = px * 0.35;
+    }
+    ctx.fillStyle = rgba(q.color, q.alpha);
+    ctx.fillText(q.text, q.cx * cellW, q.cy * cellH);
+    ctx.restore();
   }
 
   /**
@@ -526,6 +599,11 @@ export class CanvasSurface implements Surface {
     // an icon that's supposed to sit in front of it (jane.md [43]/[44]).
     for (const q of this.onTopQueue) this.paintImage(q.cx, q.cy, q.img, q.wCells, q.hCells, q.angle, q.glow);
     this.onTopQueue.length = 0;
+
+    // Display typography last of all — a heading sits above its own screen's
+    // accent art (§16.9's title composes the ship UNDER the wordmark).
+    for (const q of this.displayQueue) this.paintDisplayText(q);
+    this.displayQueue.length = 0;
 
     this.paintLight();
     return drawn;

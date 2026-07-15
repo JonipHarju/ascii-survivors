@@ -149,6 +149,28 @@ export interface Surface {
    */
   glowRing(cx: number, cy: number, rx: number, ry: number, thickness: number, color: Color, alpha: number): void;
 
+  /**
+   * Real display typography — a heading drawn at `hCells` rows tall, centred
+   * on (cx, cy) in cell space. design.md §16.9: screen headings become canvas
+   * display text (bold, tightly tracked) instead of ASCII block-letter
+   * banners; body copy stays ordinary `text()` cells.
+   *
+   * Deferred on the canvas (painted at the very end of `flush()`, above
+   * every glyph, image and primitive) so a heading can sit over its own
+   * screen's accent art regardless of call order. No-op where `caps.raster`
+   * is false — the terminal keeps Jane's `.txt` banners, per §16.9's own
+   * ruling ("the terminal is allowed to look like a terminal"), so callers
+   * branch on `caps.raster` rather than expecting a fallback here.
+   */
+  displayText(
+    cx: number,
+    cy: number,
+    text: string,
+    hCells: number,
+    color: Color,
+    opts?: { weight?: number; trackingEm?: number; alpha?: number; glow?: Color },
+  ): void;
+
   /** Push the frame to the display. Returns bytes written, where meaningful. */
   flush(): number;
 }

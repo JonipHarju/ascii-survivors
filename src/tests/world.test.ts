@@ -1045,6 +1045,7 @@ describe('rendering the world', () => {
     glowRing(cx: number, cy: number, rx: number, ry: number, thickness: number, color: Color, alpha: number): void {
       this.glowRings.push({ cx, cy, rx, ry, thickness, color, alpha });
     }
+    displayText(): void {}
     flush(): number {
       return 0;
     }

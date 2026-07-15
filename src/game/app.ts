@@ -17,12 +17,16 @@ import { generateCards, type Card } from './upgrades.ts';
 import { crossroadsParam, upgradeCost, type Upgrade } from '../data/crossroads.ts';
 import { makeHitRadius } from './hitbox.ts';
 import { loadProfile, memoryStore, saveProfile, type Profile, type SaveStore } from './save.ts';
-import { formatTime, World } from './world.ts';
+import { formatTime, World, WU_PER_ROW } from './world.ts';
 
 const ACCENT: Color = 0xffe040;
 const DIM: Color = 0x6a6a6a;
 const TEXT: Color = 0xc7c7c7;
 const RED: Color = 0xff3b3b;
+/** The player's reserved accent pair (§16.9): wordmark white, cyan halo. */
+const CYAN: Color = 0x4ff0f0;
+/** Dawn's heading gold — warmer than ACCENT, it's a sunrise, not a price tag. */
+const DAWN_GOLD: Color = 0xffc860;
 
 /** Below this the HUD and field can't coexist; we ask for a bigger window. */
 const MIN_COLS = 80;
@@ -560,7 +564,53 @@ export class App {
     drawCentered(r, cx, cy + 2, 'resize your terminal', DIM);
   }
 
+  /**
+   * A field-entity raster row (images.tsv, w/h in wu), converted to cells for
+   * screen-space composition — same `h / WU_PER_ROW` every field draw does.
+   */
+  private accentImage(id: string): { img: CanvasImageSource; wCells: number; hCells: number } | null {
+    const resolved = resolveImage(this.images, this.data.images, id);
+    if (resolved === null) return null;
+    return { img: resolved.img, wCells: resolved.entry.w, hCells: resolved.entry.h / WU_PER_ROW };
+  }
+
+  /** One menu row: the key in accent, Jane's label in body text. */
+  private drawMenuLine(r: Surface, cx: number, y: number, key: string, label: string): void {
+    const x = cx - Math.floor((key.length + 2 + label.length) / 2);
+    r.text(x, y, key, ACCENT);
+    r.text(x + key.length + 2, y, label, TEXT);
+  }
+
+  /**
+   * design.md §16.9 (owner 15.07 23:31 unfroze it): the title is real display
+   * typography plus the Warden's own ship — no ASCII wordmark, no ASCII
+   * picture. The menu copy is Jane's, verbatim from her ui/title.txt.
+   */
+  private drawTitleRaster(r: Surface): void {
+    const cx = Math.floor(r.width / 2);
+    const cy = Math.floor(r.height / 2);
+
+    r.displayText(cx, cy - 12, 'LONE NIGHT', 4.6, 0xffffff, { weight: 800, trackingEm: 0.16, glow: CYAN });
+    r.displayText(cx, cy - 8, 'one night. kill everything. see the sun.', 1.05, 0x77c9cf, {
+      weight: 500,
+      trackingEm: 0.08,
+    });
+
+    const ship = this.accentImage(this.world.character?.sprite ?? 'sprites/player');
+    if (ship !== null) {
+      const h = 11;
+      r.drawImage(cx, cy + 1, ship.img, (ship.wCells / ship.hCells) * h, h, 0, CYAN);
+    }
+
+    const menuY = cy + 9;
+    this.drawMenuLine(r, cx, menuY, '[ ENTER ]', 'begin the night');
+    this.drawMenuLine(r, cx, menuY + 2, '[   C   ]', 'the crossroads');
+    this.drawMenuLine(r, cx, menuY + 4, '[   Q   ]', 'stay in the dark');
+  }
+
   private drawTitle(r: Surface): void {
+    if (r.caps.raster) return this.drawTitleRaster(r);
+
     const cx = Math.floor(r.width / 2);
     const sprite = this.sprites.get('ui/title');
     const full: Rect = { x: 0, y: 0, w: r.width, h: r.height };
@@ -595,17 +645,31 @@ export class App {
     const full: Rect = { x: 0, y: 0, w: r.width, h: r.height };
 
     let y = 1;
-    const banner = this.sprites.get('ui/crossroads');
-    if (!banner.placeholder) {
-      const frame = banner.frames[0]!;
-      drawSprite(r, frame, cx - Math.floor(frame.w / 2), y, full);
-      y += frame.h + 1;
+    if (r.caps.raster) {
+      // §16.9: heading in accent gold, the supply beacon as the screen's one
+      // raster accent — the same object that means "loot" on the field means
+      // "spend it" here. The ASCII signpost banner retires to the terminal.
+      r.displayText(cx, 3.4, 'THE CROSSROADS', 2.6, ACCENT, { weight: 800, trackingEm: 0.14 });
+      const chest = this.accentImage('pickups/chest');
+      if (chest !== null) {
+        const h = 4;
+        r.drawImage(cx, 7.4, chest.img, (chest.wCells / chest.hCells) * h, h, 0, undefined, true);
+      }
+      y = 10;
     } else {
-      drawCentered(r, cx, y + 1, 'THE CROSSROADS', ACCENT);
-      y += 3;
+      const banner = this.sprites.get('ui/crossroads');
+      if (!banner.placeholder) {
+        const frame = banner.frames[0]!;
+        drawSprite(r, frame, cx - Math.floor(frame.w / 2), y, full);
+        y += frame.h + 1;
+      } else {
+        drawCentered(r, cx, y + 1, 'THE CROSSROADS', ACCENT);
+        y += 3;
+      }
     }
 
-    drawCentered(r, cx, y, `⛁ ${this.profile.gold.toLocaleString('en-US')} gold`, ACCENT);
+    const gold = this.profile.gold.toLocaleString('en-US');
+    drawCentered(r, cx, y, r.caps.raster ? `${gold} gold` : `⛁ ${gold} gold`, ACCENT);
     y += 2;
 
     if (rows.length === 0) {
@@ -829,21 +893,36 @@ export class App {
   private drawDawn(r: Surface, field: Rect): void {
     const w = this.world;
     const cx = field.x + Math.floor(field.w / 2);
-    const sprite = this.sprites.get('ui/dawn');
 
     let y = field.y + 2;
-    if (!sprite.placeholder) {
-      const frame = sprite.frames[0]!;
-      drawSprite(r, frame, cx - Math.floor(frame.w / 2), y, field);
-      y += frame.h + 1;
+    if (r.caps.raster) {
+      // §16.9: `DAWN` in warm gold, the sunburst ASCII retires; the accent is
+      // the player's own ship, small, nose-up, above the line — the survivor
+      // IS the picture. The sentence is Jane's, from ui/dawn.txt.
+      r.displayText(cx, y + 4, 'DAWN', 3.6, DAWN_GOLD, { weight: 800, trackingEm: 0.24, glow: 0xff9030 });
+      const ship = this.accentImage(w.character?.sprite ?? 'sprites/player');
+      if (ship !== null) {
+        const h = 6;
+        r.drawImage(cx, y + 10.5, ship.img, (ship.wCells / ship.hCells) * h, h, 0, DAWN_GOLD);
+      }
+      y += 13;
+      drawCentered(r, cx, y + 1, 'the sun comes up. you are still standing.', TEXT);
     } else {
-      drawCentered(r, cx, y + 2, 'DAWN', ACCENT);
-      y += 4;
+      const sprite = this.sprites.get('ui/dawn');
+      if (!sprite.placeholder) {
+        const frame = sprite.frames[0]!;
+        drawSprite(r, frame, cx - Math.floor(frame.w / 2), y, field);
+        y += frame.h + 1;
+      } else {
+        drawCentered(r, cx, y + 2, 'DAWN', ACCENT);
+        y += 4;
+      }
+      drawCentered(r, cx, y + 1, 'you saw the sun', TEXT);
     }
 
-    drawCentered(r, cx, y + 1, 'you saw the sun', TEXT);
+    const gold = this.profile.gold.toLocaleString('en-US');
     drawCentered(r, cx, y + 3, `${w.kills.toLocaleString('en-US')} dead · ${formatTime(w.time)} · level ${w.level}`, DIM);
-    drawCentered(r, cx, y + 5, `⛁ ${this.profile.gold.toLocaleString('en-US')} banked`, ACCENT);
+    drawCentered(r, cx, y + 5, r.caps.raster ? `${gold} gold banked` : `⛁ ${gold} banked`, ACCENT);
     drawCentered(r, cx, y + 7, 'any key: run again   C: crossroads   Q: quit', DIM);
   }
 }

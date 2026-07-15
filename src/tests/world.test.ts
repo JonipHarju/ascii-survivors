@@ -1046,6 +1046,7 @@ describe('rendering the world', () => {
       this.glowRings.push({ cx, cy, rx, ry, thickness, color, alpha });
     }
     displayText(): void {}
+    panelFrame(): void {}
     flush(): number {
       return 0;
     }
@@ -1261,6 +1262,38 @@ describe('rendering the world', () => {
       const drawn = r.drawImages.find((d) => d.w === 3);
       assert.ok(drawn !== undefined);
       assert.equal(drawn!.glow, undefined, 'an undamaged enemy must not glow');
+    });
+  });
+
+  describe('first-encounter portrait on raster (owner 15.07 23:31 — never ASCII)', () => {
+    it('borrows the field sprite, wu-converted, when no portraits/<id> row exists', () => {
+      const imgData: GameData = { ...data, images: parseImageTable('sprites/mobs/ghoul\tspace/mobs/spacebug/spacebug_green.png\t3\t2.9') };
+      const w = new World(imgData, 1);
+      const images: ImageSource = { get: (path) => (path.includes('spacebug_green') ? FAKE_IMG : undefined) };
+      const view = new GameView(new SpriteLoader('/nonexistent'), images);
+      view.notifyFirstEncounter('ghoul');
+      const r = new FakeRasterSurface();
+
+      view.render(r, w, FIELD, { dark: false, debug: false });
+
+      const portrait = r.drawImages.find((d) => d.w === 3 && Math.abs(d.h - 2.9 / 2) < 0.01);
+      assert.ok(portrait !== undefined, `no portraits/ row must still show the creature — got ${JSON.stringify(r.drawImages)}`);
+    });
+
+    it('a mob with no raster art draws NO panel — the ASCII portrait never reaches a raster backend', async () => {
+      const loader = new SpriteLoader(new URL('../../assets', import.meta.url).pathname);
+      await loader.load(); // real assets: the ASCII portraits exist and would have drawn before
+      const w = new World(data, 1);
+      const withPanel = new GameView(loader, { get: () => undefined });
+      withPanel.notifyFirstEncounter('ghoul');
+      const without = new GameView(loader, { get: () => undefined });
+
+      const rA = new FakeRasterSurface();
+      const rB = new FakeRasterSurface();
+      withPanel.render(rA, w, FIELD, { dark: false, debug: false });
+      without.render(rB, w, FIELD, { dark: false, debug: false });
+
+      assert.equal(rA.sets.length, rB.sets.length, 'the first encounter must add zero glyph cells on raster');
     });
   });
 

@@ -105,6 +105,7 @@ class RecordingSurface implements Surface {
   displayText(_cx: number, _cy: number, text: string, hCells: number, color: Color): void {
     this.displayTexts.push({ text, hCells, color });
   }
+  panelFrame(): void {}
   flush(): number {
     return 0;
   }

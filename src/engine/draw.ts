@@ -139,6 +139,19 @@ export function drawBox(
   if (panelImg !== undefined) r.drawImage(x + w / 2, y + h / 2, panelImg, w, h);
   const interiorBg = panelImg !== undefined ? DEFAULT : bg;
 
+  if (r.caps.raster) {
+    // Owner 15.07 23:31, no ASCII art: the box-drawing border retires on
+    // raster. Blank cells still erase whatever field glyphs sit behind the
+    // panel (that's what occludes the crowd), the texture shows through the
+    // DEFAULT-bg cells, and the frame is a real stroke painted under the text.
+    r.fillRect(x, y, w, h, ' ', fg, interiorBg);
+    r.panelFrame(x + w / 2, y + h / 2, w, h, fg);
+    if (title !== undefined && title.length > 0 && w > title.length + 4) {
+      r.text(x + 2, y, ` ${title} `, fg, interiorBg);
+    }
+    return;
+  }
+
   r.set(x, y, '╭', fg, bg);
   r.set(x + w - 1, y, '╮', fg, bg);
   r.set(x, y + h - 1, '╰', fg, bg);

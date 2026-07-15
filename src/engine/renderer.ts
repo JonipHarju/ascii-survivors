@@ -118,6 +118,9 @@ export class Renderer implements Surface {
   /** `caps.raster` is false — screens keep their `.txt` banners here (§16.9). */
   displayText(): void {}
 
+  /** `caps.raster` is false — panels keep their glyph borders here. */
+  panelFrame(): void {}
+
   /** Recolor a cell without touching its glyph. Used for flashes and tinting. */
   tint(x: number, y: number, fg: Color): void {
     if (x < 0 || y < 0 || x >= this.width || y >= this.height) return;

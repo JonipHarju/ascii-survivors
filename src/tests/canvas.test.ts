@@ -59,6 +59,10 @@ class StubContext {
   fillRect(x: number, y: number, w: number, h: number): void {
     this.fillRects.push({ x, y, w, h });
   }
+  strokeRects: DrawCall[] = [];
+  strokeRect(x: number, y: number, w: number, h: number): void {
+    this.strokeRects.push({ x, y, w, h });
+  }
   drawImage(_img: unknown, x: number, y: number, w: number, h: number): void {
     this.drawImages.push({ x, y, w, h });
   }
@@ -247,6 +251,19 @@ describe('CanvasSurface', () => {
     // 2 rows at cellH=20 -> a 40px face; bold weight and the display family, not the cell monospace.
     assert.ok(ctx.font.startsWith('800 40px'), `font was ${ctx.font}`);
     assert.ok(!ctx.font.includes('JetBrains'), 'headings use the display face, not the grid font');
+  });
+
+  it('panelFrame(): deferred until flush(), stroked at the rect in pixels', () => {
+    const { surface, ctx } = makeSurface();
+    surface.clear();
+
+    surface.panelFrame(10, 5, 6, 4, 0xff3b3b);
+    assert.equal(ctx.strokeRects.length, 0, 'a panel frame must not paint immediately');
+    surface.flush();
+
+    // Centre (10,5) cells at 10x20px, 6x4 cells -> a 60x80px rect at (70,60),
+    // inset 1px so the stroke isn't clipped at the canvas edge.
+    assert.deepEqual(ctx.strokeRects, [{ x: 71, y: 61, w: 58, h: 78 }]);
   });
 
   it('displayText(): clear() drops queued headings — a screen switch never leaks a title', () => {

@@ -928,20 +928,29 @@ export class GameView {
     const imgId = `portraits/${id}`;
 
     if (r.caps.raster) {
-      const resolved = resolveImage(this.images, w.data.images, imgId);
-      if (resolved !== null) {
-        const { w: wCells, h: hCells } = resolved.entry;
-        const x = field.x + field.w - wCells - 2;
-        const y = field.y + 1;
-        const t = Math.min(1, (1.5 - this.portraitTimer) / 0.25);
-        const offset = Math.round((1 - t * t) * (wCells + 2));
+      // `portraits/<id>` first; a mob without one borrows its own field
+      // sprite, blown up — always the same creature the player just met. On
+      // raster this path never falls through to the ASCII portrait (owner
+      // 15.07 23:31: no ASCII art); a mob with no raster art at all just
+      // shows no panel, same as a missing portrait always has.
+      const resolved =
+        resolveImage(this.images, w.data.images, imgId) ??
+        resolveImage(this.images, w.data.images, `sprites/mobs/${id}`) ??
+        resolveImage(this.images, w.data.images, `sprites/elites/${id}`);
+      if (resolved === null) return;
 
-        r.drawImage(x + offset + wCells / 2, y + hCells / 2, resolved.img, wCells, hCells);
-        // No `# name:` header on a raster row — the entity id is the closest
-        // thing to a label; good enough for a first-encounter panel.
-        r.text(Math.round(x + offset), Math.round(y + hCells), id.toUpperCase(), ACCENT);
-        return;
-      }
+      const wCells = resolved.entry.w;
+      const hCells = imgId === resolved.entry.id ? resolved.entry.h : resolved.entry.h / WU_PER_ROW;
+      const x = field.x + field.w - wCells - 2;
+      const y = field.y + 1;
+      const t = Math.min(1, (1.5 - this.portraitTimer) / 0.25);
+      const offset = Math.round((1 - t * t) * (wCells + 2));
+
+      r.drawImage(x + offset + wCells / 2, y + hCells / 2, resolved.img, wCells, hCells);
+      // No `# name:` header on a raster row — the entity id is the closest
+      // thing to a label; good enough for a first-encounter panel.
+      r.text(Math.round(x + offset), Math.round(y + hCells), id.toUpperCase(), ACCENT);
+      return;
     }
 
     const sprite = this.sprites.get(imgId);

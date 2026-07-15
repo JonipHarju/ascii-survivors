@@ -150,6 +150,20 @@ export interface Surface {
   glowRing(cx: number, cy: number, rx: number, ry: number, thickness: number, color: Color, alpha: number): void;
 
   /**
+   * A UI panel's frame: a thin stroke around a rect centred on (cx, cy),
+   * `w`x`h` cells. Owner 15.07 23:31 ("no ASCII art"): on raster backends the
+   * box-drawing border (`╭─╮│`) retires and this draws in its place.
+   *
+   * Deferred to `flush()`, painted after the buffered background pass but
+   * BEFORE glyph tiles — a panel is furniture: its own title and body text
+   * must read on top of the frame line, and a flat panel's buffered bg fill
+   * must not blot the stroke out. (Contrast `dot()` et al., which paint after
+   * glyphs because field effects must survive raster actors.) No-op where
+   * `caps.raster` is false — callers keep the glyph border as the fallback.
+   */
+  panelFrame(cx: number, cy: number, w: number, h: number, color: Color, alpha?: number): void;
+
+  /**
    * Real display typography — a heading drawn at `hCells` rows tall, centred
    * on (cx, cy) in cell space. design.md §16.9: screen headings become canvas
    * display text (bold, tightly tracked) instead of ASCII block-letter

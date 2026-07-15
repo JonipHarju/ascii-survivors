@@ -139,6 +139,9 @@ export class CanvasSurface implements Surface {
   /** `displayText()` headings, painted dead last in `flush()` (see Surface). */
   private displayQueue: DisplayTextItem[] = [];
 
+  /** `panelFrame()` strokes — painted after bg fills, under glyphs (see Surface). */
+  private panelQueue: { cx: number; cy: number; w: number; h: number; color: Color; alpha: number }[] = [];
+
   /** (glyph, colour) -> pre-rendered tile. Bounded; the game uses few combos. */
   private glyphCache = new Map<string, HTMLCanvasElement>();
 
@@ -237,6 +240,7 @@ export class CanvasSurface implements Surface {
     this.onTopQueue.length = 0;
     this.primitiveQueue.length = 0;
     this.displayQueue.length = 0;
+    this.panelQueue.length = 0;
 
     // Paint the flat backdrop immediately, not in flush(). drawImage() below is
     // an immediate draw too — GameView calls it between clear() and flush(), and
@@ -332,6 +336,30 @@ export class CanvasSurface implements Surface {
   glowRing(cx: number, cy: number, rx: number, ry: number, thickness: number, color: Color, alpha: number): void {
     if (!Number.isFinite(cx) || !Number.isFinite(cy)) return;
     this.primitiveQueue.push({ kind: 'ring', cx, cy, rx, ry, thickness, color, alpha });
+  }
+
+  /** See `Surface.panelFrame` — deferred; painted over bg fills, under glyphs. */
+  panelFrame(cx: number, cy: number, w: number, h: number, color: Color, alpha = 0.9): void {
+    if (!Number.isFinite(cx) || !Number.isFinite(cy) || w <= 0 || h <= 0) return;
+    this.panelQueue.push({ cx, cy, w, h, color, alpha });
+  }
+
+  private paintPanelFrame(q: { cx: number; cy: number; w: number; h: number; color: Color; alpha: number }): void {
+    const { ctx, cellW, cellH } = this;
+    const w = q.w * cellW;
+    const h = q.h * cellH;
+    const x = q.cx * cellW - w / 2;
+    const y = q.cy * cellH - h / 2;
+
+    ctx.save();
+    ctx.strokeStyle = rgba(q.color, q.alpha);
+    ctx.lineWidth = Math.max(1.5, cellW * 0.16);
+    // The same silhouette-halo trick every bright glyph gets — a frame line
+    // with no glow reads as a spreadsheet border next to a lit field.
+    ctx.shadowColor = css(q.color);
+    ctx.shadowBlur = cellW * 0.8;
+    ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+    ctx.restore();
   }
 
   /** See `Surface.displayText` — deferred, painted above everything in `flush()`. */
@@ -563,6 +591,11 @@ export class CanvasSurface implements Surface {
         }
       }
     }
+
+    // Panel frames sit over the background fills but under every glyph tile,
+    // so a panel's own title/body text always reads on top of its frame line.
+    for (const q of this.panelQueue) this.paintPanelFrame(q);
+    this.panelQueue.length = 0;
 
     const pad = this.opts.glow;
     let drawn = 0;

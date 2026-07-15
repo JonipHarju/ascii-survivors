@@ -274,9 +274,14 @@ describe('drawBox', () => {
   class FakeSurface implements Surface {
     readonly width = 40;
     readonly height = 20;
-    readonly caps: Capabilities = { smoothLight: false, subCell: true, raster: true };
+    readonly caps: Capabilities;
     cells = new Map<string, { ch: string; fg?: Color; bg?: Color }>();
     images: { cx: number; cy: number; w: number; h: number }[] = [];
+    panels: { cx: number; cy: number; w: number; h: number; color: Color }[] = [];
+
+    constructor(raster = true) {
+      this.caps = { smoothLight: false, subCell: true, raster };
+    }
 
     clear(): void {}
     set(x: number, y: number, ch: string, fg?: Color, bg?: Color): void {
@@ -308,6 +313,9 @@ describe('drawBox', () => {
     glowRect(): void {}
     glowRing(): void {}
     displayText(): void {}
+    panelFrame(cx: number, cy: number, w: number, h: number, color: Color): void {
+      this.panels.push({ cx, cy, w, h, color });
+    }
     flush(): number {
       return 0;
     }
@@ -331,8 +339,27 @@ describe('drawBox', () => {
     // The interior fill is skipped (left DEFAULT) so the texture isn't blotted
     // out by flush()'s buffered background pass later (see canvas.ts/surface.ts).
     assert.equal(r.cells.get('12,7')?.bg, DEFAULT, 'interior cell no longer carries the box bg');
-    // The border still does — a solid glyph tile always wins regardless.
-    assert.equal(r.cells.get('10,5')?.bg, 0x101010, 'border corner keeps the given bg');
+  });
+
+  it('raster: the border is a panelFrame stroke, never box-drawing glyphs (owner 15.07 23:31)', () => {
+    const r = new FakeSurface(true);
+    drawBox(r, { x: 10, y: 5, w: 16, h: 5 }, 0xff3b3b, 0x100808, 'YOU DIED');
+
+    assert.deepEqual(r.panels, [{ cx: 18, cy: 7.5, w: 16, h: 5, color: 0xff3b3b }]);
+    for (const { ch } of r.cells.values()) {
+      assert.ok(!'╭╮╰╯─│'.includes(ch), `glyph border char '${ch}' reached a raster surface`);
+    }
+    assert.equal(r.cells.get('10,5')?.ch, ' ', 'border cells still blank out the field behind the panel');
+    assert.equal(r.cells.get('13,5')?.ch, 'Y', 'the title still renders on the frame line');
+  });
+
+  it('terminal: the glyph border survives untouched', () => {
+    const r = new FakeSurface(false);
+    drawBox(r, { x: 0, y: 0, w: 5, h: 4 }, 0xffffff, 0x101010);
+
+    assert.equal(r.panels.length, 0, 'no stroke on a non-raster backend');
+    assert.equal(r.cells.get('0,0')?.ch, '╭');
+    assert.equal(r.cells.get('4,3')?.ch, '╯');
   });
 });
 

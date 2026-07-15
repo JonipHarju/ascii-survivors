@@ -2540,3 +2540,125 @@ already committed:
 
 Sequencing unchanged: this whole section stays P2, after §16.2c lands —
 the field outranks the menus.
+
+## 17. Owner feedback 15.07 22:23 — stop adding; make one shot feel finished
+
+> *"The game looks like a hobby project and does not feel good to play. Make
+> the game feel good to play with real graphical effects and sound effects and
+> for now stop focusing on horizontal content. THE GAME NEEDS TO BE FUN TO PLAY
+> BEFORE IT HAS CONTENT."*
+
+Correct. §0 already said **feel before content**, but our task log drifted back
+into roster swaps, card sets, boss forms, and menu treatments. Those are visible
+improvements, but they are horizontal. The player still spends the first minute
+firing one weapon, and that weapon does not yet have a complete fire-to-reward
+feedback chain. We polished the nouns and left the verb unfinished.
+
+### 17.1 Freeze, effective now
+
+Until the first 90 seconds pass the acceptance test in §17.5, do not build:
+
+- new weapons, enemies, passives, evolutions, characters, bosses, or modes;
+- title/dawn/crossroads visual work from §16.9;
+- more card, portrait, roster, background, or boss-form art;
+- raster animation infrastructure or late-game-only spectacle.
+
+§16.2c is the sole exception already in flight: replacing the remaining glyph
+bands/rings/columns/hazards with translucent canvas shapes closes an active
+graphical-regression complaint. Finish it, then move vertically through the
+starting Nova loop below. No detours.
+
+**Landed concurrently (`fe538c4`):** §16.2c is closed. The web field now uses
+deferred `glowRect`/`glowRing`/`dot` primitives for every remaining area shape
+and hazard, with terminal glyphs retained only as TTY fallback. The freeze now
+has no exception: the Nova loop is the only active product work.
+
+### 17.2 The feedback chain
+
+Every successful attack has six perceptible beats:
+
+`discharge → travel/shape → impact → reaction → death → reward`
+
+Today Nova has travel (raster bolt), reaction (60ms enemy rim), death (raster
+pop), and reward (XP orb). It has **no discharge cue**, almost no impact shape,
+and generic audio starts only when damage has already happened. In a dark,
+zoomed-out field that makes the weapon look as though it simply exists and an
+enemy later blinks. That is the hobby-project read.
+
+The starting Nova is the vertical slice. If these six beats read on Nova, the
+same small vocabulary can later be reused by every weapon. Do not polish all
+seven in parallel.
+
+### 17.3 Nova graphical pass — first priority after §16.2c
+
+Use the `Surface.dot()` queue that already exists; this should not create a new
+particle engine.
+
+1. **Discharge pulse:** whenever Nova fires, a tight crimson-white bloom expands
+   from the player's centre for **0.09s**, radius **0.5 → 1.6 wu**, fading to
+   zero. It is radial because Nova may seek behind the ship; putting a muzzle on
+   the nose would lie about where the shot came from.
+2. **Bolt wake:** emit at most **four** dim crimson dots behind each bolt, total
+   history **0.12s**. Motion, not brightness. The projectile sprite remains the
+   brightest part and must stay readable as the object doing damage.
+3. **Impact burst:** on contact, **4 dots** burst outward over **0.10s**, radius
+   **0.35 wu**, speed **5–9 wu/s**, in the bolt's crimson. This is the missing
+   visual punctuation between projectile disappearance and enemy flash.
+4. **Killing impact:** the same burst plus the existing raster death pop. Do not
+   add a second explosion sprite. A rat should crack, not detonate like a boss.
+5. **Player damage response:** currently the player has hitstop and sound but no
+   visual hurt state. Pulse the existing player halo red for **0.12s**. Do not
+   knock back, stun, or move the player; §6's control rule stands.
+
+Particle budgets are hard limits, not targets: **80 bolt-wake dots, 60 impact
+dots** alive at once. Over budget, drop the oldest dim particle. Never drop the
+projectile, actor, XP, or damage number to preserve juice.
+
+### 17.4 Sound is hierarchy, not quantity
+
+The audio pipeline exists, but the combat mix is structurally wrong at density.
+The current hit clip is **0.61s** and may start every **0.03s**; the kill clip is
+**0.46s** and may start every **0.02s**. That permits roughly twenty overlapping
+copies of each. A killing blow also queues both `hit` and `kill`. More samples do
+not make more impact; they make undifferentiated clipping.
+
+Rules:
+
+- **A killing blow plays kill, not hit + kill.** The stronger cue replaces the
+  weaker one.
+- Add one weapon event, **`weapon/nova`**, at actual fire time. It is the clear,
+  short discharge cue and may play once per Nova volley, never once per bolt.
+- Generic `hit` is texture: at most **8 starts/sec**, quiet.
+- Generic `kill` is punctuation: at most **6 starts/sec**. Ten deaths in one sim
+  tick still produce one sound, not ten.
+- Player `hurt`, level-up, evolve, chest, death, and win cues outrank combat.
+  When one fires, hit/kill chatter may be skipped that tick.
+- Music remains below those cues. No new track and no music-system work.
+
+Immediate data mix: `hit` **0.12**, `kill` **0.18**. These are intentionally
+lower than the old 0.35/0.30 because density supplies perceived loudness. The
+new Nova discharge should start around **0.28** once Jane has curated a short
+laser sample from the existing licensed SFX pack. Do not reuse the 0.61s impact
+sample as a weapon shot.
+
+### 17.5 The first-90-seconds acceptance test
+
+One ordinary run, sound on, no cheats, no late-game start. This pass is signed
+off only when all are true:
+
+1. At 0:00, before the first Ghoul dies, the player can identify the instant Nova
+   fires, the bolt's path, and the exact impact without reading the HUD.
+2. A killing blow is one coordinated event: impact burst + flinch/pop + one kill
+   cue. No double sound and no ASCII fallback.
+3. Taking contact damage is visible on the player even with the HP bar covered.
+4. At the 0:30 rat beat, combat remains musical rather than becoming a wall of
+   identical hit/kill samples; music and player-hurt remain audible.
+5. At the first level-up, the new power choice feels louder than ordinary combat
+   through the already-existing stop, flash, card, and level-up cue.
+6. The field contains zero picture-glyph effects after §16.2c. Text and damage
+   numbers remain typography and are allowed.
+7. No new gameplay content was added to achieve any of this.
+
+Only after this run is captured and judged by eye **and ear** do we unfreeze the
+next polish target. The next target will be another broken link in an existing
+weapon's feedback chain, not another item for the content list.

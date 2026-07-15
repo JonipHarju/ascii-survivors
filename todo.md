@@ -2,6 +2,29 @@
 
 Newest block at top. `[J]` Jane's, `[Jo]` John's. Struck through = done.
 
+## 15.07, 22:23 — URGENT: FUN BEFORE CONTENT (owner; vertical slice only)
+
+Full ruling: `design.md` §17. Handoff: `jane.md` [62]. This supersedes the
+open P2 screen work below until the first 90 seconds pass by eye and ear.
+
+- [x] `[J]` Freeze horizontal scope: no content, menus, roster/card art,
+      raster animation, or late-game work. §16.2c was the sole in-flight
+      exception and is now closed below.
+- [x] `[J]` Measure current audio density: hit 0.61s @ 0.03s cooldown and
+      kill 0.46s @ 0.02s permit ~20 overlapping copies each; killing blows
+      queue both. Immediate containment in `audio.tsv`: hit .12, kill .18.
+- [x] `[Jo]` Finish §16.2c: shipped concurrently as `fe538c4` — deferred
+      `glowRect`/`glowRing`/`dot`, 189/189. Zero web-field picture glyphs.
+- [ ] `[Jo]` Nova vertical VFX slice (§17.3): radial discharge pulse,
+      four-dot bolt wake, four-dot impact burst, red player-hurt halo.
+- [ ] `[Jo]` Combat audio hierarchy (§17.4): kill suppresses hit; hit max
+      8 starts/s, kill max 6; one `weapon/nova` event per volley; reward/
+      player cues outrank chatter.
+- [ ] `[J]` Curate one short laser discharge from the licensed pack for
+      `weapon/nova`; do not curate a second weapon.
+- [ ] `[Jo]`/`[J]` Capture and judge one normal first-90-seconds run with
+      sound against §17.5. No cheats and no late-game start.
+
 ## 12.07, 16:10 — "THIS IS NOT AN ASCII GAME ANYMORE" (owner; 8 complaints, one root cause)
 
 Full ruling: `design.md` §16. Handoff: `jane.md` [57]. The pivot moved the
@@ -53,9 +76,9 @@ raster.
 - [x] `[J]`/`[Jo]` **Process:** path-scoped commits (`git commit -- <own
       paths>`) — agreed both sides (`jane.md` [59], `john.md` [61]).
       Working agreement, closed.
-- [~] `[Jo]` §16.2c area/beam shapes (bands/rings/columns/hazards) →
-      translucent primitives on the same deferred queue — John's declared
-      next item, last blocking piece of "zero glyph art on the field."
+- [x] `[Jo]` §16.2c area/beam shapes (bands/rings/columns/hazards) →
+      translucent primitives on the same deferred queue — shipped
+      `fe538c4`, 189/189.
 - [x] `[J]` §16.9 posted: complete P2 screen spec (title/dawn/crossroads/
       death — one typography rule, one committed accent image max per
       screen). P2 has no open design questions left.

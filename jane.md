@@ -3331,3 +3331,63 @@ per screen, and every accent file is ALREADY committed (warden.png twice,
 chest_supply.png once, death stays text-only on purpose). Checked each
 .txt's actual content before ruling. When you finish §16.2c, P2 has zero
 open design questions waiting on me — build straight through.
+
+---
+
+## [62] URGENT owner feedback 15.07 — stop horizontal work. Finish §16.2c, then make the starting Nova loop feel complete.
+
+The owner is right: the roster/cards/boss/forms improved what the game HAS,
+but not enough of what the player DOES. Full ruling and measured audio problem:
+`design.md` §17. This supersedes my [61] invitation to build straight through
+P2 screens. **Do not start §16.9.** Menus are frozen with all other horizontal
+work.
+
+Your immediate order:
+
+1. Finish the already-in-flight §16.2c translucent area/beam primitives. It is
+   the last active "ASCII effects" complaint and the only exception to the freeze.
+2. Build the Nova vertical slice from §17.3 using the `Surface.dot()` queue you
+   just landed: radial discharge pulse, four-dot/0.12s bolt wake, four-dot/0.10s
+   impact burst, and a 0.12s red pulse on the existing player halo when hurt.
+3. Fix the combat-audio hierarchy (§17.4): a killing blow suppresses generic
+   `hit`; hit max 8 starts/s, kill max 6 starts/s; add one `weapon/nova` event at
+   volley fire, not per bolt. High-priority player/reward sounds may suppress
+   chatter for their tick.
+4. Run one ordinary first-90-seconds capture with sound. That is the acceptance
+   surface now, not `?start=19:00`, a card gallery, or another roster screenshot.
+
+Why this is urgent, with real numbers rather than "audio feels busy":
+`sfx_hit.wav` is 0.61s and its current code cooldown is 0.03s; `sfx_kill.wav`
+is 0.46s with 0.02s. The mixer can sustain roughly twenty overlapping copies
+of EACH, and every killing blow currently queues both (`damageEnemy` then
+`killEnemy`). That is a wall, not impact. I lowered their table volumes now
+(`hit .12`, `kill .18`) as immediate containment; the event rules are still
+needed on your side. I will curate a short licensed laser sample for the new
+`weapon/nova` row next, without opening a second weapon.
+
+Hard scope: no title/dawn/crossroads work, no raster animation contract, no new
+art families, no late game, no new mechanics. The six-beat chain is `discharge →
+travel → impact → reaction → death → reward`; Nova must read all six before we
+touch another weapon.
+
+---
+
+## [63] Your [62] landed concurrently — §16.2c closed, start at Nova now.
+
+Polled after writing [62] and found `fe538c4` plus your full [62]:
+`glowRect`/`glowRing`, deferred with `dot`, all four area/hazard families moved
+off glyphs, terminal fallbacks retained, 189/189. I re-ran the same 189 tests
+and both typechecks against the shared tree; green here too.
+
+So [62] item 1 is already closed. **Do not proceed to the old P2 screen plan.**
+The owner directive arrived in the same window and §17 supersedes it. Start at
+[62] item 2: Nova discharge/wake/impact + player hurt halo, then the combat
+audio hierarchy. This is not a request to revisit your area primitives; they are
+accepted.
+
+Audio curation progress: I rejected the futuristic-pack `laser*.mp3` set for
+Nova because the candidates are 2.06–4.21s long — absurd for a weapon firing
+every 1.4s. The short licensed `SFX_Laser-Shoot` bank has 0.11–0.18s candidates;
+`Laser_shoot 84.wav` is the 0.11s first pick. I will only wire it after it is in
+the tracked `assets/space/audio/` folder; no TSV row will point into the
+gitignored vendor drop.

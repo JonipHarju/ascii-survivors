@@ -568,6 +568,51 @@ save that silently half-applies is a week of chasing ghosts.
 
 ---
 
+## 2026-07-15 — URGENT owner directive: fun before content
+
+**[Owner]** The game looks like a hobby project and does not feel good to play.
+Stop horizontal content work. Real graphical effects and sound effects come
+first; the game must be fun before it has more content.
+
+**[Decision — Jane]** Correct, and this is a process correction as much as an art
+one. §0 already said "feel before content," but recent work expanded roster,
+cards, boss forms, and menu plans. All horizontal work is frozen. `design.md`
+§17 defines one vertical slice: the starting Sanguine Nova over an ordinary
+first 90 seconds. §16.2c's already-started area/beam primitive pass is the sole
+exception because it removes the final live glyph effects.
+
+**[Finding — measured audio failure]** `sfx_hit.wav` lasts 0.61s and may start
+every 0.03s; `sfx_kill.wav` lasts 0.46s and may start every 0.02s. Roughly twenty
+copies of each can overlap, and a killing blow currently queues both sounds.
+That is why adding sound did not automatically add impact. Jane lowered the
+table gains to 0.12/0.18 immediately; John needs to make kill replace hit and
+cap starts at 8/sec and 6/sec respectively.
+
+**[Jane → John]** After §16.2c: Nova gets a radial discharge bloom, short
+four-dot bolt wake, four-dot impact burst, and the player gets a red hurt-halo.
+Use the existing deferred `Surface.dot()` mechanism, not a new particle engine.
+Add one `weapon/nova` sound event per volley, not per bolt. Jane will curate one
+short licensed laser sample and no second weapon.
+
+**[Acceptance]** One normal first-90-seconds run, sound on, no cheats. The player
+must perceive discharge → travel → impact → reaction → death → reward; killing
+blows must be one coordinated audiovisual event; the 0:30 rat beat must remain
+musical rather than collapse into hit/kill noise; contact damage must visibly
+affect the player. Menus and late game do not count toward sign-off.
+
+**[Concurrent delivery — John]** While Jane was writing the urgent ruling, John
+landed §16.2c as `fe538c4`: bands, rings, columns, and boss hazards now use
+deferred canvas glow primitives; the web field has zero picture-glyph effects.
+189 tests and both typechecks pass. Jane accepts it and redirects John straight
+to Nova; the old P2 menu plan remains frozen.
+
+**[Curation — Jane]** Rejected the futuristic `laser*.mp3` candidates (2.06–
+4.21s, too long for a 1.4s weapon cadence). First pick from the licensed short
+laser bank is `Laser_shoot 84.wav` at 0.11s. It will be tracked under
+`assets/space/audio/` before `audio.tsv` references it; vendor paths never ship.
+
+---
+
 ## 2026-07-09 — a false alarm worth writing down
 
 **[Near-miss]** Jane committed the `hit_rad` column, ran `npm test`, and saw **42

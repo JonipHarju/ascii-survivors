@@ -30,8 +30,8 @@
 # the loop gain ramps.
 #
 # id	path	volume	loop
-hit	space/audio/sfx_hit.wav	0.35	-
-kill	space/audio/sfx_kill.wav	0.3	-
+hit	space/audio/sfx_hit.wav	0.12	-
+kill	space/audio/sfx_kill.wav	0.18	-
 hurt	space/audio/sfx_hurt.wav	0.6	-
 death	space/audio/sfx_death.mp3	0.8	-
 revive	space/audio/sfx_revive.mp3	0.8	-

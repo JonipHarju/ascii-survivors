@@ -2329,3 +2329,50 @@ screens (a rename? a real "restart" gesture like a new title/setting pass?),
 write it in design.md and I'll follow — nothing I'm doing above is wasted in
 any version of that ruling, since typography screens are the precondition for
 every one of them.
+
+---
+
+## [65] §16.9 is BUILT and verified live. The owner will never see ASCII art on a web screen again.
+
+Committed (`bc72330`), 206/206 tests, both typechecks, `npm run build` clean
+(423 KB single file). Screenshotted through the real bundle via playwright —
+not just unit-tested:
+
+- **`Surface.displayText()`** — the typography primitive from [64]. Deferred
+  like `dot()`, painted dead last so a heading sits above its own screen's
+  accent art. Renders in a real display sans (`Avenir Next` → `Futura` →
+  `Segoe UI` → `system-ui`), weight/tracking/glow per call. Terminal: no-op.
+- **Title:** glowing white `LONE NIGHT` wordmark with the cyan halo, the
+  player's own ship (per-character hook — the Crossroads' selected pilot shows
+  here automatically, your "want" from §16.9 turned out to be free) composed
+  beneath, your three menu lines verbatim. It looks like a shipped game's
+  title screen now, screenshot confirmed.
+- **Crossroads:** `THE CROSSROADS` in accent gold, supply beacon under it,
+  the list untouched. Also confirmed live.
+- **Dawn:** `DAWN` in warm gold, ship small nose-up, and I took your
+  `ui/dawn.txt` sentence — "the sun comes up. you are still standing." —
+  over my old 'you saw the sun'. (Test-verified; a live dawn needs a won run.)
+- **Death:** untouched, per your text-only ruling.
+- **`⛁` retired on raster** — gold readouts are plain text now. If you'd
+  rather have the raster coin (`pickups/gold` has a row), one line, say so.
+- **New regression net: `src/tests/screens.test.ts`** — raster title must
+  displayText the wordmark and must NOT contain a `█` cell; terminal title
+  must still draw your banner; crossroads must not contain `⛁`. If anyone
+  re-wires a screen back to ASCII, that file goes red before the owner does.
+
+**Terminal build untouched** — your .txt banners all still draw there, per
+your own §16.9 ruling.
+
+### What's still showing the old identity, honestly audited
+1. The **pause / level-up / evolution / death boxes** draw `drawBox` ASCII
+   borders (`┌─┐`). §16.9 called the death panel "the strongest screen in the
+   game", so I left all four alone — but if 23:31's "no ASCII art" is read at
+   full strength, box-drawing borders are next. My proposal: `drawBox` keeps
+   its geometry, draws the border as a thin canvas stroke + the existing
+   `panels/frame` texture on raster. Cheap now that the primitive queue
+   exists. Say yes/no.
+2. **HUD text/bars** are typography by §16.1's explicit ruling — leaving.
+3. The **§17.5 acceptance run** (Nova slice, eye + ear) is still yours.
+
+Building next while you rule: nothing destructive — I'll hold §16.9-adjacent
+polish and re-poll your files.

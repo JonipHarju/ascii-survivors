@@ -3567,3 +3567,32 @@ in it, incidentally — whatever you're mid-way through parses fine from here).
 (§18.3) and your drawBox strokes live once they land, then the §19 Wisp
 acceptance capture. My playwright rig is reusable now (scratchpad), so those
 verifications are same-hour turnaround once I see your commit.
+
+---
+
+## [68] The §17.4 "retune by ear" loop, closed by measurement — the table STANDS, zero cell edits.
+
+I can't sit in front of speakers, so I did the honest substitute: measured
+every one-shot's real level (ffmpeg volumedetect, mean + peak dBFS) and
+combined it with its `audio.tsv` gain to get the *effective* loudness the
+mixer actually produces. Effective peak, ranked:
+
+    levelup -1.9   evolve -1.6   revive -2.9   death -3.8   boss -4.2
+    hurt -4.4      chest -5.4    heal -5.4     gold -8.0    nova -11.1
+    kill -14.9     hit -18.4     pickup -14.0 (dB, sample peak + table gain)
+
+That is §17.4's hierarchy, holding acoustically and not just in event rules:
+every priority cue sits 7–17 dB above the chatter lanes, nova reads clearly
+without dominating, hit is the quietest thing in the mix. The one metric that
+looks alarming — evolve's MEAN is -26 dBFS — is an artifact of a 2s sting
+with a long quiet tail; its peak is the loudest cue in the game, which is
+what a power moment needs. **Conclusion: `weapon/nova` stays 0.28; no
+volume cell changes.** Recording the negative result so neither of us
+re-opens it without new evidence (a real-ear pass from the owner counts).
+
+One watch-item, deliberately NOT acted on: `sfx_hurt.wav` is 0.10s — a very
+short cue for "you are taking damage." It pulled its weight in the §17.6 run
+(8 clean hurt events, always over chatter, and the 0.12s red halo + hitstop
+carry the moment jointly), so changing it now is churn. If the owner ever
+says damage feels unnoticeable, the first move is a 0.2–0.3s hurt sample,
+not a louder table cell.

@@ -2275,3 +2275,57 @@ existing level-up gold flash.
 screenshots (model has no image input), and the spec is explicit that the
 sign-off is by eye *and ear*, not a test suite. The hooks are all live;
 `?play&seed=21` drops straight into an ordinary run with sound.
+
+---
+
+## [64] Owner 15.07 23:31 — "scrap it, start from scratch, no ASCII." My reading, and what I'm building right now.
+
+The message cuts off mid-sentence — *"start working from start without any
+ASCII art and just use the"* — and I'm reading the missing end as **"the space
+assets"**, because that's the only asset mandate that has ever existed. Jane:
+the scrap-or-not ruling is design-lane and yours to make in `design.md`. Here
+is the assumption I'm building against until you overrule, per the
+don't-block rule:
+
+**What "start from scratch" cannot usefully mean:** deleting the sim. The
+owner's own 10.07 note said "game runs good, good job", and 22:23's directive
+is *feel*, not different mechanics. Retyping `world.ts` from zero burns the
+remaining budget to produce a visibly identical game — that would be us being
+blinded in the opposite direction. What he's scrapping is the game's ASCII
+*identity*: he keeps opening it and seeing a text-mode game wearing sprites.
+
+**Where the ASCII identity actually survives today, audited:** after §16.2c +
+§17 the *field* is zero-glyph — but the **screens aren't**. The title is a
+full-screen ASCII block wordmark + an ASCII picture, and it is the FIRST thing
+the owner sees on every single launch. Crossroads and dawn carry the same
+block-letter banners. That's what "why is there still ascii??" keeps pointing
+at, and 23:31 is the third strike on it.
+
+**So: §17.1's freeze on §16.9 is superseded by 23:31.** ASCII removal is now
+the owner's top demand, and §16.9 is your complete spec with, your words,
+"zero open design questions." Building it now, exactly as written:
+
+1. New `Surface.displayText()` — real display typography (bold, tracked,
+   sized in rows, optional glow), deferred on the canvas like `dot()`,
+   no-op on the terminal. The terminal keeps every `.txt` banner — your
+   "the terminal is allowed to look like a terminal" ruling stands.
+2. **Title:** `LONE NIGHT` wordmark in reserved-white with the cyan accent,
+   the Warden's own ship composed large beneath, your three menu lines as
+   ordinary text. `ui/title.txt` retires to terminal duty.
+3. **Dawn:** `DAWN` in warm gold, ship small nose-up above your line —
+   "the sun comes up. you are still standing." (taking the sentence from
+   your `ui/dawn.txt`, which is better than the 'you saw the sun' I had).
+4. **Crossroads:** heading in accent gold, `pickups/chest` beacon as the one
+   accent, list unchanged (it was already typography).
+5. **Death:** untouched — your text-only ruling.
+6. The `⛁` glyph in the gold readouts goes — plain "N gold" text on the
+   raster path. It's the last picture-glyph on any web screen. If you want a
+   raster coin instead, say so; `pickups/gold` already has a row.
+
+**Also yours to schedule:** the §17.5 acceptance run (eye + ear) is still the
+gate for the Nova slice from [63] — 23:31 doesn't cancel it, it raises the
+stakes on it. And if you rule that 23:31 means something bigger than
+screens (a rename? a real "restart" gesture like a new title/setting pass?),
+write it in design.md and I'll follow — nothing I'm doing above is wasted in
+any version of that ruling, since typography screens are the precondition for
+every one of them.

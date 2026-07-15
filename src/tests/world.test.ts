@@ -1011,6 +1011,8 @@ describe('rendering the world', () => {
     drawImages: { cx: number; cy: number; w: number; h: number; angle?: number; glow?: Color }[] = [];
     sets: { x: number; y: number; ch: string }[] = [];
     dots: { cx: number; cy: number; rx: number; ry: number; color: Color; alpha: number }[] = [];
+    glowRects: { cx: number; cy: number; w: number; h: number; color: Color; alpha: number }[] = [];
+    glowRings: { cx: number; cy: number; rx: number; ry: number; thickness: number; color: Color; alpha: number }[] = [];
     clear(): void {}
     set(x: number, y: number, ch: string): void {
       this.sets.push({ x, y, ch });
@@ -1036,6 +1038,12 @@ describe('rendering the world', () => {
     }
     dot(cx: number, cy: number, rx: number, ry: number, color: Color, alpha: number): void {
       this.dots.push({ cx, cy, rx, ry, color, alpha });
+    }
+    glowRect(cx: number, cy: number, w: number, h: number, color: Color, alpha: number): void {
+      this.glowRects.push({ cx, cy, w, h, color, alpha });
+    }
+    glowRing(cx: number, cy: number, rx: number, ry: number, thickness: number, color: Color, alpha: number): void {
+      this.glowRings.push({ cx, cy, rx, ry, thickness, color, alpha });
     }
     flush(): number {
       return 0;
@@ -1537,6 +1545,56 @@ describe('rendering the world', () => {
 
       assert.equal(r.dots.length, 1, `expected one spark dot, got ${JSON.stringify(r.dots)}`);
       assert.equal(r.sets.some((s) => s.ch === "'"), false, 'the ember glyph must not also draw');
+    });
+  });
+
+  describe('area weapons and boss hazards use translucent primitives on raster (design.md §16.2c)', () => {
+    it('bands and Silver Rain columns become glowing rectangles, never glyph carpets', () => {
+      const w = new World(data, 1);
+      w.effects.push({ kind: 'band', xLeft: w.x - 2, xRight: w.x + 6, yCenter: w.y, halfRows: 1, age: 0, color: 0xffe040 });
+      w.columns.push({ x: w.x + 8, y: w.y, w: 4, h: 12, life: 1, dmg: 2, color: 0x88ccff, struck: false });
+      const r = new FakeRasterSurface();
+
+      new GameView(new SpriteLoader('/nonexistent'), { get: () => undefined }).render(r, w, FIELD, { dark: false, debug: false });
+
+      assert.equal(r.glowRects.length, 2);
+      assert.equal(r.sets.some((s) => s.ch === '═' || s.ch === '─' || s.ch === '|'), false);
+      assert.deepEqual(
+        r.glowRects.map(({ w: width, h }) => ({ w: width, h })),
+        [
+          { w: 4, h: 6 },
+          { w: 8, h: 3 },
+        ],
+        'render order is column then band; dimensions stay in the original combat geometry',
+      );
+    });
+
+    it('rings keep their wu circle and boss exhaust becomes a chain of soft dots', () => {
+      const w = new World(data, 1);
+      w.effects.push({ kind: 'ring', x: w.x, y: w.y, radius: 8, age: 0, color: 0xff8800 });
+      w.hazards.push({ x: w.x + 4, y: w.y, life: 2, dmg: 1, color: 0xff3300 });
+      const r = new FakeRasterSurface();
+
+      new GameView(new SpriteLoader('/nonexistent'), { get: () => undefined }).render(r, w, FIELD, { dark: false, debug: false });
+
+      assert.deepEqual(r.glowRings.map(({ rx, ry }) => ({ rx, ry })), [{ rx: 8, ry: 4 }]);
+      assert.equal(r.dots.length, 1);
+      assert.equal(r.sets.some((s) => s.ch === '~' || s.ch === data.countess.trailGlyph), false);
+    });
+
+    it('keeps every original glyph fallback in the terminal renderer', () => {
+      const w = new World(data, 1);
+      w.effects.push({ kind: 'ring', x: w.x + 10, y: w.y, radius: 2, age: 0, color: 0xff8800 });
+      w.effects.push({ kind: 'band', xLeft: w.x + 5, xRight: w.x + 8, yCenter: w.y + 6, halfRows: 0, age: 0, color: 0xffe040 });
+      w.columns.push({ x: w.x - 10, y: w.y, w: 2, h: 4, life: 1, dmg: 2, color: 0x88ccff, struck: false });
+      w.hazards.push({ x: w.x, y: w.y + 8, life: 2, dmg: 1, color: 0xff3300 });
+      const r = new Renderer(100, 34, 'truecolor', { write: () => true } as unknown as NodeJS.WritableStream);
+      r.clear();
+
+      new GameView(new SpriteLoader('/nonexistent'), { get: () => undefined }).render(r, w, FIELD, { dark: false, debug: false });
+
+      const chars = ['~', '═', '|', data.countess.trailGlyph];
+      for (const ch of chars) assert.ok(Array.from({ length: r.height }, (_, y) => Array.from({ length: r.width }, (_, x) => r.getChar(x, y))).flat().includes(ch), `expected '${ch}' fallback`);
     });
   });
 

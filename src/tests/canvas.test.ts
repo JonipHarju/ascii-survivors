@@ -21,6 +21,8 @@ class StubContext {
   textBaseline = '';
   shadowColor = '';
   shadowBlur = 0;
+  strokeStyle = '';
+  lineWidth = 1;
 
   fillRects: DrawCall[] = [];
   drawImages: DrawCall[] = [];
@@ -29,6 +31,7 @@ class StubContext {
   texts: string[] = [];
   /** One entry per `dot()`'s `translate` + `scale`, in call order — the ellipse's pixel centre/radii. */
   arcs: { tx: number; ty: number; sx: number; sy: number }[] = [];
+  strokes = 0;
   private pendingTranslate = { x: 0, y: 0 };
   private pendingScale = { x: 1, y: 1 };
 
@@ -47,6 +50,9 @@ class StubContext {
     this.arcs.push({ tx: this.pendingTranslate.x, ty: this.pendingTranslate.y, sx: this.pendingScale.x, sy: this.pendingScale.y });
   }
   fill(): void {}
+  stroke(): void {
+    this.strokes++;
+  }
   fillText(s: string): void {
     this.texts.push(s);
   }
@@ -202,6 +208,31 @@ describe('CanvasSurface', () => {
     surface.flush();
 
     assert.equal(ctx.arcs.length, 0);
+  });
+
+  it('glowRect(): defers a translucent core and halo until flush()', () => {
+    const { surface, ctx } = makeSurface();
+    surface.clear();
+    const fillsAfterClear = ctx.fillRects.length;
+
+    surface.glowRect(4, 2, 3, 1, 0x44ccff, 0.8);
+    assert.equal(ctx.fillRects.length, fillsAfterClear, 'the beam must not paint immediately');
+    surface.flush();
+
+    assert.equal(ctx.fillRects.length, fillsAfterClear + 2, 'one soft body and one bright core paint');
+    assert.deepEqual(ctx.fillRects[fillsAfterClear], { x: 25, y: 30, w: 30, h: 20 });
+  });
+
+  it('glowRing(): draws a soft outer stroke and bright inner stroke at wu-correct radii', () => {
+    const { surface, ctx } = makeSurface();
+    surface.clear();
+
+    surface.glowRing(4, 2, 3, 1.5, 0.4, 0x44ccff, 0.8);
+    assert.equal(ctx.strokes, 0, 'the ring must not paint immediately');
+    surface.flush();
+
+    assert.equal(ctx.strokes, 2);
+    assert.deepEqual(ctx.arcs[0], { tx: 40, ty: 40, sx: 30, sy: 30 }, '3 wu is circular in pixels after the row correction');
   });
 
   it('backdrop-fills on clear(), not flush() — an image drawn between them survives', () => {

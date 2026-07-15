@@ -2151,3 +2151,49 @@ deferred-queue verified so it can't paint under a same-frame raster ship)
 are all committed (`fa3b6fb`), 184/184, typecheck clean. Only §16.2c (area/
 beam shapes — bands, rings, Silver Rain, boss hazards) is still open on my
 side; picking it up next.
+
+---
+
+## [62] Urgent owner feedback 15.07 — §16.2c is closed. The last field weapon glyphs are real canvas effects now.
+
+The new directive is feel before horizontal content. I stayed on that line:
+no weapon, enemy, upgrade, or late-game feature added. I finished the one
+blocking graphical-overhaul item both our notes already identified — bands,
+rings, Silver Rain columns, and the Overlord's burning trail were still ASCII
+fills beside a raster field.
+
+**Rendering contract:** `Surface` now has `glowRect()` and `glowRing()` beside
+`dot()`. Canvas stores all three in one ordered deferred primitive queue, then
+paints it after buffered glyphs and immediate raster actors. This is the same
+ordering property [60] established for particles: an effect submitted before a
+ship cannot disappear under that ship later in the frame. Rects paint a soft
+translucent body plus brighter inset core; rings paint a broad low-alpha stroke
+plus a tight bright stroke. Invalid/non-positive shapes cost nothing. The TTY
+backend implements both as no-ops and keeps every old glyph fallback.
+
+**Call sites, exact combat geometry unchanged:**
+
+- Chain/Ouroboros bands use a glowing rect with the existing `[xLeft,xRight)`
+  width and `2*halfRows+1` row height; the old 60ms bright-to-dim animation is
+  now alpha/colour rather than `═` to `─`.
+- Censer/Pyre rings use a glowing ellipse at `rx=r`, `ry=r/WU_PER_ROW`, so the
+  same isotropic wu circle still lands as a true pixel circle.
+- Silver Rain/Moonfall use their existing `w x h` collision rectangle as a
+  translucent beam; first strike is brightest and the remaining lifetime dims.
+- Overlord exhaust points use the already-built radial dot primitive. Their
+  fixed spatial laying rate joins adjacent dots into a soft burning trail
+  without inventing collision geometry from a decorative texture.
+
+The web field now has zero glyph art in the surfaces §16.1 enumerated: actors,
+death pops, projectiles, pickups, debris, ambient particles, area weapons, and
+boss hazards all use raster art or canvas primitives. Typography (HUD, damage
+numbers, labels) remains typography by §16.1's explicit ruling. Terminal mode
+still renders the original `═/─`, `~`, `|`, and trail glyphs.
+
+**Verification:** 2 new canvas tests plus 3 world integration/fallback tests.
+The canvas tests pin deferred painting, exact pixel dimensions, the two
+layer glow, and a wu-correct ring. World tests prove raster receives primitives
+and no glyph carpets for all four effect families, while one terminal test
+proves every fallback remains. `npm test` 189/189; `npm run typecheck` clean in
+both configs; `npm run build` emits the 403 KB single-file app plus all 66 media
+files. `git diff --check` clean.

@@ -492,12 +492,25 @@ export class GameView {
       const sy = p.row(h.y);
       if (!p.inside(sx, sy)) continue;
       // Cools as it burns out, so the arena reads as filling with old exhaust.
-      r.set(sx, sy, glyph, shade(h.color, Math.min(1, 0.35 + (h.life / life) * 0.65)));
+      const fade = Math.min(1, 0.35 + (h.life / life) * 0.65);
+      const color = shade(h.color, fade);
+      if (r.caps.raster) {
+        // Spatially-dense dots join into a soft exhaust trail without replacing
+        // the boss hazard's collision geometry with a decorative sprite.
+        r.dot(p.colF(h.x), p.rowF(h.y), 0.75, 0.75 / WU_PER_ROW, color, fade);
+        continue;
+      }
+      r.set(sx, sy, glyph, color);
     }
   }
 
   private drawColumns(r: Surface, w: World, p: Proj): void {
     for (const c of w.columns) {
+      if (r.caps.raster) {
+        const alpha = c.struck ? Math.min(0.7, 0.25 + c.life * 0.5) : 1;
+        r.glowRect(p.colF(c.x), p.rowF(c.y), c.w, c.h / WU_PER_ROW, c.color, alpha);
+        continue;
+      }
       const x0 = p.col(c.x - c.w / 2);
       const x1 = p.col(c.x + c.w / 2);
       const y0 = p.row(c.y - c.h / 2);
@@ -516,6 +529,12 @@ export class GameView {
   private drawRings(r: Surface, w: World, p: Proj): void {
     for (const fx of w.effects) {
       if (fx.kind !== 'ring') continue;
+
+      if (r.caps.raster) {
+        const alpha = Math.max(0.25, 1 - fx.age * 4);
+        r.glowRing(p.colF(fx.x), p.rowF(fx.y), fx.radius, fx.radius / WU_PER_ROW, 0.45, fx.color, alpha);
+        continue;
+      }
 
       const steps = Math.max(16, Math.round(fx.radius * 4));
       for (let i = 0; i < steps; i++) {
@@ -729,6 +748,13 @@ export class GameView {
       // it reads perfectly at speed.
       const ch = fx.age < 0.06 ? '═' : '─';
       const color = fx.age < 0.06 ? ACCENT : 0xb8a000;
+
+      if (r.caps.raster) {
+        const width = fx.xRight - fx.xLeft;
+        const height = fx.halfRows * 2 + 1;
+        r.glowRect(p.colF((fx.xLeft + fx.xRight) / 2), p.rowF(fx.yCenter), width, height, color, fx.age < 0.06 ? 1 : 0.55);
+        continue;
+      }
 
       const x0 = p.col(fx.xLeft);
       const x1 = p.col(fx.xRight); // exclusive: [xLeft, xRight)

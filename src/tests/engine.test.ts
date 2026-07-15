@@ -305,6 +305,8 @@ describe('drawBox', () => {
       this.images.push({ cx, cy, w: wCells, h: hCells });
     }
     dot(): void {}
+    glowRect(): void {}
+    glowRing(): void {}
     flush(): number {
       return 0;
     }

@@ -136,6 +136,19 @@ export interface Surface {
    */
   dot(cx: number, cy: number, rx: number, ry: number, color: Color, alpha: number): void;
 
+  /**
+   * A translucent, softly glowing filled rectangle in cell space. Deferred with
+   * `dot()` so area weapons paint over raster actors instead of disappearing
+   * beneath them. No-op on non-raster backends; callers keep their glyph fill.
+   */
+  glowRect(cx: number, cy: number, w: number, h: number, color: Color, alpha: number): void;
+
+  /**
+   * A translucent glowing ellipse outline in cell space. `rx`/`ry` follow the
+   * same wu-correct convention as `dot()`; `thickness` is measured in cells.
+   */
+  glowRing(cx: number, cy: number, rx: number, ry: number, thickness: number, color: Color, alpha: number): void;
+
   /** Push the frame to the display. Returns bytes written, where meaningful. */
   flush(): number;
 }

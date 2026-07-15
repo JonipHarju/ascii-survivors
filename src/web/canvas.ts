@@ -110,8 +110,12 @@ export class CanvasSurface implements Surface {
   /** `drawImage(..., onTop: true)` calls, painted at the end of `flush()` instead of immediately. */
   private onTopQueue: { cx: number; cy: number; img: CanvasImageSource; wCells: number; hCells: number; angle: number; glow?: Color }[] = [];
 
-  /** `dot()` calls — always deferred, painted in `flush()`. See `Surface.dot`'s own doc comment for why. */
-  private dotQueue: { cx: number; cy: number; rx: number; ry: number; color: Color; alpha: number }[] = [];
+  /** Field primitives, kept in call order and deferred until after raster actors/glyphs. */
+  private primitiveQueue: (
+    | { kind: 'dot'; cx: number; cy: number; rx: number; ry: number; color: Color; alpha: number }
+    | { kind: 'rect'; cx: number; cy: number; w: number; h: number; color: Color; alpha: number }
+    | { kind: 'ring'; cx: number; cy: number; rx: number; ry: number; thickness: number; color: Color; alpha: number }
+  )[] = [];
 
   /** (glyph, colour) -> pre-rendered tile. Bounded; the game uses few combos. */
   private glyphCache = new Map<string, HTMLCanvasElement>();
@@ -209,7 +213,7 @@ export class CanvasSurface implements Surface {
     this.oy.fill(0);
     this.light = null;
     this.onTopQueue.length = 0;
-    this.dotQueue.length = 0;
+    this.primitiveQueue.length = 0;
 
     // Paint the flat backdrop immediately, not in flush(). drawImage() below is
     // an immediate draw too — GameView calls it between clear() and flush(), and
@@ -294,7 +298,17 @@ export class CanvasSurface implements Surface {
   /** See `Surface.dot`'s doc comment — always deferred, painted in `flush()`. */
   dot(cx: number, cy: number, rx: number, ry: number, color: Color, alpha: number): void {
     if (!Number.isFinite(cx) || !Number.isFinite(cy)) return;
-    this.dotQueue.push({ cx, cy, rx, ry, color, alpha });
+    this.primitiveQueue.push({ kind: 'dot', cx, cy, rx, ry, color, alpha });
+  }
+
+  glowRect(cx: number, cy: number, w: number, h: number, color: Color, alpha: number): void {
+    if (!Number.isFinite(cx) || !Number.isFinite(cy)) return;
+    this.primitiveQueue.push({ kind: 'rect', cx, cy, w, h, color, alpha });
+  }
+
+  glowRing(cx: number, cy: number, rx: number, ry: number, thickness: number, color: Color, alpha: number): void {
+    if (!Number.isFinite(cx) || !Number.isFinite(cy)) return;
+    this.primitiveQueue.push({ kind: 'ring', cx, cy, rx, ry, thickness, color, alpha });
   }
 
   /**
@@ -321,6 +335,42 @@ export class CanvasSurface implements Surface {
     ctx.beginPath();
     ctx.arc(0, 0, 1, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
+  }
+
+  private paintGlowRect(cx: number, cy: number, w: number, h: number, color: Color, alpha: number): void {
+    const { ctx, cellW, cellH } = this;
+    const width = w * cellW;
+    const height = h * cellH;
+    if (width <= 0 || height <= 0 || alpha <= 0) return;
+    const x = cx * cellW - width / 2;
+    const y = cy * cellH - height / 2;
+
+    ctx.fillStyle = rgba(color, alpha * 0.2);
+    ctx.fillRect(x, y, width, height);
+    const inset = Math.min(width, height) * 0.12;
+    ctx.fillStyle = rgba(color, alpha * 0.58);
+    ctx.fillRect(x + inset, y + inset, Math.max(0, width - inset * 2), Math.max(0, height - inset * 2));
+  }
+
+  private paintGlowRing(cx: number, cy: number, rx: number, ry: number, thickness: number, color: Color, alpha: number): void {
+    const { ctx, cellW, cellH } = this;
+    const rxPx = rx * cellW;
+    const ryPx = ry * cellH;
+    const thicknessPx = thickness * cellW;
+    if (rxPx <= 0 || ryPx <= 0 || thicknessPx <= 0 || alpha <= 0) return;
+
+    ctx.save();
+    ctx.translate(cx * cellW, cy * cellH);
+    ctx.scale(rxPx, ryPx);
+    ctx.beginPath();
+    ctx.arc(0, 0, 1, 0, Math.PI * 2);
+    ctx.strokeStyle = rgba(color, alpha * 0.2);
+    ctx.lineWidth = (thicknessPx * 2.4) / rxPx;
+    ctx.stroke();
+    ctx.strokeStyle = rgba(color, alpha * 0.8);
+    ctx.lineWidth = thicknessPx / rxPx;
+    ctx.stroke();
     ctx.restore();
   }
 
@@ -462,13 +512,14 @@ export class CanvasSurface implements Surface {
       }
     }
 
-    // Deferred `dot()` particles — after every buffered glyph AND every
-    // immediate `drawImage` call made this frame (Surface.dot's own doc
-    // comment: a thrust/ember/spark dot spawned early in `render()` must
-    // still read on top of a raster ship painted later in the same frame,
-    // not vanish under it).
-    for (const q of this.dotQueue) this.paintDot(q.cx, q.cy, q.rx, q.ry, q.color, q.alpha);
-    this.dotQueue.length = 0;
+    // Deferred field primitives — after every buffered glyph and immediate
+    // raster actor, preserving the order GameView submitted them in.
+    for (const q of this.primitiveQueue) {
+      if (q.kind === 'dot') this.paintDot(q.cx, q.cy, q.rx, q.ry, q.color, q.alpha);
+      else if (q.kind === 'rect') this.paintGlowRect(q.cx, q.cy, q.w, q.h, q.color, q.alpha);
+      else this.paintGlowRing(q.cx, q.cy, q.rx, q.ry, q.thickness, q.color, q.alpha);
+    }
+    this.primitiveQueue.length = 0;
 
     // Deferred `onTop` images last — after the background fills and glyph
     // tiles above, so a UI panel's own buffered background can't paint over

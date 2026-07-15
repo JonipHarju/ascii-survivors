@@ -109,6 +109,12 @@ export class Renderer implements Surface {
   /** `caps.raster` is false — callers always have a glyph fallback ready. */
   dot(): void {}
 
+  /** `caps.raster` is false — callers always have a glyph fallback ready. */
+  glowRect(): void {}
+
+  /** `caps.raster` is false — callers always have a glyph fallback ready. */
+  glowRing(): void {}
+
   /** Recolor a cell without touching its glyph. Used for flashes and tinting. */
   tint(x: number, y: number, fg: Color): void {
     if (x < 0 || y < 0 || x >= this.width || y >= this.height) return;

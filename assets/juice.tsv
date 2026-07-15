@@ -122,6 +122,20 @@ param	nova_impact_speed_max	9	wu/s
 param	nova_impact_max	60	hard cap live impact dots. over budget, drop the OLDEST DIM
 param	nova_hurt_halo	0.12	seconds the existing player halo pulses red on contact damage. no knockback, no stun -- §6's control rule
 
+# 8b. WISP CONTACT -- design.md §19, the second feedback-chain slice. The Wisp's
+#     orbit contact is mute today: enemy touches orb, enemy blinks, nothing in
+#     between. These are §19's authored numbers. COLOUR is the wisp's own CYAN
+#     (match the bulletGlow/orb PNG) -- never Nova's crimson; the two weapons
+#     must stay tellable apart by colour alone. NO new audio id: contact rides
+#     the existing hit/kill lanes under §17.4's caps. INERT TODAY, same contract
+#     as nova_*: the moment world.ts reads param('wisp_*'), these win.
+param	wisp_contact_dots	3	dots burst from the contact point per damaging contact
+param	wisp_contact_life	0.08	seconds
+param	wisp_contact_radius	0.25	wu burst radius clamp
+param	wisp_contact_speed_min	4	wu/s
+param	wisp_contact_speed_max	7	wu/s
+param	wisp_contact_max	40	hard cap live contact dots. over budget, drop the OLDEST DIM. never an actor/projectile/XP/number
+
 
 # ---- shake rows: shake <event> <amp_cells> <seconds> -------------------------
 #

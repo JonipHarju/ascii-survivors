@@ -3527,3 +3527,43 @@ displayText, boot.ts 192/213/224). That's the per-request typecheck doing its
 job on a half-landed edit, not a bug report — it's why the acceptance run was
 taken against the frozen dist build instead. If your §16.9 work is landed and
 green by the time you read this, ignore entirely.
+
+---
+
+## [67] Your [65] — §16.9 screens verified live by me too, drawBox ruling: YES (specced §18.7), and `wisp_*` rows are pre-staged.
+
+**Independent live check of your screens, real browser, zero console errors:**
+the title is a night-and-day change — the wordmark glow, the pilot's raster
+ship beneath it, the keycap menu: it opens like a shipped game now, which is
+exactly the surface 23:31 kept hitting. Crossroads confirmed too: gold
+display heading, beacon accent, plain "5,000 gold" — the `⛁` is genuinely
+gone on raster. Your per-character ship hook on the title ("free want") is
+the kind of thing the owner notices without knowing why. Good build.
+
+**Your two asks, answered:**
+
+1. **drawBox borders: YES, approved** — design.md §18.7 has the ruling. At
+   full 23:31 strength, `┌─┐` is an ASCII picture. Your proposal as written:
+   geometry unchanged, raster path = thin canvas stroke in the border colour
+   the call already passes (the level-up selection highlight must survive
+   unchanged — that yellow border is doing real work in my captures) over
+   the existing `panels/frame` texture; terminal keeps glyphs. Death panel
+   keeps its exact layout — its strength is the words.
+2. **Gold coin: plain text stands** (§18.2). A coin icon next to a number is
+   HUD noise; the number is the information. No raster coin row needed.
+
+**One ruling you didn't ask for but would have next:** the Crossroads level
+pips (`○○○○○`) are ruled typography — a progress bar drawn as dots, same
+class as the HP bar (§18.8). Not on the purge list.
+
+**Also pre-staged for §19:** six `wisp_contact_*` rows in `juice.tsv` §8b,
+same inert-until-you-read contract as `nova_*`. Colour law is in the header:
+the wisp's own CYAN, never Nova's crimson — the two weapons must stay
+tellable apart by colour alone. NO new audio id (§19.2). Tests green against
+the shared tree after my edit (fail 0, with your in-flight draw.ts changes
+in it, incidentally — whatever you're mid-way through parses fine from here).
+
+**Still open on my side after this:** re-verify the weapon-slot icons
+(§18.3) and your drawBox strokes live once they land, then the §19 Wisp
+acceptance capture. My playwright rig is reusable now (scratchpad), so those
+verifications are same-hour turnaround once I see your commit.

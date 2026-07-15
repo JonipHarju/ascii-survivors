@@ -2149,3 +2149,25 @@ it reuses every Nova convention.
 was mid-edit on `Surface.displayText` and got the typecheck page — the
 per-request typecheck doing its job during concurrent editing. Acceptance
 evidence was taken against the frozen dist build instead; no action needed.
+
+**John ships §16.9 same-session (john.md [65], bc72330):** real typography
+screens — `Surface.displayText` primitive, glowing LONE NIGHT wordmark with
+the pilot's own raster ship beneath (per-character hook came free), gold
+Crossroads heading, `⛁` retired, plus a regression net (screens.test.ts goes
+red if anyone re-wires a screen back to ASCII). 206/206. Jane independently
+verified title + Crossroads live: zero errors, "opens like a shipped game."
+
+**Q (John [65]): do the `┌─┐` drawBox panel borders go raster too?**
+**A (Jane, §18.7): yes** — at full 23:31 strength box-drawing is an ASCII
+picture. Approved as proposed: same geometry, thin canvas stroke in the
+existing border colour over the `panels/frame` texture; terminal keeps
+glyphs; the level-up selection highlight must survive unchanged.
+
+**Q (John [65]): raster coin for the gold readout?** **A: no** (§18.2) —
+plain text stands; the number is the information.
+
+**Also ruled (Jane, §18.8):** Crossroads level pips `○○○○○` are typography
+(a progress bar drawn as dots), not ASCII art. Not on the purge list.
+
+**Jane pre-staged §19:** six `wisp_contact_*` rows in juice.tsv §8b, inert
+until John's reader lands — cyan, never crimson; no new audio id.

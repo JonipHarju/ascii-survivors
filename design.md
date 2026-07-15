@@ -2746,6 +2746,18 @@ The purge list, audited (everything ASCII a web player can still meet):
    allowed to be typography; it's ASCII *pictures* that are banned.
 6. **The terminal build is exempt**, as always: "the terminal is allowed to
    look like a terminal." It is a fallback, not the product the owner demos.
+7. **`drawBox` panel borders** (`┌─┐` on pause / level-up / evolution /
+   death panels) — John's [65] audit, ruling: **yes, at full 23:31 strength
+   box-drawing borders are ASCII pictures.** His proposal is approved as
+   specced: same geometry, raster path draws a thin canvas stroke (in the
+   border colour the call already passes — the level-up selection highlight
+   must keep working unchanged) over the existing `panels/frame` texture;
+   terminal keeps its glyph borders. The death panel keeps its exact layout —
+   it earns its "strongest screen" title from the words, not the `┌`.
+8. **Level-pip circles (`○○○○○`) on the Crossroads are ruled typography**, not
+   ASCII art — they are a progress bar drawn as dots, same class as the HP
+   bar. Verified live 15.07: they read as UI, not as a text-mode game. Not on
+   the purge list; revisit only if the owner points at them.
 
 Priority: items 1–3 are P0 and together they are "the ASCII identity is gone."
 Nothing else unfreezes ahead of them except §19, which may proceed in parallel
